@@ -1,0 +1,59 @@
+# 배포용. 로컬 개발은 docker-compose.yml (DB 만) 을 쓴다.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# 비밀값은 같은 디렉터리의 .env 에서 읽는다 (.env.example 참고). .env 는 커밋하지 않는다.
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: roomescape
+      POSTGRES_USER: roomescape
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 를 .env 에 설정해야 한다}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # 포트를 열지 않는다. 같은 도커 네트워크의 app 만 붙으면 된다
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roomescape -d roomescape"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  app:
+    build: .
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/roomescape
+      DB_USER: roomescape
+      DB_PASSWORD: ${DB_PASSWORD:?}
+      # 여기서만 켠다. 개발 기기에서는 꺼져 있어야 한다
+      COLLECTOR_ENABLED: "true"
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-https://choieuihyun.github.io}
+      # 인증이 없는 엔드포인트다. 배포에서는 반드시 꺼 둔다 (Caddy 도 라우팅하지 않는다)
+      DEBUG_ENDPOINTS: "false"
+      TZ: Asia/Seoul
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN 을 .env 에 설정해야 한다}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # 발급받은 인증서. 지우면 매번 재발급받는다
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

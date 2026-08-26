@@ -1,0 +1,15 @@
+# 도메인만 있으면 Let's Encrypt 인증서를 알아서 받고 갱신한다.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# 공개하는 것은 조회 API 뿐이다.
+	handle /api/* {
+		reverse_proxy app:8080
+	}
+
+	# /debug 를 비롯한 나머지는 앱까지 가지도 않는다.
+	# 앱 쪽에서도 DEBUG_ENDPOINTS=false 로 꺼 두지만, 둘 다 걸어 둔다.
+	handle {
+		respond "Not Found" 404
+	}
+}

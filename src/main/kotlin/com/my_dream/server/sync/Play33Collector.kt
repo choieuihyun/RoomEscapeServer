@@ -56,6 +56,7 @@ class Play33Collector(
     fun collectOne(branch: Play33Branch, date: LocalDate): SyncResult {
         val day = crawler.fetch(branch, date)
         warnIfRangeChanged(day)
+        warnIfNoThemes(day)
 
         val result = sync.sync(day)
 
@@ -74,6 +75,22 @@ class Play33Collector(
             )
         }
         return result
+    }
+
+    /**
+     * 테마가 하나도 없는 지점은 **정상일 수도 있고**(지점 준비 중 · 테마를 내린 상태)
+     * **파서가 깨진 신호일 수도 있다.** 조용히 0 으로 지나가면 둘을 구분할 길이 없다.
+     *
+     * 예외로 끊지는 않는다 — 실제로 비어 있는 지점이 있고(2026-08-26 기준 수원점),
+     * 그때마다 수집 한 바퀴를 실패로 만들 이유는 없다. 대신 눈에 띄게 남긴다.
+     */
+    private fun warnIfNoThemes(day: DaySchedule) {
+        if (day.themes.isEmpty()) {
+            log.warn(
+                "테마가 하나도 없다 — {} {}. 지점이 비어 있는 게 맞는지, 파서가 깨진 건지 확인이 필요하다",
+                day.branch.branchName, day.date,
+            )
+        }
     }
 
     /** 사이트가 예약 오픈 범위를 바꾸면 우리 순회 범위도 바뀌어야 한다. 조용히 어긋나지 않게 알린다. */

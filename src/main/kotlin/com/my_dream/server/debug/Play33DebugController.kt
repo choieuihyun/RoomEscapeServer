@@ -8,6 +8,7 @@ import com.my_dream.server.domain.ThemeRepository
 import com.my_dream.server.domain.TimeSlotRepository
 import com.my_dream.server.sync.Play33Collector
 import com.my_dream.server.sync.SyncResult
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.GetMapping
@@ -15,7 +16,13 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDate
 
-/** 손으로 확인하는 임시 엔드포인트. 배포 전에 이 패키지째 지운다. */
+/**
+ * 손으로 확인하는 엔드포인트. **인증이 없다.**
+ *
+ * 기본은 꺼져 있고, 켜려면 `DEBUG_ENDPOINTS=true` 로 띄운다.
+ * 배포에서는 이 값이 false 이고 Caddy 도 `/api` 밖은 라우팅하지 않는다 — 두 겹으로 막는다.
+ */
+@ConditionalOnProperty(prefix = "debug", name = ["endpoints-enabled"], havingValue = "true")
 @RestController
 class Play33DebugController(
     private val crawler: Play33Crawler,
