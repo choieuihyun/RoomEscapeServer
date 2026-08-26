@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:17
+    container_name: roomescape-db
+    environment:
+      POSTGRES_DB: roomescape
+      POSTGRES_USER: roomescape
+      # 로컬 개발 전용 비밀번호. 배포할 때는 환경변수로 주입한다
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-localdev}
+    ports:
+      # 호스트에서만 접근 가능하게 루프백에 묶는다. 0.0.0.0 으로 열지 말 것
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # 이게 없으면 컨테이너를 지울 때 데이터가 통째로 사라진다
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roomescape -d roomescape"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,104 @@
+package com.my_dream.server.sync
+
+import com.my_dream.server.crawler.play33.DaySchedule
+import com.my_dream.server.crawler.play33.Play33Branch
+import com.my_dream.server.crawler.play33.Play33Crawler
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.stereotype.Component
+import java.time.LocalDate
+
+/**
+ * 수집을 **한다**. 언제 하는지는 [Play33CollectJob] 이 정한다.
+ *
+ * 둘을 나눈 이유: 스케줄을 끈 상태에서도 손으로 한 번 수집해 보는 길이 있어야 한다.
+ * 한 클래스에 묶어 두면 스케줄러를 끄는 순간 수집 기능까지 같이 사라진다.
+ */
+@Component
+class Play33Collector(
+    private val crawler: Play33Crawler,
+    private val sync: ScheduleSyncService,
+    @param:Value("\${collector.play33.request-delay-ms:1200}") private val requestDelayMs: Long,
+) {
+
+    private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * 플레이33 전체를 한 바퀴. `4지점 × 7일 = 28요청`이면 전부라서
+     * 감시 대상을 골라 긁을 필요가 없다 (아키텍처 D3).
+     */
+    fun collectAll(): SweepSummary {
+        val today = LocalDate.now()
+        var transitions = 0
+        var quarantined = 0
+        var failures = 0
+
+        for (branch in Play33Branch.entries) {
+            for (offset in 0 until RESERVATION_RANGE_DAYS) {
+                val date = today.plusDays(offset.toLong())
+                // 한 지점·하루가 실패해도 나머지는 계속 돈다
+                try {
+                    val result = collectOne(branch, date)
+                    transitions += result.transitions.size
+                    quarantined += result.quarantined.size
+                } catch (e: Exception) {
+                    failures++
+                    log.warn("수집 실패 — {} {} : {}", branch.branchName, date, e.message)
+                }
+                pauseBetweenRequests()
+            }
+        }
+
+        return SweepSummary(transitions, quarantined, failures)
+            .also { log.info("수집 한 바퀴 완료 — 전이 {}건, 격리 {}건, 실패 {}건", it.transitions, it.quarantined, it.failures) }
+    }
+
+    fun collectOne(branch: Play33Branch, date: LocalDate): SyncResult {
+        val day = crawler.fetch(branch, date)
+        warnIfRangeChanged(day)
+
+        val result = sync.sync(day)
+
+        result.transitions.forEach {
+            log.info("🎟️  자리 남 — {} {} {} {}", it.branchName, it.themeName, it.date, it.time)
+        }
+        result.quarantined.forEach {
+            val tail = if (it.recovered) {
+                "${it.consecutive}회 연속이라 기준선 복구를 위해 이번엔 저장했다 (알림은 보내지 않음)"
+            } else {
+                "이번 수집분은 저장하지 않음 (${it.consecutive}회 연속)"
+            }
+            log.error(
+                "⚠️  위생 검사 격리 — {} {} : 매진이던 {}개 중 {}개가 한 번에 풀렸다. 파서 확인 필요. {}",
+                it.themeName, it.date, it.previouslyUnavailable, it.flipped, tail,
+            )
+        }
+        return result
+    }
+
+    /** 사이트가 예약 오픈 범위를 바꾸면 우리 순회 범위도 바뀌어야 한다. 조용히 어긋나지 않게 알린다. */
+    private fun warnIfRangeChanged(day: DaySchedule) {
+        val reported = day.reservationRangeDays ?: return
+        if (reported != RESERVATION_RANGE_DAYS) {
+            log.warn(
+                "예약 오픈 범위가 {}일로 바뀌었다 (코드 기준 {}일). 순회 범위를 조정해야 한다",
+                reported, RESERVATION_RANGE_DAYS,
+            )
+        }
+    }
+
+    private fun pauseBetweenRequests() {
+        try {
+            Thread.sleep(requestDelayMs)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+    }
+
+    companion object {
+        /** 사이트가 `reservation_range_day` 로 밝힌 값. `[오늘, 오늘+6]` 이 열린다 */
+        const val RESERVATION_RANGE_DAYS = 7
+    }
+}
+
+data class SweepSummary(val transitions: Int, val quarantined: Int, val failures: Int)
