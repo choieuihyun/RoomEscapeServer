@@ -38,3 +38,25 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### macOS ###
+.DS_Store
+
+### 비밀값 — 절대 커밋 금지 ###
+.env
+.env.*
+!.env.example
+*.local.properties
+src/main/resources/application-local.properties
+src/main/resources/application-secret.properties
+
+### AI 도구 로컬 상태 ###
+.serena/
+.claude/settings.local.json
+
+### 작업용 스크래치 ###
+picture/
+scratch/
+*.log
+
+# 크롤 픽스처(src/test/resources/*.html)는 회귀 테스트의 근거라 커밋한다.
