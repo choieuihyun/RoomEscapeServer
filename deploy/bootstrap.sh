@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# 갓 만든 우분투 서버 하나를 이 서비스가 도는 상태까지 올린다.
+#
+#   ssh <서버> 'bash -s' -- <도메인> [DuckDNS토큰] < deploy/bootstrap.sh
+#
+# 예)
+#   ssh roomescape 'bash -s' -- roomescape.duckdns.org a1b2c3d4-... < deploy/bootstrap.sh
+#
+# 여러 번 실행해도 안전하다(멱등). 실패하면 그 자리에서 멈춘다.
+#
+# ⚠️ 오라클 클라우드는 방화벽이 두 겹이다. 이 스크립트는 서버 안쪽(iptables)만 연다.
+#    바깥쪽(VCN 보안 목록)은 콘솔에서 열어야 한다 — 아래 안내가 출력된다.
+
+set -euo pipefail
+
+DOMAIN="${1:-}"
+DUCKDNS_TOKEN="${2:-}"
+REPO="${REPO:-https://github.com/choieuihyun/RoomEscapeServer.git}"
+APP_DIR="${APP_DIR:-$HOME/roomescape}"
+
+say() { printf '\n\033[1;34m▶ %s\033[0m\n' "$*"; }
+ok()  { printf '  \033[32m✓\033[0m %s\n' "$*"; }
+die() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
+
+[ -n "$DOMAIN" ] || die "도메인을 인자로 넘겨야 한다.  예: bash -s -- roomescape.duckdns.org <토큰>"
+[ "$(id -u)" -ne 0 ] || die "root 말고 일반 사용자(ubuntu)로 실행할 것. 필요할 때만 sudo 를 쓴다."
+
+# ── 1. 패키지 ────────────────────────────────────────────
+say "패키지 준비"
+sudo apt-get update -qq
+sudo apt-get install -y -qq ca-certificates curl git iptables-persistent >/dev/null
+ok "기본 패키지"
+
+# ── 2. 도커 ──────────────────────────────────────────────
+say "도커"
+if command -v docker >/dev/null 2>&1; then
+  ok "이미 설치됨 ($(docker --version | cut -d, -f1))"
+else
+  # 공식 apt 저장소를 쓴다. curl | sh 보다 느리지만 무엇이 설치되는지 보인다
+  sudo install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg |
+    sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  sudo chmod a+r /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
+    sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
+  sudo apt-get update -qq
+  sudo apt-get install -y -qq docker-ce docker-ce-cli containerd.io \
+    docker-buildx-plugin docker-compose-plugin >/dev/null
+  ok "설치 완료"
+fi
+
+# sudo 없이 docker 를 쓰려면 그룹에 넣어야 한다. 적용은 다음 로그인부터다
+if ! id -nG "$USER" | grep -qw docker; then
+  sudo usermod -aG docker "$USER"
+  ok "docker 그룹에 추가 (다음 접속부터 sudo 없이)"
+fi
+sudo systemctl enable --now docker >/dev/null 2>&1 || true
+
+# ── 3. 서버 안쪽 방화벽 ──────────────────────────────────
+# 오라클 우분투 이미지는 iptables 로 22 말고 전부 막아 둔다.
+# 이걸 모르면 "보안 목록은 열었는데 왜 접속이 안 되지" 로 한참 헤맨다.
+say "방화벽 (서버 안쪽)"
+for port in 80 443; do
+  if sudo iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null; then
+    ok "$port 이미 열림"
+  else
+    # REJECT 규칙보다 앞에 넣어야 한다. 뒤에 붙이면 그 전에 막힌다
+    sudo iptables -I INPUT 6 -p tcp --dport "$port" -m state --state NEW -j ACCEPT
+    ok "$port 열림"
+  fi
+done
+sudo netfilter-persistent save >/dev/null 2>&1 && ok "재부팅 후에도 유지되게 저장"
+
+# ── 4. DuckDNS (선택) ────────────────────────────────────
+if [ -n "$DUCKDNS_TOKEN" ]; then
+  say "DuckDNS"
+  SUB="${DOMAIN%%.duckdns.org}"
+  resp=$(curl -fsS "https://www.duckdns.org/update?domains=${SUB}&token=${DUCKDNS_TOKEN}&ip=")
+  [ "$resp" = "OK" ] || die "DuckDNS 갱신 실패 (응답: $resp). 서브도메인과 토큰을 확인할 것"
+  ok "$DOMAIN → 이 서버 IP"
+
+  # 인스턴스를 껐다 켜면 IP 가 바뀔 수 있다. 5분마다 맞춰 둔다
+  mkdir -p "$HOME/.duckdns"
+  printf 'curl -fsS "https://www.duckdns.org/update?domains=%s&token=%s&ip=" >/dev/null\n' \
+    "$SUB" "$DUCKDNS_TOKEN" > "$HOME/.duckdns/update.sh"
+  chmod 700 "$HOME/.duckdns/update.sh"
+  ( crontab -l 2>/dev/null | grep -v duckdns/update.sh
+    echo "*/5 * * * * bash $HOME/.duckdns/update.sh" ) | crontab -
+  ok "5분마다 IP 자동 갱신 (크론)"
+fi
+
+# ── 5. 코드 ──────────────────────────────────────────────
+say "코드"
+if [ -d "$APP_DIR/.git" ]; then
+  git -C "$APP_DIR" pull --ff-only
+  ok "최신으로 갱신"
+else
+  git clone --depth 1 "$REPO" "$APP_DIR"
+  ok "$APP_DIR 에 받음"
+fi
+
+# ── 6. 비밀값 ────────────────────────────────────────────
+say "환경 설정"
+ENV_FILE="$APP_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+  ok ".env 이미 있음 (덮어쓰지 않는다)"
+  # 도메인이 바뀌었을 수 있으니 그것만 맞춘다
+  if ! grep -q "^DOMAIN=${DOMAIN}$" "$ENV_FILE"; then
+    sed -i "s|^DOMAIN=.*|DOMAIN=${DOMAIN}|" "$ENV_FILE"
+    ok "DOMAIN 을 $DOMAIN 으로 갱신"
+  fi
+else
+  # DB 비밀번호는 사람이 볼 일이 없다. 여기서 만들고 .env 에만 둔다
+  cat > "$ENV_FILE" <<EOF
+DB_PASSWORD=$(openssl rand -base64 30 | tr -d '/+=' | head -c 32)
+DOMAIN=${DOMAIN}
+API_CORS_ORIGINS=https://choieuihyun.github.io
+EOF
+  chmod 600 "$ENV_FILE"
+  ok ".env 생성 (DB 비밀번호 자동 생성)"
+fi
+
+# ── 7. 기동 ──────────────────────────────────────────────
+say "빌드 & 기동 (첫 빌드는 몇 분 걸린다)"
+cd "$APP_DIR"
+sudo docker compose -f docker-compose.prod.yml up -d --build
+
+# ── 8. 확인 ──────────────────────────────────────────────
+say "확인"
+for i in $(seq 1 60); do
+  code=$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost/api/branches" 2>/dev/null || echo 000)
+  [ "$code" = "200" ] && break
+  sleep 5
+done
+[ "${code:-000}" = "200" ] || {
+  echo
+  sudo docker compose -f docker-compose.prod.yml logs --tail 40
+  die "앱이 응답하지 않는다. 위 로그를 확인할 것"
+}
+ok "앱 응답 정상 (서버 내부에서 HTTPS 200)"
+
+echo
+printf '\033[1;32m배포 끝났다.\033[0m\n\n'
+printf '  서버 내부 확인 :  curl -sk https://localhost/api/branches\n'
+printf '  바깥에서 확인   :  curl -s https://%s/api/branches\n' "$DOMAIN"
+printf '  로그            :  cd %s && sudo docker compose -f docker-compose.prod.yml logs -f app\n\n' "$APP_DIR"
+cat <<'NOTE'
+⚠️ 바깥에서 접속이 안 되면 클라우드 쪽 방화벽이 아직 닫혀 있는 것이다.
+   이 스크립트는 서버 안쪽(iptables)만 열 수 있다.
+
+   오라클  : 네트워킹 → VCN → 보안 목록 → 수신 규칙 추가
+             소스 0.0.0.0/0, TCP, 대상 포트 80 과 443 각각
+   Hetzner : 기본적으로 열려 있다. 방화벽을 따로 만들었다면 거기에 80/443 추가
+
+   HTTPS 인증서는 80 포트가 열려야 발급된다 — 80 을 빼먹으면 인증서부터 실패한다.
+NOTE
