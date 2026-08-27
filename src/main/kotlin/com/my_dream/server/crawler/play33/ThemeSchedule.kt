@@ -31,8 +31,8 @@ data class ThemeSchedule(
     val genre: String?,
     val capacity: String?,
     val runningMinutes: Int?,
-    val horrorLevel: Int?,
-    val difficulty: Int?,
+    val horrorLevel: Double?,
+    val difficulty: Double?,
     val slots: List<Slot>,
 )
 

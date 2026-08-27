@@ -57,8 +57,8 @@ class Play33ParserTest {
         assertEquals("드라마/스릴러", witness.genre)
         assertEquals("2~3인", witness.capacity)
         assertEquals(65, witness.runningMinutes)
-        assertEquals(1, witness.horrorLevel)
-        assertEquals(2, witness.difficulty)
+        assertEquals(1.0, witness.horrorLevel)
+        assertEquals(2.0, witness.difficulty)
         assertNotNull(witness.posterUrl)
     }
 
@@ -81,5 +81,59 @@ class Play33ParserTest {
     fun `모든 테마가 슬롯을 가진다`() {
         assertTrue(page.themes.isNotEmpty())
         page.themes.forEach { assertEquals(10, it.slots.size, "${it.themeName} 슬롯 수") }
+    }
+}
+
+/**
+ * 대전점 2026-08-28 — **0.5 단위** 평점이 들어 있는 페이지다.
+ *
+ * 건대점 픽스처는 공포·난이도가 전부 정수라서, 소수점을 지우던 버그를 못 잡았다.
+ * (`"0.5"` → `5`, `size25` → `25`) 정수만 있는 표본으로는 증명되지 않는 게 있다.
+ */
+class Play33ParserHalfStepTest {
+
+    private val parser = Play33Parser()
+    private val html = requireNotNull(javaClass.getResource("/play33-daejeon-2026-08-28.html")).readText()
+    private val page = parser.parse(html)
+
+    @Test
+    fun `공포도의 소수점을 지우지 않는다`() {
+        // 이게 5.0 으로 읽히면 "거의 안 무섭다" 가 "최고 공포" 가 된다
+        assertEquals(0.5, page.themes.first { it.themeName == "좌충우돌 꼬마마법사" }.horrorLevel)
+    }
+
+    @Test
+    fun `공포도가 정수인 테마도 그대로 읽는다`() {
+        assertEquals(0.0, page.themes.first { it.themeName == "우울해서 빵 샀어" }.horrorLevel)
+        assertEquals(1.0, page.themes.first { it.themeName == "자각몽(自覺夢)" }.horrorLevel)
+        assertEquals(4.0, page.themes.first { it.themeName == "강천여자고등학교" }.horrorLevel)
+    }
+
+    @Test
+    fun `sizeN 이 두 자리면 반 칸이다`() {
+        // reservation.css 가 size1·size15·size2·size25 … 를 각각 다르게 그린다
+        assertEquals(2.5, page.themes.first { it.themeName == "우울해서 빵 샀어" }.difficulty)
+        assertEquals(2.0, page.themes.first { it.themeName == "좌충우돌 꼬마마법사" }.difficulty)
+        assertEquals(4.0, page.themes.first { it.themeName == "자각몽(自覺夢)" }.difficulty)
+        assertEquals(3.0, page.themes.first { it.themeName == "강천여자고등학교" }.difficulty)
+    }
+
+    @Test
+    fun `난이도는 별 다섯 개를 넘지 않는다`() {
+        // 25 같은 값이 다시 새어 나오면 여기서 걸린다
+        page.themes.forEach {
+            val d = it.difficulty
+            assertTrue(d == null || d in 0.0..5.0, "${it.themeName} 난이도 $d")
+        }
+    }
+
+    @Test
+    fun `모르는 표기는 넘겨짚지 않고 비운다`() {
+        // 세 자리(백분율 등)로 바뀌면 이상한 숫자를 만들지 말고 null 이어야 한다
+        val odd = parser.parse(
+            """<section class="reslist"><div class="reslist-text"><strong>가짜</strong>
+               <div class="resstep size100 cba"></div></div></section>""",
+        )
+        assertNull(odd.themes.single().difficulty)
     }
 }

@@ -65,7 +65,7 @@ class Play33Parser {
             capacity = info["인원"],
             // "65분" 과 "60" 이 섞여 있어서 숫자만 남긴다
             runningMinutes = info["시간"]?.digitsOrNull(),
-            horrorLevel = info["공포"]?.digitsOrNull(),
+            horrorLevel = info["공포"]?.halfStepOrNull(),
             difficulty = difficulty(),
             slots = slots(),
         )
@@ -79,13 +79,22 @@ class Play33Parser {
             label to value
         }.toMap()
 
-    /** 난이도는 별 개수가 `<div class="resstep size3 cba">` 의 sizeN 으로 들어온다 */
-    private fun Element.difficulty(): Int? =
+    /**
+     * 난이도는 별 개수가 `<div class="resstep size3 cba">` 의 sizeN 으로 들어온다.
+     *
+     * **두 자리면 반 칸이다.** `reservation.css` 가 `size1 size15 size2 size25 …
+     * size4 size45` 를 각각 다르게 그린다 — `size25` 는 25 가 아니라 **2.5** 다.
+     * 예전에는 이걸 그대로 정수로 읽어 별 25 개짜리 테마가 생겼다.
+     *
+     * 세 자리 이상은 우리가 모르는 표기다. 넘겨짚어 이상한 값을 만드느니 `null` 로 둔다.
+     */
+    private fun Element.difficulty(): Double? =
         selectFirst(".resstep")
             ?.classNames()
             ?.firstOrNull { it.startsWith("size") }
             ?.removePrefix("size")
-            ?.toIntOrNull()
+            ?.takeIf { it.isNotEmpty() && it.all(Char::isDigit) }
+            ?.let { when (it.length) { 1 -> it.toDouble(); 2 -> it.toDouble() / 10; else -> null } }
 
     /**
      * 예약 가능 여부는 `disabled` 속성 유무로 판단한다.
@@ -100,5 +109,15 @@ class Play33Parser {
     private fun String.toLocalTimeOrNull(): LocalTime? =
         runCatching { LocalTime.parse(trim()) }.getOrNull()
 
+    /** `"65분"` 처럼 단위가 붙은 정수용. 소수점이 섞이는 값에는 쓰면 안 된다 */
     private fun String.digitsOrNull(): Int? = filter { it.isDigit() }.toIntOrNull()
+
+    /**
+     * 공포도는 `0.5` 단위로 적힌다 (`"0"`, `"0.5"`, `"3.5"`, `"4"`).
+     *
+     * 숫자만 남기던 예전 방식은 점을 지워서 **`0.5` 를 `5` 로** 만들었다 —
+     * "거의 안 무섭다" 가 "최고로 무섭다" 로 뒤집혔다. 소수점을 살려서 읽는다.
+     */
+    private fun String.halfStepOrNull(): Double? =
+        Regex("""\d+(?:\.\d+)?""").find(this)?.value?.toDoubleOrNull()
 }

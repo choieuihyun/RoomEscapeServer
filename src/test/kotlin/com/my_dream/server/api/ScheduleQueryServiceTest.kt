@@ -113,8 +113,8 @@ class ScheduleQueryServiceTest @Autowired constructor(
         assertEquals("2~3인", theme.capacity)
         assertEquals(2, theme.minPeople)
         assertEquals(3, theme.maxPeople, "4명이면 이 테마를 못 간다는 걸 화면이 알 수 있어야 한다")
-        assertEquals(1, theme.horrorLevel)
-        assertEquals(2, theme.difficulty)
+        assertEquals(1.0, theme.horrorLevel)
+        assertEquals(2.0, theme.difficulty)
     }
 
     @Test
@@ -146,8 +146,8 @@ class ScheduleQueryServiceTest @Autowired constructor(
                 genre = "드라마/스릴러",
                 capacity = "2~3인",
                 runningMinutes = 65,
-                horrorLevel = 1,
-                difficulty = 2,
+                horrorLevel = 1.0,
+                difficulty = 2.0,
                 slots = listOf(
                     Slot(LocalTime.of(10, 35), available = true),
                     Slot(LocalTime.of(22, 15), available = false),

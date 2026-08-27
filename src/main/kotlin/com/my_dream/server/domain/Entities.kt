@@ -48,8 +48,8 @@ class Theme(
     var genre: String? = null,
     var capacity: String? = null,
     var runningMinutes: Int? = null,
-    var horrorLevel: Int? = null,
-    var difficulty: Int? = null,
+    var horrorLevel: Double? = null,
+    var difficulty: Double? = null,
     @Column(length = 500) var posterUrl: String? = null,
 ) {
     @Id

@@ -42,9 +42,9 @@ data class ThemeDto(
     /** [capacity] 에서 뽑아낸 값. 인원이 안 맞는 테마를 걸러내라고 있다 */
     val minPeople: Int?,
     val maxPeople: Int?,
-    val horrorLevel: Int?,
-    /** 별 개수 (1~5) */
-    val difficulty: Int?,
+    val horrorLevel: Double?,
+    /** 별 개수. **0.5 단위** 다 — `2.5` 가 실제로 온다 */
+    val difficulty: Double?,
     val posterUrl: String?,
 
     val sessions: List<SessionDto>,
