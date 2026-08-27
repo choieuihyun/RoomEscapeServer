@@ -4,7 +4,7 @@
 
 수집한 시간표는 두 곳으로 나간다.
 
-1. **알림** — 취소표가 나오면 푸시 *(예정)*
+1. **알림** — 감시를 걸어 둔 자리가 풀리면 알린다 *(판정 완료 · 발송은 아직 로그)*
 2. **[Floduler](https://github.com/choieuihyun/RoomEscapeScheduler) 피드** — 방탈출 연방 시간표 계산기에 회차와 **매진 여부**를 제공
 
 Kotlin 2.3 · Spring Boot 4.1 · PostgreSQL 17 · JDK 21
@@ -32,7 +32,7 @@ Kotlin 2.3 · Spring Boot 4.1 · PostgreSQL 17 · JDK 21
                                                               │         │
                                        불가→가능 전이만 ───────┘         └── 조회 요청
                                                      ↓                        ↓
-                                              ⑤ Notifier (예정)          ⑦ Api
+                                              ⑤ Notifier                 ⑦ Api
                                                      ↓                        ↓
                                                 사용자 폰                  Floduler
 ```
@@ -53,6 +53,25 @@ GET /api/schedule?branch=&date=          그날 전 테마 회차 + 매진 여�
 남아 있어야 나중에 "이 자리 감시" 를 붙일 수 있다.
 
 수집 전인 지점·날짜는 빈 배열이 아니라 **404** 다. "회차가 없는 날" 과 "아직 안 본 날" 은 다른 말이다.
+
+---
+
+## 감시 API — "이 자리가 풀리면 알려줘"
+
+```
+POST   /api/watches      { slotId }    감시 등록 (두 번 걸어도 하나)
+GET    /api/watches                    내 감시 목록 (지난 날짜는 빠진다)
+DELETE /api/watches/{id}               해제
+```
+
+**이 세 개만 로그인이 필요하다.** 조회 API 는 공개다.
+`Authorization: Bearer <Firebase ID 토큰>` 을 보내면 구글 공개키로 서명을 검증한다 —
+**비밀번호가 이 서버를 지나가지 않는다.**
+
+같은 자리에 대한 알림은 **1시간에 한 번**까지다. 평생 1회로 두면 첫 알림을 놓친 사람이
+그 자리를 영영 못 받는다 — 취소표는 났다 사라졌다를 반복한다.
+
+발송 경로는 아직 **로그**다. `notify.channel=fcm` 으로 갈아 끼우면 실제 푸시가 된다.
 
 ---
 
@@ -88,6 +107,9 @@ curl 'http://127.0.0.1:8080/api/branches'
 | `SERVER_ADDRESS` | `127.0.0.1` | 루프백 전용. 남에게 보여줄 때만 `0.0.0.0` |
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | 로컬 compose 기준 | |
 | `API_CORS_ORIGINS` | Pages + localhost | 쉼표로 여러 개 |
+| `FIREBASE_PROJECT_ID` | `roomescapescheduler` | 감시 API 토큰을 검증할 대상. 비밀값 아님 |
+| `NOTIFY_CHANNEL` | `log` | `fcm` 으로 바꾸면 실제 푸시 (아직 미구현) |
+| `NOTIFY_COOLDOWN_MINUTES` | `60` | 같은 자리를 다시 알리기까지의 최소 간격 |
 
 ```bash
 ./gradlew test    # DB 없이 돈다 (H2 인메모리)

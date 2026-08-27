@@ -56,4 +56,9 @@ data class ThemeDto(
  * **매진 회차도 빠짐없이 포함한다.** 계산에서 빼는 것과 화면에서 지우는 것은 다르다 —
  * 화면에 남아 있어야 나중에 "이 자리 감시" 를 붙일 수 있다.
  */
-data class SessionDto(val t: Int, val soldout: Boolean)
+data class SessionDto(
+    /** 이 자리를 가리키는 값. 감시를 걸 때 `POST /api/watches` 에 그대로 넣는다 */
+    val id: Long,
+    val t: Int,
+    val soldout: Boolean,
+)

@@ -81,3 +81,54 @@ class TimeSlot(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null
 }
+
+/**
+ * 감시 신청 — "이 자리가 풀리면 알려줘".
+ *
+ * 자연키는 `(userId, timeSlot)` 이다. 같은 사람이 같은 자리를 두 번 신청할 수 없고,
+ * 신청 버튼을 두 번 눌러도 알림이 두 번 가지 않는다. [userId] 는 Firebase uid (`sub`) 다.
+ *
+ * 지난 날짜는 지우지 않는다. 지우는 배치를 따로 만드는 것보다,
+ * 조회할 때 `date >= 오늘` 로 거르는 쪽이 사고가 적다.
+ */
+@Entity
+@Table(name = "watch", uniqueConstraints = [UniqueConstraint(columnNames = ["user_id", "time_slot_id"])])
+class Watch(
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "time_slot_id", nullable = false)
+    val timeSlot: TimeSlot,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/**
+ * 보낸 알림 기록. **쿨다운 판정의 유일한 근거다** (아키텍처 D11).
+ *
+ * 메모리에 두지 않는 이유: 서버를 재시작하면 기억이 날아가고,
+ * 그 직후 수집 한 바퀴에서 방금 보낸 알림이 전부 다시 나간다.
+ *
+ * [outcome] 이 [SENT] 인 것만 쿨다운으로 센다. 발송이 실패한 건 "알렸다" 가 아니라서
+ * 다음 바퀴에 다시 시도해야 한다 — 실패를 쿨다운으로 세면 그 자리는 조용히 묻힌다.
+ */
+@Entity
+@Table(name = "notification_log")
+class NotificationLog(
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "watch_id", nullable = false)
+    val watch: Watch,
+    @Column(name = "sent_at", nullable = false) val sentAt: Instant,
+    @Column(nullable = false) val outcome: String,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+
+    companion object {
+        const val SENT = "SENT"
+        const val FAILED = "FAILED"
+    }
+}

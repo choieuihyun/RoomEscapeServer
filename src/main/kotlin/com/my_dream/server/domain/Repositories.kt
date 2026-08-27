@@ -37,3 +37,44 @@ interface TimeSlotRepository : JpaRepository<TimeSlot, Long> {
     )
     fun findDatesByStore(store: Store, from: LocalDate): List<LocalDate>
 }
+
+interface WatchRepository : JpaRepository<Watch, Long> {
+
+    fun findByUserIdAndTimeSlot(userId: String, timeSlot: TimeSlot): Watch?
+
+    /**
+     * 내 감시 목록. 지난 자리는 빼고 준다 — 지나간 회차를 지켜보고 있다고 말하면 거짓말이다.
+     *
+     * `join fetch` 로 매장까지 한 번에 끌어온다. 없으면 목록을 그리는 동안
+     * 감시 하나마다 쿼리가 더 나간다 (N+1).
+     */
+    @Query(
+        """
+        select w from Watch w
+        join fetch w.timeSlot s
+        join fetch s.theme t
+        join fetch t.store
+        where w.userId = :userId and s.date >= :from
+        order by s.date, s.time
+        """,
+    )
+    fun findActiveByUserId(userId: String, from: LocalDate): List<Watch>
+
+    /** 전이가 난 자리들을 감시하던 사람 전부. 전이 한 건마다 쿼리를 날리지 않으려고 묶어서 받는다. */
+    @Query(
+        """
+        select w from Watch w
+        join fetch w.timeSlot s
+        join fetch s.theme t
+        join fetch t.store
+        where s.id in :slotIds
+        """,
+    )
+    fun findByTimeSlotIds(slotIds: Collection<Long>): List<Watch>
+}
+
+interface NotificationLogRepository : JpaRepository<NotificationLog, Long> {
+
+    /** 이 감시에 **성공적으로** 보낸 가장 최근 알림. 쿨다운 판정에 쓴다. */
+    fun findTopByWatchAndOutcomeOrderBySentAtDesc(watch: Watch, outcome: String): NotificationLog?
+}

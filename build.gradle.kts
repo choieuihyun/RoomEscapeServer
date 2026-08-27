@@ -28,6 +28,10 @@ dependencies {
     implementation("org.jsoup:jsoup:1.21.1")
     // Spring Boot 4 는 Flyway 자동설정이 starter 로 분리돼 있다 (flyway-core 만으로는 안 돈다)
     implementation("org.springframework.boot:spring-boot-starter-flyway")
+    // 알림 신청은 "누가" 를 알아야 한다. Floduler 가 이미 쓰는 Firebase Auth 의
+    // ID 토큰을 검증한다 — 비밀번호를 우리가 다루지 않는 쪽이 항상 안전하다 (D12)
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
     developmentOnly("org.springframework.boot:spring-boot-devtools")

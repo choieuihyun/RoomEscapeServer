@@ -3,6 +3,7 @@ package com.my_dream.server.sync
 import com.my_dream.server.crawler.play33.DaySchedule
 import com.my_dream.server.crawler.play33.Play33Branch
 import com.my_dream.server.crawler.play33.Play33Crawler
+import com.my_dream.server.notify.NotificationService
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -18,6 +19,7 @@ import java.time.LocalDate
 class Play33Collector(
     private val crawler: Play33Crawler,
     private val sync: ScheduleSyncService,
+    private val notifications: NotificationService,
     @param:Value("\${collector.play33.request-delay-ms:1200}") private val requestDelayMs: Long,
 ) {
 
@@ -63,6 +65,10 @@ class Play33Collector(
         result.transitions.forEach {
             log.info("🎟️  자리 남 — {} {} {} {}", it.branchName, it.themeName, it.date, it.time)
         }
+        // **저장이 끝난 뒤에** 알린다. 같은 트랜잭션 안에서 보내면 롤백돼도 알림은 못 되돌린다.
+        // 알림 경로가 통째로 터져도 수집 한 바퀴는 계속 돌아야 한다 — 수집이 알림에 종속되면 안 된다
+        runCatching { notifications.onTransitions(result.transitions) }
+            .onFailure { log.error("알림 판정 실패 — 수집은 계속한다 : {}", it.message, it) }
         result.quarantined.forEach {
             val tail = if (it.recovered) {
                 "${it.consecutive}회 연속이라 기준선 복구를 위해 이번엔 저장했다 (알림은 보내지 않음)"

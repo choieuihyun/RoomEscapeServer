@@ -5,6 +5,8 @@ import java.time.LocalTime
 
 /** `예약 불가 → 예약 가능` 으로 바뀐 회차 하나. 이 서비스가 존재하는 이유다. */
 data class SlotTransition(
+    /** 감시 신청과 맞춰 보려면 어느 행이 풀렸는지가 필요하다. 이름·시각만으로는 못 찾는다 */
+    val timeSlotId: Long,
     val storeKey: String,
     val branchName: String,
     val themeName: String,

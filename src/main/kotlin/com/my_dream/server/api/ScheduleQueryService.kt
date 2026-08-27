@@ -92,6 +92,7 @@ class ScheduleQueryService(
 
     /** `10:35` → `635`. 자정부터의 분. */
     private fun TimeSlot.toSession() = SessionDto(
+        id = requireNotNull(id),
         t = time.hour * 60 + time.minute,
         soldout = !available,
     )

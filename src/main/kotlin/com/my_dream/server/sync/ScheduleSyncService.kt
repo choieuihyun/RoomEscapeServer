@@ -73,7 +73,16 @@ class ScheduleSyncService(
 
             if (emitTransitions) {
                 transitions += flipped.map {
-                    SlotTransition(store.storeKey, store.branchName, theme.name, day.date, it.time)
+                    // flipped 는 "이전에 매진이던" 회차라 existing 에 반드시 있다
+                    val row = requireNotNull(existing[it.time]) { "flipped 인데 이전 행이 없다: ${it.time}" }
+                    SlotTransition(
+                        timeSlotId = requireNotNull(row.id),
+                        storeKey = store.storeKey,
+                        branchName = store.branchName,
+                        themeName = theme.name,
+                        date = day.date,
+                        time = it.time,
+                    )
                 }
             }
         }
