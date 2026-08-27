@@ -7,6 +7,7 @@ import com.my_dream.server.domain.StoreRepository
 import com.my_dream.server.domain.ThemeRepository
 import com.my_dream.server.domain.TimeSlotRepository
 import com.my_dream.server.sync.Play33Collector
+import com.my_dream.server.sync.SweepSummary
 import com.my_dream.server.sync.SyncResult
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.format.annotation.DateTimeFormat
@@ -45,6 +46,15 @@ class Play33DebugController(
         @RequestParam(defaultValue = "KONKUK") branch: Play33Branch,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate,
     ): SyncResult = collector.collectOne(branch, date)
+
+    /**
+     * 전 지점 한 바퀴. **스케줄러를 켜지 않고** 수집 한 번을 손으로 돌려본다.
+     *
+     * 매장 사이가 병렬로 도는지, 한 바퀴가 주기 안에 끝나는지를 확인하는 자리다 (D13).
+     * 실제 요청이 `지점수 × 7`번 나가므로 아무 때나 누르지 않는다.
+     */
+    @GetMapping("/debug/sweep")
+    fun sweep(): SweepSummary = collector.collectAll()
 
     /** DB 에 실제로 뭐가 들어갔는지. */
     @GetMapping("/debug/stored")
