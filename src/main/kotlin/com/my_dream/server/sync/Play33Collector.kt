@@ -24,7 +24,7 @@ class Play33Collector(
     private val sync: ScheduleSyncService,
     private val notifications: NotificationService,
     @param:Value("\${collector.play33.request-delay-ms:1200}") private val requestDelayMs: Long,
-    @param:Value("\${collector.play33.store-concurrency:4}") private val storeConcurrency: Int,
+    @param:Value("\${collector.play33.site-concurrency:4}") private val siteConcurrency: Int,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -33,17 +33,20 @@ class Play33Collector(
      * 플레이33 전체를 한 바퀴. `4지점 × 7일 = 28요청`이면 전부라서
      * 감시 대상을 골라 긁을 필요가 없다 (아키텍처 D3).
      *
-     * **매장 사이는 병렬, 매장 안은 순차다** (아키텍처 D13).
-     * 수집 윤리 규칙은 "매장당 동시 1개, 초당 1회 미만" 이라 *매장 단위*로 걸린다 —
-     * 다른 매장을 동시에 긁는 것은 어느 매장에도 부담을 더하지 않는다.
+     * **병렬 단위는 지점이 아니라 사이트다** (아키텍처 D13).
      *
-     * 전부 순차로 돌면 한 바퀴가 `매장수 × 7 × 1.2초` 로 늘어나서,
-     * 매장이 늘어날수록 수집 주기 자체가 지켜지지 않는다.
+     * 수집 윤리 규칙은 "동시 요청 1개, 초당 1회 미만" 인데, 이건 **상대 서버 기준**이다.
+     * 플레이33은 네 지점이 전부 `play33.kr` 한 대라, 지점별로 동시에 긁으면
+     * 그 서버 하나에 초당 4회가 간다 — 지점이 나뉘어 있다고 서버가 나뉜 게 아니다.
+     *
+     * 그래서 **같은 사이트를 쓰는 지점끼리 묶어 한 줄로 세우고, 사이트끼리만 동시에** 돈다.
+     * 지금은 사이트가 하나뿐이라 실질적으로 순차다. 브랜드가 늘어 사이트가 여러 개가 되면
+     * 그때 실제로 병렬이 되고, 그게 한 바퀴가 수집 주기를 넘기지 않게 해 준다.
      */
     fun collectAll(): SweepSummary {
         val today = LocalDate.now()
-        val branches = Play33Branch.entries
-        val threads = storeConcurrency.coerceIn(1, branches.size)
+        val bySite = Play33Branch.entries.groupBy { it.host }
+        val threads = siteConcurrency.coerceIn(1, bySite.size)
         // 바퀴마다 만들고 접는다. 스케줄러를 꺼 두면 스레드도 남지 않는다
         val pool = Executors.newFixedThreadPool(threads) { r ->
             Thread(r, "play33-collect").apply { isDaemon = true }
@@ -51,11 +54,11 @@ class Play33Collector(
         val startedAt = System.nanoTime()
 
         return try {
-            pool.invokeAll(branches.map { branch -> Callable { collectBranch(branch, today) } })
+            pool.invokeAll(bySite.map { (host, branches) -> Callable { collectSite(host, branches, today) } })
                 .map { future ->
-                    // 매장 하나가 통째로 실패해도 나머지 집계는 살린다
+                    // 사이트 하나가 통째로 실패해도 나머지 집계는 살린다
                     runCatching { future.get() }.getOrElse {
-                        log.warn("지점 수집이 통째로 실패 — {}", it.message)
+                        log.warn("사이트 수집이 통째로 실패 — {}", it.message)
                         SweepSummary(0, 0, RESERVATION_RANGE_DAYS)
                     }
                 }
@@ -65,8 +68,8 @@ class Play33Collector(
                 .also {
                     val took = Duration.ofNanos(System.nanoTime() - startedAt)
                     log.info(
-                        "수집 한 바퀴 완료 — {}초 ({}개 지점 동시), 전이 {}건, 격리 {}건, 실패 {}건",
-                        took.toSeconds(), threads, it.transitions, it.quarantined, it.failures,
+                        "수집 한 바퀴 완료 — {}초 (사이트 {}곳, 동시 {}), 전이 {}건, 격리 {}건, 실패 {}건",
+                        took.toSeconds(), bySite.size, threads, it.transitions, it.quarantined, it.failures,
                     )
                 }
         } finally {
@@ -74,14 +77,20 @@ class Play33Collector(
         }
     }
 
-    /** 한 지점의 7일치. **여기는 순차다** — 같은 매장에 동시 요청을 보내지 않는다. */
-    private fun collectBranch(branch: Play33Branch, today: LocalDate): SweepSummary {
+    /**
+     * 한 사이트가 담당하는 모든 지점·날짜. **여기는 끝까지 순차다** —
+     * 이 서버에 가는 요청은 항상 한 번에 하나고, 사이에 [requestDelayMs] 를 쉰다.
+     */
+    private fun collectSite(host: String, branches: List<Play33Branch>, today: LocalDate): SweepSummary {
         var transitions = 0
         var quarantined = 0
         var failures = 0
 
-        for (offset in 0 until RESERVATION_RANGE_DAYS) {
-            val date = today.plusDays(offset.toLong())
+        val work = branches.flatMap { branch ->
+            (0 until RESERVATION_RANGE_DAYS).map { branch to today.plusDays(it.toLong()) }
+        }
+
+        work.forEachIndexed { i, (branch, date) ->
             // 한 지점·하루가 실패해도 나머지는 계속 돈다
             try {
                 val result = collectOne(branch, date)
@@ -91,10 +100,11 @@ class Play33Collector(
                 failures++
                 log.warn("수집 실패 — {} {} : {}", branch.branchName, date, e.message)
             }
-            // 마지막 날짜 뒤에는 쉬지 않는다 — 다음 요청이 없는데 기다릴 이유가 없다
-            if (offset < RESERVATION_RANGE_DAYS - 1) pauseBetweenRequests()
+            // 마지막 요청 뒤에는 쉬지 않는다. 다음 요청이 없는데 기다릴 이유가 없다
+            if (i < work.lastIndex) pauseBetweenRequests()
         }
 
+        log.debug("{} — {}요청 완료", host, work.size)
         return SweepSummary(transitions, quarantined, failures)
     }
 

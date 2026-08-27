@@ -13,7 +13,17 @@ enum class Play33Branch(val id: Int, val branchName: String, val key: String) {
     SUWON(7, "수원점", "play33-suwon"),
     ;
 
+    /**
+     * 이 지점을 긁을 때 실제로 두드리는 서버.
+     *
+     * **네 지점이 전부 같은 값이다.** 지점은 서버가 아니라 `?branch=N` 파라미터일 뿐이라,
+     * 지점별로 동시에 요청하면 그 서버 한 대에 초당 4회가 간다. 수집 속도를 정하는 단위는
+     * 지점이 아니라 여기다 (아키텍처 D13).
+     */
+    val host: String get() = HOST
+
     companion object {
         const val BRAND = "플레이33"
+        const val HOST = "play33.kr"
     }
 }

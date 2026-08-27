@@ -30,6 +30,7 @@ class Play33Client {
             .orEmpty()
 
     companion object {
-        private const val BASE_URL = "https://play33.kr"
+        // 지점 enum 과 같은 값을 본다. 따로 적어 두면 한쪽만 바뀌어도 아무도 모른다
+        private const val BASE_URL = "https://" + Play33Branch.HOST
     }
 }
