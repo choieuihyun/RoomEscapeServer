@@ -8,6 +8,9 @@
 #
 # 여러 번 실행해도 안전하다(멱등). 실패하면 그 자리에서 멈춘다.
 #
+# 하는 일: 도커 · 방화벽 · SSH 잠그기 · 자동 보안 업데이트 · fail2ban
+#          · DuckDNS · 코드 · .env · 빌드 · 기동 · 응답 확인
+#
 # ⚠️ 오라클 클라우드는 방화벽이 두 겹이다. 이 스크립트는 서버 안쪽(iptables)만 연다.
 #    바깥쪽(VCN 보안 목록)은 콘솔에서 열어야 한다 — 아래 안내가 출력된다.
 
@@ -61,18 +64,96 @@ sudo systemctl enable --now docker >/dev/null 2>&1 || true
 # 오라클 우분투 이미지는 iptables 로 22 말고 전부 막아 둔다.
 # 이걸 모르면 "보안 목록은 열었는데 왜 접속이 안 되지" 로 한참 헤맨다.
 say "방화벽 (서버 안쪽)"
+
+# REJECT/DROP 규칙보다 **앞에** 넣어야 한다. 뒤에 붙으면 그 전에 막혀서 아무 효과가 없다.
+# 위치를 숫자로 박아 두면 이미지의 기본 규칙이 하나만 달라져도 엉뚱한 자리에 들어간다 —
+# 그때 증상이 "열었는데 접속이 안 된다" 라서 원인을 찾기가 아주 어렵다. 매번 찾아서 넣는다.
+open_port() {
+  local port="$1" pos
+  pos=$(sudo iptables -L INPUT --line-numbers -n | awk '$2=="REJECT"||$2=="DROP"{print $1; exit}')
+  if [ -n "$pos" ]; then
+    sudo iptables -I INPUT "$pos" -p tcp --dport "$port" -m state --state NEW -j ACCEPT
+  else
+    sudo iptables -A INPUT -p tcp --dport "$port" -m state --state NEW -j ACCEPT
+  fi
+}
+
 for port in 80 443; do
-  if sudo iptables -C INPUT -p tcp --dport "$port" -j ACCEPT 2>/dev/null; then
+  if sudo iptables -C INPUT -p tcp --dport "$port" -m state --state NEW -j ACCEPT 2>/dev/null; then
     ok "$port 이미 열림"
   else
-    # REJECT 규칙보다 앞에 넣어야 한다. 뒤에 붙이면 그 전에 막힌다
-    sudo iptables -I INPUT 6 -p tcp --dport "$port" -m state --state NEW -j ACCEPT
+    open_port "$port"
     ok "$port 열림"
   fi
 done
 sudo netfilter-persistent save >/dev/null 2>&1 && ok "재부팅 후에도 유지되게 저장"
 
-# ── 4. DuckDNS (선택) ────────────────────────────────────
+# ── 4. 서버 잠그기 ───────────────────────────────────────
+# 인터넷에 붙은 기계는 몇 분 안에 스캔당한다. 여기서 하는 일은 셋이다.
+say "보안"
+
+# (1) SSH 비밀번호 로그인 차단
+#     **키가 있는 걸 확인하고 나서만** 끈다. 확인 없이 끄면 키 설정이 안 된 기계에서
+#     자기 자신을 영영 잠가 버린다 — 클라우드 콘솔로도 못 들어간다.
+KEYS="$HOME/.ssh/authorized_keys"
+if [ -s "$KEYS" ]; then
+  sudo tee /etc/ssh/sshd_config.d/99-roomescape.conf >/dev/null <<'SSHCONF'
+# 비밀번호로는 못 들어온다. 키만 받는다
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin no
+SSHCONF
+  # 설정이 깨졌는데 재시작하면 그때 SSH 가 안 뜬다. 먼저 검사한다.
+  # /run/sshd 가 없으면 설정과 무관하게 검사가 실패해서 멀쩡한 설정을 되돌리게 된다
+  sudo mkdir -p /run/sshd
+  if sudo sshd -t 2>/dev/null; then
+    sudo systemctl reload ssh 2>/dev/null || sudo systemctl restart ssh
+    ok "SSH — 키만 허용 (비밀번호·root 로그인 차단)"
+  else
+    sudo rm -f /etc/ssh/sshd_config.d/99-roomescape.conf
+    printf '  \033[33m!\033[0m SSH 설정 검사 실패 — 되돌렸다. 수동 확인 필요\n'
+  fi
+else
+  printf '  \033[33m!\033[0m authorized_keys 가 비었다 — 비밀번호 로그인을 끄지 않는다\n'
+  printf '    (끄면 이 기계에 다시 못 들어온다. 키를 넣고 다시 실행할 것)\n'
+fi
+
+# (2) 자동 보안 업데이트
+#     안 하면 알려진 취약점이 그대로 남는다. 잊어버려도 돌아가는 게 서버의 값이라
+#     "가끔 손으로 apt upgrade" 는 계획이 아니다.
+sudo apt-get install -y -qq unattended-upgrades >/dev/null
+sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null <<'AUTOUP'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+AUTOUP
+# 커널 패치는 재부팅해야 적용된다. 새벽 4시에, 필요할 때만.
+# 컨테이너는 restart: unless-stopped 라 부팅 후 알아서 돌아온다
+sudo tee /etc/apt/apt.conf.d/52roomescape-reboot >/dev/null <<'REBOOT'
+Unattended-Upgrade::Automatic-Reboot "true";
+Unattended-Upgrade::Automatic-Reboot-Time "04:00";
+REBOOT
+ok "자동 보안 업데이트 (필요 시 04:00 재부팅)"
+
+# (3) fail2ban — SSH 무차별 대입을 차단한다
+sudo apt-get install -y -qq fail2ban >/dev/null
+sudo tee /etc/fail2ban/jail.d/sshd.local >/dev/null <<'JAIL'
+[sshd]
+enabled  = true
+# 우분투 24.04 는 SSH 로그가 파일이 아니라 저널로 간다
+backend  = systemd
+maxretry = 5
+bantime  = 1h
+JAIL
+# 설정이 깨져 있으면 fail2ban 이 조용히 안 뜬다. 켜기 전에 검사한다
+if sudo fail2ban-client -t >/dev/null 2>&1; then
+  sudo systemctl enable --now fail2ban >/dev/null 2>&1 || true
+  ok "fail2ban (5회 실패 → 1시간 차단)"
+else
+  sudo rm -f /etc/fail2ban/jail.d/sshd.local
+  printf '  \033[33m!\033[0m fail2ban 설정 검사 실패 — 되돌렸다. 수동 확인 필요\n'
+fi
+
+# ── 5. DuckDNS (선택) ────────────────────────────────────
 if [ -n "$DUCKDNS_TOKEN" ]; then
   say "DuckDNS"
   SUB="${DOMAIN%%.duckdns.org}"
@@ -90,7 +171,7 @@ if [ -n "$DUCKDNS_TOKEN" ]; then
   ok "5분마다 IP 자동 갱신 (크론)"
 fi
 
-# ── 5. 코드 ──────────────────────────────────────────────
+# ── 6. 코드 ──────────────────────────────────────────────
 say "코드"
 if [ -d "$APP_DIR/.git" ]; then
   git -C "$APP_DIR" pull --ff-only
@@ -100,7 +181,7 @@ else
   ok "$APP_DIR 에 받음"
 fi
 
-# ── 6. 비밀값 ────────────────────────────────────────────
+# ── 7. 비밀값 ────────────────────────────────────────────
 say "환경 설정"
 ENV_FILE="$APP_DIR/.env"
 if [ -f "$ENV_FILE" ]; then
@@ -121,12 +202,12 @@ EOF
   ok ".env 생성 (DB 비밀번호 자동 생성)"
 fi
 
-# ── 7. 기동 ──────────────────────────────────────────────
+# ── 8. 기동 ──────────────────────────────────────────────
 say "빌드 & 기동 (첫 빌드는 몇 분 걸린다)"
 cd "$APP_DIR"
 sudo docker compose -f docker-compose.prod.yml up -d --build
 
-# ── 8. 확인 ──────────────────────────────────────────────
+# ── 9. 확인 ──────────────────────────────────────────────
 say "확인"
 for i in $(seq 1 60); do
   code=$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost/api/branches" 2>/dev/null || echo 000)
