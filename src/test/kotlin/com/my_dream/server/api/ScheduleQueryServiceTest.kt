@@ -1,9 +1,9 @@
 package com.my_dream.server.api
 
-import com.my_dream.server.crawler.play33.DaySchedule
+import com.my_dream.server.crawler.DaySchedule
 import com.my_dream.server.crawler.play33.Play33Branch
-import com.my_dream.server.crawler.play33.Slot
-import com.my_dream.server.crawler.play33.ThemeSchedule
+import com.my_dream.server.crawler.Slot
+import com.my_dream.server.crawler.ThemeSchedule
 import com.my_dream.server.sync.ScheduleSyncService
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -135,7 +135,7 @@ class ScheduleQueryServiceTest @Autowired constructor(
     }
 
     private fun day(on: LocalDate = date) = DaySchedule(
-        branch = Play33Branch.KONKUK,
+        store = Play33Branch.KONKUK.toStoreRef(),
         date = on,
         reservationRangeDays = 7,
         themes = listOf(

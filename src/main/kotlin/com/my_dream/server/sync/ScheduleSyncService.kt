@@ -1,8 +1,8 @@
 package com.my_dream.server.sync
 
-import com.my_dream.server.crawler.play33.DaySchedule
-import com.my_dream.server.crawler.play33.Play33Branch
-import com.my_dream.server.crawler.play33.ThemeSchedule
+import com.my_dream.server.crawler.DaySchedule
+import com.my_dream.server.crawler.StoreRef
+import com.my_dream.server.crawler.ThemeSchedule
 import com.my_dream.server.domain.Store
 import com.my_dream.server.domain.StoreRepository
 import com.my_dream.server.domain.Theme
@@ -29,7 +29,7 @@ class ScheduleSyncService(
 
     @Transactional
     fun sync(day: DaySchedule): SyncResult {
-        val store = findOrCreateStore(day.branch)
+        val store = findOrCreateStore(day.store)
         val now = Instant.now()
         val transitions = mutableListOf<SlotTransition>()
         val quarantined = mutableListOf<QuarantineReport>()
@@ -101,11 +101,11 @@ class ScheduleSyncService(
 
     private fun streakKey(theme: Theme, day: DaySchedule) = "${theme.id}:${day.date}"
 
-    private fun findOrCreateStore(branch: Play33Branch): Store =
-        stores.findByStoreKey(branch.key)?.apply {
-            brand = Play33Branch.BRAND
-            branchName = branch.branchName
-        } ?: stores.save(Store(branch.key, Play33Branch.BRAND, branch.branchName))
+    private fun findOrCreateStore(ref: StoreRef): Store =
+        stores.findByStoreKey(ref.key)?.apply {
+            brand = ref.brand
+            branchName = ref.branchName
+        } ?: stores.save(Store(ref.key, ref.brand, ref.branchName))
 
     /** 테마 메타데이터(장르·인원·소요시간 등)는 볼 때마다 최신으로 덮어쓴다. */
     private fun findOrUpdateTheme(store: Store, incoming: ThemeSchedule): Theme {

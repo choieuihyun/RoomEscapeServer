@@ -1,5 +1,7 @@
 package com.my_dream.server.crawler.play33
 
+import com.my_dream.server.crawler.Slot
+import com.my_dream.server.crawler.ThemeSchedule
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element

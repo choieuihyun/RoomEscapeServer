@@ -1,5 +1,7 @@
 package com.my_dream.server.crawler.play33
 
+import com.my_dream.server.crawler.StoreRef
+
 /**
  * 예약 페이지의 `branch` 파라미터 값. 지점 select 의 option value 에서 그대로 가져왔다.
  * value=6 은 "테스트" 지점이라 제외한다.
@@ -21,6 +23,9 @@ enum class Play33Branch(val id: Int, val branchName: String, val key: String) {
      * 지점이 아니라 여기다 (아키텍처 D13).
      */
     val host: String get() = HOST
+
+    /** 공통 모양으로. 저장·조회는 매장 종류를 몰라도 되게 여기서 끊는다 */
+    fun toStoreRef() = StoreRef(key = key, brand = BRAND, branchName = branchName)
 
     companion object {
         const val BRAND = "플레이33"

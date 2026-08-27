@@ -1,9 +1,9 @@
 package com.my_dream.server.sync
 
-import com.my_dream.server.crawler.play33.DaySchedule
+import com.my_dream.server.crawler.DaySchedule
 import com.my_dream.server.crawler.play33.Play33Branch
-import com.my_dream.server.crawler.play33.Slot
-import com.my_dream.server.crawler.play33.ThemeSchedule
+import com.my_dream.server.crawler.Slot
+import com.my_dream.server.crawler.ThemeSchedule
 import com.my_dream.server.domain.TimeSlotRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -130,7 +130,7 @@ class ScheduleSyncServiceTest @Autowired constructor(
 
     /** [soldOut] 은 [TIMES] 의 인덱스. 나머지는 예약 가능으로 만든다. */
     private fun day(soldOut: List<Int>, themeName: String = "목격자") = DaySchedule(
-        branch = Play33Branch.KONKUK,
+        store = Play33Branch.KONKUK.toStoreRef(),
         date = date,
         reservationRangeDays = 7,
         themes = listOf(

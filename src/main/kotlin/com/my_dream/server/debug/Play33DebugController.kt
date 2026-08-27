@@ -1,12 +1,13 @@
 package com.my_dream.server.debug
 
-import com.my_dream.server.crawler.play33.DaySchedule
+import com.my_dream.server.crawler.DaySchedule
 import com.my_dream.server.crawler.play33.Play33Branch
 import com.my_dream.server.crawler.play33.Play33Crawler
 import com.my_dream.server.domain.StoreRepository
 import com.my_dream.server.domain.ThemeRepository
 import com.my_dream.server.domain.TimeSlotRepository
 import com.my_dream.server.sync.Play33Collector
+import com.my_dream.server.sync.StoreCollector
 import com.my_dream.server.sync.SweepSummary
 import com.my_dream.server.sync.SyncResult
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -28,6 +29,7 @@ import java.time.LocalDate
 class Play33DebugController(
     private val crawler: Play33Crawler,
     private val collector: Play33Collector,
+    private val sweeper: StoreCollector,
     private val stores: StoreRepository,
     private val themes: ThemeRepository,
     private val slots: TimeSlotRepository,
@@ -54,7 +56,7 @@ class Play33DebugController(
      * 실제 요청이 `지점수 × 7`번 나가므로 아무 때나 누르지 않는다.
      */
     @GetMapping("/debug/sweep")
-    fun sweep(): SweepSummary = collector.collectAll()
+    fun sweep(): SweepSummary = sweeper.collectAll()
 
     /** DB 에 실제로 뭐가 들어갔는지. */
     @GetMapping("/debug/stored")

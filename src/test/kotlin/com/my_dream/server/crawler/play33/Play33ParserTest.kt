@@ -1,5 +1,6 @@
 package com.my_dream.server.crawler.play33
 
+import com.my_dream.server.crawler.Slot
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import java.time.LocalTime

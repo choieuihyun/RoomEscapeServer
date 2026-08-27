@@ -1,5 +1,6 @@
 package com.my_dream.server.crawler.play33
 
+import com.my_dream.server.crawler.DaySchedule
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -32,7 +33,7 @@ class Play33Crawler(
         }
 
         return DaySchedule(
-            branch = branch,
+            store = branch.toStoreRef(),
             date = date,
             reservationRangeDays = page.reservationRangeDays,
             themes = page.themes,

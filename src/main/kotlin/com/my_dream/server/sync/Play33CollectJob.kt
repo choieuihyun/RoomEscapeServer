@@ -5,7 +5,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 
 /**
- * 수집을 **언제** 할지만 정한다. 실제 수집은 [Play33Collector] 가 한다.
+ * 수집을 **언제** 할지만 정한다. 실제 수집은 [StoreCollector] 가 한다.
  *
  * `collector.play33.enabled=false` 로 끄면 이 빈만 사라지고 수집 기능 자체는 남는다.
  *
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component
  */
 @Component
 @ConditionalOnProperty(prefix = "collector.play33", name = ["enabled"], havingValue = "true", matchIfMissing = true)
-class Play33CollectJob(private val collector: Play33Collector) {
+class Play33CollectJob(private val collector: StoreCollector) {
 
     @Scheduled(
         fixedDelayString = "\${collector.play33.interval-ms:300000}",
