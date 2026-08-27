@@ -30,9 +30,10 @@ class StoreCollectorTest @Autowired constructor(private val ingest: ScheduleInge
     private inner class FakeStore(
         override val host: String,
         override val brand: String,
-        private val branches: List<String>,
+        private val branchNames: List<String>,
     ) : StoreAdapter {
-        override fun plan(dates: List<LocalDate>) = branches.flatMap { b ->
+        override val branches = branchNames.map { StoreRef("$brand-$it", brand, it) }
+        override fun plan(dates: List<LocalDate>) = branchNames.flatMap { b ->
             dates.map { d ->
                 FetchUnit("$b $d") {
                     limiter.throttled(host) {
@@ -101,6 +102,7 @@ class StoreCollectorTest @Autowired constructor(private val ingest: ScheduleInge
         val flaky = object : StoreAdapter {
             override val host = "c.example"
             override val brand = "다"
+            override val branches = listOf(StoreRef("c-1", "다", "1지점"))
             override fun plan(dates: List<LocalDate>) = dates.mapIndexed { i, d ->
                 FetchUnit("$i") {
                     if (i == 0) throw IllegalStateException("첫 요청 실패")

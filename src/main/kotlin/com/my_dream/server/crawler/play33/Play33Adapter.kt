@@ -14,6 +14,7 @@ class Play33Adapter(private val crawler: Play33Crawler) : StoreAdapter {
 
     override val host = Play33Branch.HOST
     override val brand = Play33Branch.BRAND
+    override val branches = Play33Branch.entries.map { it.toStoreRef() }
 
     override fun plan(dates: List<LocalDate>): List<FetchUnit> =
         Play33Branch.entries.flatMap { branch ->

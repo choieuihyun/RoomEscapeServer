@@ -1,6 +1,6 @@
 package com.my_dream.server.api
 
-import com.my_dream.server.crawler.play33.Play33Branch
+import com.my_dream.server.crawler.StoreAdapter
 import com.my_dream.server.domain.Store
 import com.my_dream.server.domain.StoreRepository
 import com.my_dream.server.domain.Theme
@@ -21,15 +21,22 @@ import java.time.LocalDate
 class ScheduleQueryService(
     private val stores: StoreRepository,
     private val slots: TimeSlotRepository,
+    private val adapters: List<StoreAdapter>,
 ) {
 
+    /**
+     * 지원 지점 목록은 **어댑터가 알고 있다.** 조회 API 가 매장 종류를 알 필요가 없다.
+     * 매장을 추가하면 어댑터 하나만 늘리면 여기까지 따라온다.
+     */
+    private fun supportedBranches() = adapters.flatMap { it.branches }
+
     /** 지원하는 지점 전부. 아직 수집 안 된 지점은 [BranchDto.dates] 가 비어 있다. */
-    fun branches(today: LocalDate = LocalDate.now()): List<BranchDto> = Play33Branch.entries.map { branch ->
+    fun branches(today: LocalDate = LocalDate.now()): List<BranchDto> = supportedBranches().map { branch ->
         val store = stores.findByStoreKey(branch.key)
         val dates = store?.let { slots.findDatesByStore(it, today) }.orEmpty()
         BranchDto(
             id = branch.key,
-            store = Play33Branch.BRAND,
+            store = branch.brand,
             branch = branch.branchName,
             dates = dates,
             checkedAt = store?.let { s ->
@@ -41,7 +48,7 @@ class ScheduleQueryService(
     /** 없는 지점이거나 아직 수집되지 않았으면 null. 호출자가 그 사실을 구분해 알릴 수 있게 한다. */
     fun schedule(branchKey: String, date: LocalDate): ScheduleDto? {
         // 모르는 키로 DB 를 뒤지지 않는다. 지원 목록에 있는 지점만 응답한다
-        Play33Branch.entries.firstOrNull { it.key == branchKey } ?: return null
+        supportedBranches().firstOrNull { it.key == branchKey } ?: return null
         val store = stores.findByStoreKey(branchKey) ?: return null
         val rows = slots.findByStoreAndDate(store, date)
         if (rows.isEmpty()) return null

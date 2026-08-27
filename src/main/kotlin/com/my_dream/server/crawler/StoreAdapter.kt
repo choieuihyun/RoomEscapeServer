@@ -23,8 +23,16 @@ interface StoreAdapter {
      */
     val host: String
 
-    /** `플레이33` 처럼 사람이 읽는 이름. 로그에만 쓴다 */
+    /** `플레이33` 처럼 사람이 읽는 이름 */
     val brand: String
+
+    /**
+     * 이 매장이 지원하는 지점 전부.
+     *
+     * **아직 한 번도 수집 안 된 지점도 여기 나온다.** 조회 API 가 "지원하지만 아직 못 본 지점" 과
+     * "그런 지점 없음" 을 구분해 답할 수 있어야 해서다.
+     */
+    val branches: List<StoreRef>
 
     /** 이 날짜들을 긁으려면 어떤 요청이 필요한가. */
     fun plan(dates: List<LocalDate>): List<FetchUnit>

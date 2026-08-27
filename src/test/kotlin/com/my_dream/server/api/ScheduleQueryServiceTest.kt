@@ -5,6 +5,11 @@ import com.my_dream.server.crawler.play33.Play33Branch
 import com.my_dream.server.crawler.Slot
 import com.my_dream.server.crawler.ThemeSchedule
 import com.my_dream.server.sync.ScheduleSyncService
+import com.my_dream.server.crawler.HostRateLimiter
+import com.my_dream.server.crawler.play33.Play33Adapter
+import com.my_dream.server.crawler.play33.Play33Client
+import com.my_dream.server.crawler.play33.Play33Crawler
+import com.my_dream.server.crawler.play33.Play33Parser
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
@@ -21,7 +26,12 @@ import kotlin.test.assertTrue
  * 계약 원본: Floduler `작업명세서.md` §4.4
  */
 @DataJpaTest
-@Import(ScheduleQueryService::class, ScheduleSyncService::class)
+// 지원 지점 목록을 어댑터가 들고 있어서 같이 띄운다 (실제 요청은 나가지 않는다)
+@Import(
+    ScheduleQueryService::class, ScheduleSyncService::class,
+    Play33Adapter::class, Play33Crawler::class, Play33Client::class, Play33Parser::class,
+    HostRateLimiter::class,
+)
 class ScheduleQueryServiceTest @Autowired constructor(
     private val query: ScheduleQueryService,
     private val sync: ScheduleSyncService,
