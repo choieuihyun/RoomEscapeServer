@@ -2,7 +2,8 @@
 {$DOMAIN} {
 	encode zstd gzip
 
-	# 공개하는 것은 조회 API 뿐이다.
+	# 밖으로 내보내는 것은 /api 뿐이다 — 조회(공개)와 감시(로그인 필요).
+	# 로그인 검사는 앱이 한다. Caddy 는 어느 경로를 통과시킬지만 정한다.
 	handle /api/* {
 		reverse_proxy app:8080
 	}

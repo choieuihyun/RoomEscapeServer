@@ -32,6 +32,11 @@ services:
       API_CORS_ORIGINS: ${API_CORS_ORIGINS:-https://choieuihyun.github.io}
       # 인증이 없는 엔드포인트다. 배포에서는 반드시 꺼 둔다 (Caddy 도 라우팅하지 않는다)
       DEBUG_ENDPOINTS: "false"
+      # 감시 API 토큰을 검증할 대상. 비밀값이 아니다 — 브라우저에도 그대로 내려가는 이름이다
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-roomescapescheduler}
+      # log = 로그에만 남긴다. fcm 으로 바꾸려면 서비스 계정 키가 있어야 한다
+      NOTIFY_CHANNEL: ${NOTIFY_CHANNEL:-log}
+      NOTIFY_COOLDOWN_MINUTES: ${NOTIFY_COOLDOWN_MINUTES:-60}
       TZ: Asia/Seoul
     depends_on:
       db:
