@@ -88,7 +88,14 @@ class KeyescapeClient(private val rateLimiter: HostRateLimiter) {
          * 예약 오픈 주기가 다른 것으로 보인다. 이걸 실패로 세면 한 바퀴마다 실패가 9건씩 쌓여서
          * **진짜 고장이 묻힌다.**
          */
-        private val NOT_OPEN = listOf("예약 가능 한 날짜가 아닙니다", "예약가능한 날짜가 아닙니다")
+        private val NOT_OPEN = listOf(
+            "예약 가능 한 날짜가 아닙니다",
+            "예약가능한 날짜가 아닙니다",
+            // 2026-08-27 에버랜드 오늘 날짜에서 새로 나온 문구.
+            // **모르는 거절을 예외로 끊어 뒀기 때문에 드러났다** — 조용히 비웠다면 못 봤을 것이다.
+            // 목록은 앞으로도 늘어난다. 그게 이 설계가 의도한 방향이다
+            "예약가능한 시간이 없습니다",
+        )
 
         /** 문구가 바뀌면 여기가 먼저 깨지도록 테스트가 실제 응답을 물고 있다 */
         fun isNotOpen(msg: String?): Boolean = NOT_OPEN.any { msg?.contains(it) == true }

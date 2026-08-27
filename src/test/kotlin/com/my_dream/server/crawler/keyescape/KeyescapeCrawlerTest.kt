@@ -160,6 +160,19 @@ class KeyescapeNotOpenTest {
     }
 
     @Test
+    fun `시간이 없다는 거절도 알아본다`() {
+        // 날짜 거절과 문구가 다르다. 모르는 거절을 예외로 끊어 뒀기 때문에 드러났다
+        val json = requireNotNull(javaClass.getResource("/keyescape-slots-notime.json")).readText()
+        val env: KeyescapeEnvelope<List<KeyescapeSlotRow>> = mapper.readValue(
+            json,
+            mapper.constructType(
+                object : ParameterizedTypeReference<KeyescapeEnvelope<List<KeyescapeSlotRow>>>() {}.type,
+            ),
+        )
+        assertTrue(KeyescapeClient.isNotOpen(env.msg), "실제 응답 문구를 못 알아본다: ${env.msg}")
+    }
+
+    @Test
     fun `모르는 거절은 실패로 본다`() {
         // 빈 리스트로 뭉개면 저장 단계가 멀쩡한 데이터를 지운다.
         // 문구가 바뀌어도 조용히 비우는 것보다 시끄럽게 깨지는 쪽이 낫다

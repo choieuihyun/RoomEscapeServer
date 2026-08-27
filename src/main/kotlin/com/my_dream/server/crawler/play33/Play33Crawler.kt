@@ -1,6 +1,7 @@
 package com.my_dream.server.crawler.play33
 
 import com.my_dream.server.crawler.DaySchedule
+import com.my_dream.server.crawler.ParsedPage
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
