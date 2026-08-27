@@ -17,8 +17,8 @@ import org.springframework.stereotype.Component
 class Play33CollectJob(private val collector: StoreCollector) {
 
     @Scheduled(
-        fixedDelayString = "\${collector.play33.interval-ms:300000}",
-        initialDelayString = "\${collector.play33.initial-delay-ms:10000}",
+        fixedDelayString = "\${collector.interval-ms:300000}",
+        initialDelayString = "\${collector.initial-delay-ms:10000}",
     )
     fun run() {
         collector.collectAll()

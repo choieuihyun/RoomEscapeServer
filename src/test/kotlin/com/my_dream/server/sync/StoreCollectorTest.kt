@@ -45,7 +45,7 @@ class StoreCollectorTest @Autowired constructor(private val ingest: ScheduleInge
     }
 
     private fun collector(vararg adapters: StoreAdapter, concurrency: Int = 4) =
-        StoreCollector(adapters.toList(), ingest, concurrency)
+        StoreCollector(adapters.toList(), ingest, PollingSchedule(rangeDays = 7, intervalMs = 300_000), concurrency)
 
     private fun gaps(host: String) =
         hits.filter { it.first == host }.map { it.second }.sorted().zipWithNext { a, b -> b - a }

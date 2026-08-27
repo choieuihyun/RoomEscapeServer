@@ -24,16 +24,14 @@ import java.util.concurrent.Executors
 class StoreCollector(
     private val adapters: List<StoreAdapter>,
     private val ingest: ScheduleIngest,
+    private val schedule: PollingSchedule,
     @param:Value("\${collector.site-concurrency:4}") private val siteConcurrency: Int,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun collectAll(): SweepSummary {
-        val today = LocalDate.now()
-        val dates = (0 until RESERVATION_RANGE_DAYS).map { today.plusDays(it.toLong()) }
-        return collect(dates)
-    }
+    /** 이번 바퀴 몫만 긁는다. 어느 날짜인지는 [PollingSchedule] 이 정한다 (D14) */
+    fun collectAll(): SweepSummary = collect(schedule.datesFor())
 
     fun collect(dates: List<LocalDate>): SweepSummary {
         // 같은 서버를 쓰는 어댑터끼리 묶는다. 브랜드가 달라도 호스트가 같으면 한 줄이다
@@ -63,8 +61,8 @@ class StoreCollector(
                 .also {
                     val took = Duration.ofNanos(System.nanoTime() - startedAt)
                     log.info(
-                        "수집 한 바퀴 완료 — {}초 (사이트 {}곳 · 요청 {}건 · 동시 {}), 전이 {}건, 격리 {}건, 실패 {}건",
-                        took.toSeconds(), byHost.size, byHost.values.sumOf { u -> u.size },
+                        "수집 한 바퀴 완료 — {}초 (날짜 {} · 사이트 {}곳 · 요청 {}건 · 동시 {}), 전이 {}건, 격리 {}건, 실패 {}건",
+                        took.toSeconds(), dates, byHost.size, byHost.values.sumOf { u -> u.size },
                         threads, it.transitions, it.quarantined, it.failures,
                     )
                 }
