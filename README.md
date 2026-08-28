@@ -9,6 +9,14 @@
 
 Kotlin 2.3 · Spring Boot 4.1 · PostgreSQL 17 · JDK 21
 
+**지금 돌고 있다 — https://floduler.duckdns.org** (오라클 도쿄 · 5분마다 수집)
+
+```
+플레이33       4지점  9테마     지점 × 날짜 = 요청 1회   HTML   disabled 속성
+키이스케이프   11지점 32테마     테마 × 날짜 = 요청 1회   JSON   enable Y/N
+래빗홀          1지점  2테마     지점 × 날짜 = 요청 1회   HTML   label 문구
+```
+
 ---
 
 ## 왜 서버가 필요한가
@@ -143,6 +151,7 @@ curl 'http://127.0.0.1:8080/api/branches'
 **절차 전체는 [배포.md](배포.md)** — 오라클 계정 만들기부터 Floduler 연결까지 순서대로.
 
 갓 만든 우분투 서버 하나를 한 줄로 올린다. 여러 번 실행해도 안전하다.
+코드를 고친 뒤 다시 배포할 때도 **같은 줄을 그대로** 돌리면 된다.
 
 ```bash
 ssh <서버> 'bash -s' -- <도메인> [DuckDNS토큰] < deploy/bootstrap.sh
