@@ -166,7 +166,10 @@ if [ -n "$DUCKDNS_TOKEN" ]; then
   printf 'curl -fsS "https://www.duckdns.org/update?domains=%s&token=%s&ip=" >/dev/null\n' \
     "$SUB" "$DUCKDNS_TOKEN" > "$HOME/.duckdns/update.sh"
   chmod 700 "$HOME/.duckdns/update.sh"
-  ( crontab -l 2>/dev/null | grep -v duckdns/update.sh
+  # 갓 만든 기계는 크론탭이 아예 없어서 `crontab -l` 이 1 로 끝나고,
+  # 일치하는 줄이 없으면 `grep -v` 도 1 로 끝난다. `set -euo pipefail` 이 둘 다
+  # 실패로 보고 스크립트를 죽인다 — 정상인 상황이라 `|| true` 로 받아 준다
+  ( { crontab -l 2>/dev/null || true; } | grep -v duckdns/update.sh || true
     echo "*/5 * * * * bash $HOME/.duckdns/update.sh" ) | crontab -
   ok "5분마다 IP 자동 갱신 (크론)"
 fi
