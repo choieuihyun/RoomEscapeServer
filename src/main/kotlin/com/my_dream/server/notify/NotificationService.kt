@@ -45,6 +45,7 @@ class NotificationService(
         var sent = 0
         var cooled = 0
         var failed = 0
+        var unreachable = 0
 
         for (watch in watching) {
             val transition = bySlotId[watch.timeSlot.id] ?: continue
@@ -56,7 +57,7 @@ class NotificationService(
             }
 
             // 발송 경로가 터져도 다른 사람 알림까지 같이 죽으면 안 된다
-            val ok = runCatching {
+            val result = runCatching {
                 notifier.send(
                     Notification(
                         userId = watch.userId,
@@ -68,22 +69,39 @@ class NotificationService(
                 )
             }.getOrElse {
                 log.warn("알림 발송 실패 — 감시 {} : {}", watch.id, it.message)
-                false
+                Delivery.FAILED
             }
 
-            logs.save(NotificationLog(watch, now, if (ok) NotificationLog.SENT else NotificationLog.FAILED))
-            if (ok) sent++ else failed++
+            when (result) {
+                Delivery.DELIVERED -> {
+                    logs.save(NotificationLog(watch, now, NotificationLog.SENT))
+                    sent++
+                }
+                Delivery.FAILED -> {
+                    logs.save(NotificationLog(watch, now, NotificationLog.FAILED))
+                    failed++
+                }
+                // **기록을 남기지 않는다.** 시도한 적이 없어서다. 남기면 기기를 등록하지 않은 사용자의
+                // 감시가 전이마다 FAILED 를 쌓고, 그게 진짜 발송 실패와 구분되지 않는다
+                Delivery.NO_ADDRESS -> unreachable++
+            }
         }
 
-        if (sent + cooled + failed > 0) {
-            log.info("알림 판정 — 발송 {}건, 쿨다운으로 보류 {}건, 실패 {}건", sent, cooled, failed)
+        if (sent + cooled + failed + unreachable > 0) {
+            log.info(
+                "알림 판정 — 발송 {}건, 쿨다운으로 보류 {}건, 실패 {}건, 받을 기기 없음 {}건",
+                sent, cooled, failed, unreachable,
+            )
         }
-        return NotifySummary(sent, cooled, failed)
+        return NotifySummary(sent, cooled, failed, unreachable)
     }
 }
 
 /**
  * [cooled] 는 "취소표가 났지만 최근에 이미 알려서 참았다" 는 뜻이다.
  * 0 이 아닌 게 정상이고, 이 값이 계속 크면 쿨다운이 너무 짧다는 신호다.
+ *
+ * [unreachable] 은 **고장이 아니라 설정 상태다** — 감시는 걸었는데 푸시 권한을 준 기기가 없다.
+ * [failed] 와 반드시 나눠서 본다. 섞으면 "실패가 계속 난다" 로 보여 진짜 고장을 못 찾는다.
  */
-data class NotifySummary(val sent: Int, val cooled: Int, val failed: Int)
+data class NotifySummary(val sent: Int, val cooled: Int, val failed: Int, val unreachable: Int = 0)

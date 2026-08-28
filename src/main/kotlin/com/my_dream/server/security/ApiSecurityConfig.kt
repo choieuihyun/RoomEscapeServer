@@ -52,8 +52,11 @@ class ApiSecurityConfig(
             .authorizeHttpRequests {
                 // 프리플라이트에는 토큰이 실리지 않는다. 막으면 본 요청까지 못 간다
                 it.requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
-                // 감시 등록·해제만 로그인이 필요하다
+                // 감시 등록·해제와 기기 등록만 로그인이 필요하다.
+                // **`anyRequest().permitAll()` 이 아래 있으므로 여기 적지 않으면 그냥 열린다** —
+                // 새 인증 경로를 만들면 반드시 이 줄에 같이 적는다
                 it.requestMatchers("/api/watches", "/api/watches/**").authenticated()
+                it.requestMatchers("/api/devices", "/api/devices/**").authenticated()
                 // 나머지는 지금까지와 같다. 조회 API 는 Floduler 계약상 공개고,
                 // 디버그는 이미 두 겹으로 막혀 있다 (기본 꺼짐 + Caddy 가 라우팅 안 함)
                 it.anyRequest().permitAll()

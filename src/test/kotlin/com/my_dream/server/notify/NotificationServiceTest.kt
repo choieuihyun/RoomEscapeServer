@@ -36,15 +36,15 @@ class NotificationServiceTest @Autowired constructor(
     private val logs: NotificationLogRepository,
 ) {
 
-    /** 보낸 것을 기억만 하는 발송기. [fail] 을 켜면 발송 실패를 흉내낸다. */
+    /** 보낸 것을 기억만 하는 발송기. [result] 로 결과를 바꿔 끼운다. */
     private class FakeNotifier : Notifier {
         val sent = mutableListOf<Notification>()
-        var fail = false
+        var result = Delivery.DELIVERED
         var explode = false
-        override fun send(notification: Notification): Boolean {
+        override fun send(notification: Notification): Delivery {
             if (explode) throw IllegalStateException("발송 경로가 터졌다")
             sent += notification
-            return !fail
+            return result
         }
     }
 
@@ -132,12 +132,12 @@ class NotificationServiceTest @Autowired constructor(
     @Test
     fun `발송에 실패하면 쿨다운을 시작하지 않는다`() {
         watch("나")
-        notifier.fail = true
+        notifier.result = Delivery.FAILED
         val first = service().onTransitions(listOf(transition()))
         assertEquals(1, first.failed)
 
         // 실패를 "알렸다" 로 세면 그 자리는 한 시간 동안 조용히 묻힌다
-        notifier.fail = false
+        notifier.result = Delivery.DELIVERED
         val second = service().onTransitions(listOf(transition()))
 
         assertEquals(1, second.sent)
@@ -175,5 +175,34 @@ class NotificationServiceTest @Autowired constructor(
 
         assertEquals(0, summary.sent + summary.cooled + summary.failed)
         assertEquals(0, logs.count().toInt())
+    }
+
+    @Test
+    fun `받을 기기가 없으면 기록도 쿨다운도 남기지 않는다`() {
+        watch("나")
+        notifier.result = Delivery.NO_ADDRESS
+
+        val summary = service().onTransitions(listOf(transition()))
+
+        // 시도한 적이 없으므로 FAILED 가 아니다. 기록을 남기면 푸시 권한을 안 준 사용자의
+        // 감시가 전이마다 실패를 쌓아, 진짜 발송 실패가 그 사이에 묻힌다
+        assertEquals(1, summary.unreachable)
+        assertEquals(0, summary.failed)
+        assertEquals(0, summary.sent)
+        assertEquals(0, logs.count().toInt())
+    }
+
+    @Test
+    fun `기기를 등록하고 나면 그다음 전이부터 바로 간다`() {
+        watch("나")
+        notifier.result = Delivery.NO_ADDRESS
+        service().onTransitions(listOf(transition()))
+
+        // 쿨다운이 시작되지 않았어야 한다 — 시작됐다면 여기서 1시간을 기다리게 된다
+        notifier.result = Delivery.DELIVERED
+        val summary = service().onTransitions(listOf(transition()))
+
+        assertEquals(1, summary.sent)
+        assertEquals(0, summary.cooled)
     }
 }

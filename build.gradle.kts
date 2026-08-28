@@ -32,6 +32,9 @@ dependencies {
     // ID 토큰을 검증한다 — 비밀번호를 우리가 다루지 않는 쪽이 항상 안전하다 (D12)
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    // FCM 발송용 액세스 토큰만 여기서 얻는다. firebase-admin 이 아니라 이 작은 라이브러리를 쓰는 이유는
+    // 아키텍처 D16 — admin 은 gRPC·netty·Firestore 까지 끌고 오는데 우리가 쓰는 건 POST 하나다
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.51.0")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
     developmentOnly("org.springframework.boot:spring-boot-devtools")

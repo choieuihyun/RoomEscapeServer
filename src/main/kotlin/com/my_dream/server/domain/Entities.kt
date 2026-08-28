@@ -132,3 +132,26 @@ class NotificationLog(
         const val FAILED = "FAILED"
     }
 }
+
+/**
+ * 알림을 받을 기기 하나. **감시가 "무엇을" 이면 이건 "어디로" 다.**
+ *
+ * [token] 이 자연키다 — user_id 가 아니라. 토큰은 "이 브라우저 설치" 를 가리키므로
+ * 같은 기기에서 다른 계정으로 로그인하면 **주인이 바뀌어야 한다.**
+ * `(user_id, token)` 으로 묶으면 이전 사용자 행이 남아서 남의 폰으로 알림이 간다.
+ *
+ * FCM 이 `UNREGISTERED` 로 답하면 그 자리에서 지운다. 안 지우면 죽은 토큰이 쌓여
+ * 발송 때마다 시체에 요청을 한 번씩 더 보낸다.
+ */
+@Entity
+@Table(name = "device_token", uniqueConstraints = [UniqueConstraint(columnNames = ["token"])])
+class DeviceToken(
+    @Column(name = "user_id", nullable = false) var userId: String,
+    @Column(nullable = false) val token: String,
+    @Column val platform: String?,
+    @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}

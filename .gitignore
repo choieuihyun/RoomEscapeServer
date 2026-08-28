@@ -49,6 +49,9 @@ out/
 *.local.properties
 src/main/resources/application-local.properties
 src/main/resources/application-secret.properties
+# 파이어베이스 서비스 계정 키. 이 JSON 하나면 우리 프로젝트로 푸시를 아무렇게나 보낼 수 있다
+firebase-service-account.json
+*-service-account*.json
 
 ### AI 도구 로컬 상태 ###
 .serena/

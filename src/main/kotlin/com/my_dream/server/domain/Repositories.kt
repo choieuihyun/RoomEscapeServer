@@ -78,3 +78,11 @@ interface NotificationLogRepository : JpaRepository<NotificationLog, Long> {
     /** 이 감시에 **성공적으로** 보낸 가장 최근 알림. 쿨다운 판정에 쓴다. */
     fun findTopByWatchAndOutcomeOrderBySentAtDesc(watch: Watch, outcome: String): NotificationLog?
 }
+
+interface DeviceTokenRepository : JpaRepository<DeviceToken, Long> {
+
+    fun findByUserId(userId: String): List<DeviceToken>
+
+    /** 등록은 upsert 다. 이미 있는 토큰이면 주인과 시각만 갱신한다 */
+    fun findByToken(token: String): DeviceToken?
+}
