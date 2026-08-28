@@ -2,6 +2,7 @@ package com.my_dream.server.sync
 
 import com.my_dream.server.crawler.FetchUnit
 import com.my_dream.server.crawler.StoreAdapter
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
@@ -25,10 +26,30 @@ class StoreCollector(
     private val adapters: List<StoreAdapter>,
     private val ingest: ScheduleIngest,
     private val schedule: PollingSchedule,
-    @param:Value("\${collector.site-concurrency:4}") private val siteConcurrency: Int,
+    @param:Value("\${collector.site-concurrency:16}") private val siteConcurrency: Int,
+    @param:Value("\${spring.datasource.hikari.maximum-pool-size:10}") private val dbPoolSize: Int,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * 두 설정이 어긋나면 **증상이 "조회 API 가 가끔 느리다" 로만 나타난다.** 수집 스레드가
+     * 저장할 때 커넥션을 하나씩 쥐는데 풀이 그보다 작으면, 수집이 도는 동안 API 가 대기한다.
+     * 로그 어디에도 원인이 안 남는 종류라 기동할 때 한 번 크게 말해 둔다.
+     *
+     * 기동을 막지는 않는다 — 느려질 뿐 틀린 값을 저장하지는 않기 때문이다.
+     * (키 없는 FCM 은 조용히 안 가므로 그쪽은 막는다. 실패 방향이 다르다)
+     */
+    @PostConstruct
+    fun warnIfPoolTooSmall() {
+        if (dbPoolSize <= siteConcurrency) {
+            log.warn(
+                "커넥션 풀({})이 동시 사이트 수({})보다 크지 않다 — 수집이 도는 동안 조회 API 가 커넥션을 못 잡는다. " +
+                    "DB_POOL_SIZE 를 올리거나 COLLECTOR_SITE_CONCURRENCY 를 내릴 것",
+                dbPoolSize, siteConcurrency,
+            )
+        }
+    }
 
     /** 이번 바퀴 몫만 긁는다. 어느 날짜인지는 [PollingSchedule] 이 정한다 (D14) */
     fun collectAll(): SweepSummary = collect(schedule.datesFor())
