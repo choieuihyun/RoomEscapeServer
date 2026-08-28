@@ -4,7 +4,7 @@
 
 수집한 시간표는 두 곳으로 나간다.
 
-1. **알림** — 감시를 걸어 둔 자리가 풀리면 알린다 *(판정 완료 · 발송은 아직 로그)*
+1. **알림** — 감시를 걸어 둔 자리가 풀리면 알린다 *(서버 완료 · 브라우저 등록만 남음)*
 2. **[Floduler](https://github.com/choieuihyun/RoomEscapeScheduler) 피드** — 방탈출 연방 시간표 계산기에 회차와 **매진 여부**를 제공
 
 Kotlin 2.3 · Spring Boot 4.1 · PostgreSQL 17 · JDK 21
@@ -15,7 +15,13 @@ Kotlin 2.3 · Spring Boot 4.1 · PostgreSQL 17 · JDK 21
 플레이33       4지점  9테마     지점 × 날짜 = 요청 1회   HTML   disabled 속성
 키이스케이프   11지점 32테마     테마 × 날짜 = 요청 1회   JSON   enable Y/N
 래빗홀          1지점  2테마     지점 × 날짜 = 요청 1회   HTML   label 문구
+지구별          3지점 21테마     지점 × 날짜 = 요청 1회   HTML   label 문구
+                                                    ─────────────────────
+                                                    4매장 19지점 · 한 바퀴 120초
 ```
+
+**매장별 요청 형식·판정 근거·함정은 [방탈출 지점 요청_응답 정리.md](방탈출%20지점%20요청_응답%20정리.md) 에 있다.**
+어댑터를 쓰기 전에 거기부터 적는다 — 조사가 코드보다 앞선다.
 
 ---
 
@@ -32,9 +38,10 @@ Kotlin 2.3 · Spring Boot 4.1 · PostgreSQL 17 · JDK 21
 ```
   ⑥ Scheduler ─ 5분마다 아래를 실행
                       │
-  play33.kr    ──▶ HTML ┐
-  keyescape.com ──▶ JSON ┴─ ①Client ─ ②Parser ─ ③Crawler(검증) ─ 어댑터
- (매장 사이트)                                                      │
+  play33.kr     ──▶ HTML ┐
+  keyescape.com ──▶ JSON ┼─ ①Client ─ ②Parser ─ ③Crawler(검증) ─ 어댑터
+  그 외 2곳      ──▶ HTML ┘                                         │
+ (매장 사이트 4곳 · 사이트끼리는 동시에, 같은 사이트로는 한 줄로)     │
                                                                     ↓
                                                             ④ Repository
                                                             이전 상태와 비교 후 저장
@@ -42,8 +49,9 @@ Kotlin 2.3 · Spring Boot 4.1 · PostgreSQL 17 · JDK 21
                                        불가→가능 전이만 ───────┘         └── 조회 요청
                                                      ↓                        ↓
                                               ⑤ Notifier                 ⑦ Api
-                                                     ↓                        ↓
-                                                사용자 폰                  Floduler
+                                            (로그 | FCM 푸시)                  ↓
+                                                     ↓                    Floduler
+                                                사용자 폰
 ```
 
 **속도를 정하는 단위는 지점이 아니라 서버다.** 요청 사이 1.2초를 쉬어 **한 호스트에 초당 1회를
@@ -137,7 +145,7 @@ curl 'http://127.0.0.1:8080/api/branches'
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | 로컬 compose 기준 | |
 | `API_CORS_ORIGINS` | Pages + localhost | 쉼표로 여러 개 |
 | `FIREBASE_PROJECT_ID` | `roomescapescheduler` | 감시 API 토큰을 검증할 대상. 비밀값 아님 |
-| `NOTIFY_CHANNEL` | `log` | `fcm` 으로 바꾸면 실제 푸시 (아직 미구현) |
+| `NOTIFY_CHANNEL` | `log` | `fcm` 으로 바꾸면 실제 푸시. **서비스 계정 키 파일이 있어야 뜬다** |
 | `NOTIFY_COOLDOWN_MINUTES` | `60` | 같은 자리를 다시 알리기까지의 최소 간격 |
 
 ```bash
