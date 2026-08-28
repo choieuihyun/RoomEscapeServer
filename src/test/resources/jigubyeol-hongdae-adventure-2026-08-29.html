@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+    <meta http-equiv="Content-Language" content="ko" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="imagetoolbar" content="no" />
+    <meta name="referrer" content="always" />
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1" />
+    <meta name="csrf-token" id="csrf" content="gOPfT45yfm9MBdGVmM5ArRCv1j1omTvqLtNTxnm1">
+    <meta name="format-detection" content="address=no, email=no" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="author" contents="토니빌리" />
+    <meta name="publisher" content="토니빌리" />
+    <meta name="reply-to(email)" content="enoch_choi@naver.com" />
+    <meta name="title" content=" 지구별방탈출 : 예약하기 " />
+    <meta name="description" content=" 예약에 오신걸 환영합니다. " />
+    <meta name="keywords" content="제로월드, 방탈출" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.xn--2e0b040a4xj.com/reservation" />
+    <meta property="og:site_name" content="지구별방탈출" />
+    <meta property="og:title" content=" 지구별방탈출 : 예약하기 " />
+    <meta property="og:description" content=" 예약에 오신걸 환영합니다. " />
+    <meta property="og:image" content="https://www.xn--2e0b040a4xj.com/images/symbol.jpg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content=" 지구별방탈출 : 예약하기 " />
+    <meta name="twitter:image" content="https://www.xn--2e0b040a4xj.com/images/symbol.jpg" />
+    <meta name="twitter:domain" content="https://www.xn--2e0b040a4xj.com/reservation" />
+    <meta name="twitter:description" content=" 예약에 오신걸 환영합니다. " />
+    <link rel="canonical" href="https://www.xn--2e0b040a4xj.com/reservation" />
+    <link rel="shortcut icon" href="https://www.xn--2e0b040a4xj.com/favicon.ico" type="image/x-icon" />
+        <link rel="stylesheet" href="/css/common.css?id=306aa27c2f9c2cc947465f7370ec1f60">
+        <link rel="stylesheet" href="/css/reservation.css?id=034e7f3b9d0ad6e05dcff18fac812d36">
+    <title>
+                    지구별방탈출 : 예약하기            </title>
+</head>
+
+<body>
+    <header class="header" id="header">
+        <div class="container clear-b">
+            <a class="header-logo" href="https://www.xn--2e0b040a4xj.com">
+                <img src="https://www.xn--2e0b040a4xj.com/images/logo.png" alt="지구별방탈출">
+            </a>
+        </div>
+    </header>
+    <button class="header-btn" id="eveLayerToggleBtn" type="button"><em></em></button>
+    <nav class="nav bs-bb" id="nav">
+        <div class="container clear-b">
+            <ul class="nav-list clear-b ff-bhs">
+                <li><a href="https://www.xn--2e0b040a4xj.com/about">지구별</a></li>
+                <li><a href="https://www.xn--2e0b040a4xj.com/theme">테마</a></li>
+                <li><a href="https://www.xn--2e0b040a4xj.com/reservation">예약</a></li>
+                <li><a href="https://www.xn--2e0b040a4xj.com/map">오시는길</a></li>
+                <li><a href="https://www.xn--2e0b040a4xj.com/notice">공지</a></li>
+                <li><a href="https://www.xn--2e0b040a4xj.com/FAQ">FAQ</a></li>
+            </ul>
+        </div>
+    </nav>
+    <article class="wrap" id="wrap">
+            <div class="o-h">
+        <div class="subtitle">
+            <div class="container ta-c">
+                <h1 class="ff-bhs">예약</h1>
+            </div>
+        </div>
+        <br id="list" />
+
+        <div class="container">
+            
+
+            <form class="search clear-b" action="https://www.xn--2e0b040a4xj.com/reservation#list">
+                <div class="search-btn pax3">
+                    <a class="ff-bhs bs-bb" href="https://www.xn--2e0b040a4xj.com/reservation/confirm">예약취소/확인</a>
+                </div>
+                <div class="search-select clear-b pax3">
+                    <span class="ff-bhs bs-bb">지점</span>
+                    <label class="bs-bb arrow-before">
+                        
+                        <select class="bs-bb" name="branch" value="2" onChange="this.form.submit()">
+                                                            <option value="1">대구점</option>
+                                                            <option value="2">홍대어드벤처점</option>
+                                                            <option value="4">홍대라스트시티점</option>
+                                                    </select>
+                    </label>
+                </div>
+                <div class="search-select clear-b pax3">
+                    <span class="ff-bhs bs-bb">테마</span>
+                    <label class="bs-bb arrow-before">
+                        <select class="bs-bb" name="theme" value="" onChange="this.form.submit()">
+                            <option value="">전체</option>
+                                                            <option value="25">PINOCCHIO(피노키오)</option>
+                                                            <option value="23">잔향</option>
+                                                            <option value="18">아몬 : 새벽을 여는 소년</option>
+                                                            <option value="17">퀘스트 : 여정의 시작</option>
+                                                            <option value="9">지난날을 잊었다</option>
+                                                            <option value="8">미스터리</option>
+                                                    </select>
+                    </label>
+                </div>
+                <div class="search-date clear-b pax3">
+                    <span class="ff-bhs bs-bb">예약날짜</span>
+                    <label class="bs-bb arrow-before">
+                        <input class="bs-bb mask-date" type="text" name="date" value="2026-08-29" onChange="this.form.submit()">
+                    </label>
+                </div>
+            </form>
+            <br />
+
+                            <section class="res-item clear-b">
+                    <figure class="pax3">
+                        <img src="https://www.xn--2e0b040a4xj.com/storage/theme/2025_10/30/I6fkjF81lKgNkyvJaS1d4hoJNEluJWisJsrhg6de.png" alt="PINOCCHIO(피노키오)">
+                    </figure>
+                    <div class="eve-mopa">
+                        <div class="res-item-grp1">
+                            <div>
+                                <h2 class="ff-bhs pax3">PINOCCHIO(피노키오)</h2>
+                                
+                                <table class="ff-bhs pax3">
+                                                                            <tr>
+                                            <th>장르</th>
+                                            <td>공포</td>
+                                        </tr>
+                                                                                                                                                    <tr>
+                                            <th>인원</th>
+                                            <td>2-4</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>시간</th>
+                                            <td>70분</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>공포</th>
+                                            <td>3.5</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>난이도</th>
+                                            <td>3</td>
+                                        </tr>
+                                                                    </table>
+                            </div>
+
+                                                    </div>
+
+                        <br />
+                        <ul class="res-times kit">
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">10:20</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">11:50</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">13:20</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">14:50</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">16:20</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">17:50</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">19:25</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">20:55</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">22:30</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                    </ul>
+
+                    </div>
+                </section>
+                            <section class="res-item clear-b">
+                    <figure class="pax3">
+                        <img src="https://www.xn--2e0b040a4xj.com/storage/theme/2025_06/15/AoGCOqlcspfLAvs40bN58BqXNomzMcl8eCLlkZdN.png" alt="잔향">
+                    </figure>
+                    <div class="eve-mopa">
+                        <div class="res-item-grp1">
+                            <div>
+                                <h2 class="ff-bhs pax3">잔향</h2>
+                                
+                                <table class="ff-bhs pax3">
+                                                                            <tr>
+                                            <th>장르</th>
+                                            <td>드라마 / 서스펜스</td>
+                                        </tr>
+                                                                                                                                                    <tr>
+                                            <th>인원</th>
+                                            <td>2-4</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>시간</th>
+                                            <td>60분</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>공포</th>
+                                            <td>1</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>난이도</th>
+                                            <td>3.5</td>
+                                        </tr>
+                                                                    </table>
+                            </div>
+
+                                                    </div>
+
+                        <br />
+                        <ul class="res-times kit">
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">10:15</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">11:40</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">13:05</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">14:25</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">15:45</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">17:25</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">18:50</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">20:15</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">21:40</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">23:05</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                    </ul>
+
+                    </div>
+                </section>
+                            <section class="res-item clear-b">
+                    <figure class="pax3">
+                        <img src="https://www.xn--2e0b040a4xj.com/storage/theme/2024_08/12/lVhIuQZQ68PyVZ2T5noQXdj26rtXVYGpH0OUtNk2.jpg" alt="아몬 : 새벽을 여는 소년">
+                    </figure>
+                    <div class="eve-mopa">
+                        <div class="res-item-grp1">
+                            <div>
+                                <h2 class="ff-bhs pax3">아몬 : 새벽을 여는 소년</h2>
+                                
+                                <table class="ff-bhs pax3">
+                                                                            <tr>
+                                            <th>장르</th>
+                                            <td>어드벤처</td>
+                                        </tr>
+                                                                                                                                                    <tr>
+                                            <th>인원</th>
+                                            <td>2-6</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>시간</th>
+                                            <td>70</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>공포</th>
+                                            <td>1</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>난이도</th>
+                                            <td>3</td>
+                                        </tr>
+                                                                    </table>
+                            </div>
+
+                                                    </div>
+
+                        <br />
+                        <ul class="res-times kit">
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">10:15</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">11:40</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">13:05</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">14:30</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">15:55</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">17:20</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">18:45</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">20:10</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">21:35</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button class="active1 eveReservationButton" type="button">
+                                                <label>예약가능</label>
+                                                <span class="ff-bhs">23:00</span>
+                                                <em></em>
+                                                <div class="d-n eveHiddenData">{&quot;branch&quot;:2,&quot;theme&quot;:18,&quot;date&quot;:&quot;2026-08-29&quot;,&quot;time&quot;:&quot;23:00&quot;}</div>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                    </ul>
+
+                    </div>
+                </section>
+                            <section class="res-item clear-b">
+                    <figure class="pax3">
+                        <img src="https://www.xn--2e0b040a4xj.com/storage/theme/2024_08/12/WwP3c6jOOOXBRBrwUs1JXepMo4WThUGlCfbHqR5C.jpg" alt="퀘스트 : 여정의 시작">
+                    </figure>
+                    <div class="eve-mopa">
+                        <div class="res-item-grp1">
+                            <div>
+                                <h2 class="ff-bhs pax3">퀘스트 : 여정의 시작</h2>
+                                
+                                <table class="ff-bhs pax3">
+                                                                            <tr>
+                                            <th>장르</th>
+                                            <td>판타지</td>
+                                        </tr>
+                                                                                                                                                    <tr>
+                                            <th>인원</th>
+                                            <td>2~6</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>시간</th>
+                                            <td>50분</td>
+                                        </tr>
+                                                                                                                                                    <tr>
+                                            <th>난이도</th>
+                                            <td>3</td>
+                                        </tr>
+                                                                    </table>
+                            </div>
+
+                                                    </div>
+
+                        <br />
+                        <ul class="res-times kit">
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button class="active1 eveReservationButton" type="button">
+                                                <label>예약가능</label>
+                                                <span class="ff-bhs">10:20</span>
+                                                <em></em>
+                                                <div class="d-n eveHiddenData">{&quot;branch&quot;:2,&quot;theme&quot;:17,&quot;date&quot;:&quot;2026-08-29&quot;,&quot;time&quot;:&quot;10:20&quot;}</div>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">11:30</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">12:40</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">13:50</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">15:00</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">16:10</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">17:20</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">18:30</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">19:40</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button class="active1 eveReservationButton" type="button">
+                                                <label>예약가능</label>
+                                                <span class="ff-bhs">20:50</span>
+                                                <em></em>
+                                                <div class="d-n eveHiddenData">{&quot;branch&quot;:2,&quot;theme&quot;:17,&quot;date&quot;:&quot;2026-08-29&quot;,&quot;time&quot;:&quot;20:50&quot;}</div>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button class="active1 eveReservationButton" type="button">
+                                                <label>예약가능</label>
+                                                <span class="ff-bhs">22:00</span>
+                                                <em></em>
+                                                <div class="d-n eveHiddenData">{&quot;branch&quot;:2,&quot;theme&quot;:17,&quot;date&quot;:&quot;2026-08-29&quot;,&quot;time&quot;:&quot;22:00&quot;}</div>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button class="active1 eveReservationButton" type="button">
+                                                <label>예약가능</label>
+                                                <span class="ff-bhs">23:10</span>
+                                                <em></em>
+                                                <div class="d-n eveHiddenData">{&quot;branch&quot;:2,&quot;theme&quot;:17,&quot;date&quot;:&quot;2026-08-29&quot;,&quot;time&quot;:&quot;23:10&quot;}</div>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                    </ul>
+
+                    </div>
+                </section>
+                            <section class="res-item clear-b">
+                    <figure class="pax3">
+                        <img src="https://www.xn--2e0b040a4xj.com/storage/theme/2024_04/01/Zf0pAzWuiBTsYHkh1TnkC7D9yyILgvNuY3HZG4Li.jpg" alt="지난날을 잊었다">
+                    </figure>
+                    <div class="eve-mopa">
+                        <div class="res-item-grp1">
+                            <div>
+                                <h2 class="ff-bhs pax3">지난날을 잊었다</h2>
+                                
+                                <table class="ff-bhs pax3">
+                                                                            <tr>
+                                            <th>장르</th>
+                                            <td>감성</td>
+                                        </tr>
+                                                                                                                                                    <tr>
+                                            <th>인원</th>
+                                            <td>2~6</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>시간</th>
+                                            <td>65분</td>
+                                        </tr>
+                                                                                                                                                    <tr>
+                                            <th>난이도</th>
+                                            <td>3.5</td>
+                                        </tr>
+                                                                    </table>
+                            </div>
+
+                                                    </div>
+
+                        <br />
+                        <ul class="res-times kit">
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">10:00</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button class="active1 eveReservationButton" type="button">
+                                                <label>예약가능</label>
+                                                <span class="ff-bhs">11:25</span>
+                                                <em></em>
+                                                <div class="d-n eveHiddenData">{&quot;branch&quot;:2,&quot;theme&quot;:9,&quot;date&quot;:&quot;2026-08-29&quot;,&quot;time&quot;:&quot;11:25&quot;}</div>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">12:50</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">14:15</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">15:40</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">17:05</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">18:30</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">19:55</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">21:20</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button class="active1 eveReservationButton" type="button">
+                                                <label>예약가능</label>
+                                                <span class="ff-bhs">22:45</span>
+                                                <em></em>
+                                                <div class="d-n eveHiddenData">{&quot;branch&quot;:2,&quot;theme&quot;:9,&quot;date&quot;:&quot;2026-08-29&quot;,&quot;time&quot;:&quot;22:45&quot;}</div>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                    </ul>
+
+                    </div>
+                </section>
+                            <section class="res-item clear-b">
+                    <figure class="pax3">
+                        <img src="https://www.xn--2e0b040a4xj.com/storage/theme/2024_04/01/AsCzKuMAO80qWVWpYcFOW0HF395mOMnuOH6LSntM.jpg" alt="미스터리">
+                    </figure>
+                    <div class="eve-mopa">
+                        <div class="res-item-grp1">
+                            <div>
+                                <h2 class="ff-bhs pax3">미스터리</h2>
+                                
+                                <table class="ff-bhs pax3">
+                                                                            <tr>
+                                            <th>장르</th>
+                                            <td>미스터리</td>
+                                        </tr>
+                                                                                                                                                    <tr>
+                                            <th>인원</th>
+                                            <td>2~6</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>시간</th>
+                                            <td>85분</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>공포</th>
+                                            <td>2</td>
+                                        </tr>
+                                                                                                                <tr>
+                                            <th>난이도</th>
+                                            <td>4.5</td>
+                                        </tr>
+                                                                    </table>
+                            </div>
+
+                                                    </div>
+
+                        <br />
+                        <ul class="res-times kit">
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">10:10</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">11:55</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">13:40</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">15:25</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">17:10</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">18:55</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">20:40</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                            <li class="pax3">
+                                    <div class="res-times-btn">
+                                                                                    <button type="button">
+                                                <label>예약불가</label>
+                                                <span class="ff-bhs">22:25</span>
+                                                <em></em>
+                                            </button>
+                                                                            </div>
+                                </li>
+                                                    </ul>
+
+                    </div>
+                </section>
+            
+        </div>
+
+
+        <br />
+        <br />
+        <br />
+    </div>
+
+
+    <form çlass="d-n" method="post" action="https://www.xn--2e0b040a4xj.com/reservation/create#list" id="eveSubmitForm">
+        <input type="hidden" name="branch" />
+        <input type="hidden" name="theme" />
+        <input type="hidden" name="date" />
+        <input type="hidden" name="time" />
+        <input type="hidden" name="_token" value="gOPfT45yfm9MBdGVmM5ArRCv1j1omTvqLtNTxnm1">    </form>
+
+
+    
+    </article>
+    <footer class="footer" id="footer">
+        <div class="container">
+            <ul class="footer-group d-f fw-w">
+                <li>
+                    <dl class="footer-info">
+                        <dt class="ff-bhs pax3">지구별 방탈출</dt>
+                        <dd class="pax3">상호 : 주식회사 어스이스케이프</dd>
+                        
+                        <dd class="pax3">사업자등록번호 : 196-86-02531</dd>
+                        <dd class="pax3">주소 : 서울특별시 마포구 와우산로21길 31, 3층</dd>
+                        
+                    </dl>
+                    <div class="footer-social">
+                        <a class="insta" href="javascript:alert('준비중입니다.');"><img src="https://www.xn--2e0b040a4xj.com/images/social_instagram.png" alt="인스타그램"></a>
+                    </div>
+                </li>
+                <li>
+                    <div class="footer-message ff-bhs pax3">
+                        Like all great travellers,<br />
+                        I have seen more than I remember, <br />
+                        and remember more than I have seen !
+                    </div>
+                    <div class="footer-links pax3">
+                        <a href="https://www.xn--2e0b040a4xj.com/reservation">예약</a>
+                        <a href="https://www.xn--2e0b040a4xj.com/map">오시는길</a>
+                        <a href="https://www.xn--2e0b040a4xj.com/policy.pdf">개인정보처리방침</a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="footer-copyright ff-bhs">
+            <div class="container pax3">
+                COPYRIGHT 2021. 지구별방탈출 ALL RIGHTS RESERVED.
+                &nbsp; 사이트제작 <a target="_blank" href="http://pf.kakao.com/_uWbZxj/chat"><u>토니빌리</u></a>
+
+            </div>
+        </div>
+    </footer>
+    <script src="/js/manifest.js?id=c3bb400200fc973a2df5dc2b6d66142c"></script>
+    <script src="/js/vendor.js?id=88ed6f1bb604caee5aff7f5915037d09"></script>
+        <script src="/js/common.js?id=cdf8b96f227d6a84a99128b747ac0ea2"></script>
+        <script src="/js/reservation.js?id=35f6600440b730e92a88ee6473975b03"></script>
+    </body>
+
+</html>
