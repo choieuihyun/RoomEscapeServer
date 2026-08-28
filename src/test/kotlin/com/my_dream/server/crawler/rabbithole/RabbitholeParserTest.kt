@@ -10,9 +10,9 @@ import kotlin.test.assertTrue
 /**
  * 실제로 받아둔 홍대점 2026-08-29 페이지로 검증한다.
  *
- * ⚠️ **이 픽스처는 전 회차가 매진이다.** 매장이 실제로 그랬다.
- * "예약 가능" 쪽 마크업 표본을 아직 못 구해서, 그쪽은 **매진 표시를 지워 흉내낸 것**으로만 본다.
- * 진짜 표본을 얻으면 채운다 — 반쪽 픽스처는 반쪽만 지킨다.
+ * 픽스처가 둘이다. `08-29` 는 전 회차 매진, `09-02` 는 **가능 1 · 불가 15** 로 섞여 있다.
+ * 처음엔 매진 표본만 있어서 "불가일 때만 label 이 붙는다" 고 잘못 봤다 —
+ * **반쪽 픽스처는 반쪽만 지킨다.**
  */
 class RabbitholeParserTest {
 
@@ -62,20 +62,24 @@ class RabbitholeParserTest {
     }
 
     @Test
-    fun `label 이 없으면 예약 가능이다`() {
-        // 가용 상태 표본을 못 구해서 매진 표시만 지워 흉내낸다.
-        // 진짜 페이지가 다른 모양이면 이 테스트는 통과하는데 현장은 틀릴 수 있다
-        val opened = html.replace("<label>예약불가</label>", "")
+    fun `예약가능 label 을 가능으로 읽는다`() {
+        // ⚠️ 처음엔 "불가일 때만 label 이 붙는다" 고 봤는데 틀렸다.
+        // 배포한 서버가 `모르는 예약 상태 문구 — "예약가능"` 경고를 뱉어서 알았고,
+        // 그때까지 래빗홀 전 회차를 매진으로 읽고 있었다.
+        val mixed = parser.parse(
+            requireNotNull(javaClass.getResource("/rabbithole-hongdae-2026-09-02.html")).readText(),
+        )
+        val slots = mixed.themes.flatMap { it.slots }
 
-        val slots = parser.parse(opened).themes.first().slots
-        assertEquals(9, slots.size)
-        assertTrue(slots.all { it.available })
+        assertEquals(16, slots.size)
+        assertEquals(1, slots.count { it.available }, "예약가능 1개")
+        assertEquals(15, slots.count { !it.available }, "예약불가 15개")
     }
 
     @Test
     fun `모르는 문구는 불가로 본다`() {
         // 잘못 "가능" 으로 읽으면 감시 걸어둔 사람 전원에게 헛알림이 나간다.
-        // 문구가 바뀌어도 label 은 있으므로 여전히 불가여야 한다
+        // 반대로 틀리면 알림이 안 갈 뿐이다 — 안전한 쪽으로 틀린다
         val renamed = html.replace("<label>예약불가</label>", "<label>마감</label>")
 
         assertTrue(parser.parse(renamed).themes.first().slots.none { it.available })

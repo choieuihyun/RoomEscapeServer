@@ -213,7 +213,11 @@ sudo docker compose -f docker-compose.prod.yml up -d --build
 # ── 9. 확인 ──────────────────────────────────────────────
 say "확인"
 for i in $(seq 1 60); do
-  code=$(curl -sk -o /dev/null -w '%{http_code}' "https://localhost/api/branches" 2>/dev/null || echo 000)
+  # **도메인으로 물어야 한다.** Caddy 는 `{$DOMAIN}` 사이트 블록만 갖고 있어서
+  # `Host: localhost` 로 오는 요청에는 응답하지 않는다 — 앱이 멀쩡해도 실패로 보인다.
+  # `--resolve` 로 DNS 를 거치지 않고 자기 자신에게 물어, 전파를 기다리지 않는다
+  code=$(curl -sk -o /dev/null -w '%{http_code}' --resolve "${DOMAIN}:443:127.0.0.1" \
+    "https://${DOMAIN}/api/branches" 2>/dev/null || echo 000)
   [ "$code" = "200" ] && break
   sleep 5
 done
@@ -222,7 +226,7 @@ done
   sudo docker compose -f docker-compose.prod.yml logs --tail 40
   die "앱이 응답하지 않는다. 위 로그를 확인할 것"
 }
-ok "앱 응답 정상 (서버 내부에서 HTTPS 200)"
+ok "앱 응답 정상 (서버 내부에서 https://${DOMAIN} → 200)"
 
 echo
 printf '\033[1;32m배포 끝났다.\033[0m\n\n'

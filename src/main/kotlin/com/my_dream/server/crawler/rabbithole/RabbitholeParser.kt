@@ -68,23 +68,37 @@ class RabbitholeParser {
             ?.let { when (it.length) { 1 -> it.toDouble(); 2 -> it.toDouble() / 10; else -> null } }
 
     /**
-     * 예약 여부를 **`<label>` 이 있느냐**로 본다. 문구를 비교하지 않는다.
+     * 예약 여부는 `<button>` 안의 `<label>` **문구**다.
      *
-     * ```
-     * 문구 비교   "예약불가" → "마감" 으로 바뀌면 전 회차가 "가능" 으로 읽힌다   오알림 대량
-     * 존재 여부   문구가 바뀌어도 label 은 있다 → 여전히 "불가"                안전한 실패
+     * ```html
+     * <button><label>예약불가</label><span>11:20</span></button>
+     * <button><label>예약가능</label><span>13:05</span></button>
      * ```
      *
-     * 최악이 "알림이 안 간다" 인 쪽을 고른다. 다만 변화를 놓치지 않게, 아는 문구가 아니면 남긴다.
+     * 처음엔 "불가일 때만 label 이 붙는다" 고 봤는데 **틀렸다.** 배포한 서버가
+     * `모르는 예약 상태 문구 — "예약가능"` 경고를 뱉어서 알았다.
+     * 그때까지 래빗홀 전 회차를 매진으로 읽고 있었다.
+     *
+     * **모르는 문구는 "불가" 로 본다.** 틀려도 안전한 쪽이다 —
+     * 잘못 "가능" 으로 읽으면 감시 걸어둔 사람 전원에게 헛알림이 나가는데,
+     * 반대로 틀리면 알림이 안 갈 뿐이다. 대신 경고를 남겨서 이번처럼 드러나게 한다.
      */
     private fun Element.slots(): List<Slot> =
         select("ul.res-times li button").mapNotNull { button ->
             val time = button.selectFirst("span")?.text()?.toLocalTimeOrNull() ?: return@mapNotNull null
             val label = button.selectFirst("label")?.text()?.trim()
-            if (label != null && label != SOLD_OUT) {
-                log.warn("모르는 예약 상태 문구 — \"{}\". 불가로 처리한다. 파서 확인 필요", label)
+            val available = when (label) {
+                AVAILABLE -> true
+                SOLD_OUT -> false
+                // label 이 아예 없는 경우도 가능으로 본다. 지금은 안 나오지만,
+                // 문구를 안 붙이는 쪽으로 바뀌면 그게 자연스러운 해석이다
+                null -> true
+                else -> {
+                    log.warn("모르는 예약 상태 문구 — \"{}\". 불가로 처리한다. 파서 확인 필요", label)
+                    false
+                }
             }
-            Slot(time = time, available = label == null)
+            Slot(time = time, available = available)
         }
 
     private fun String.digitsOrNull(): Int? = filter { it.isDigit() }.toIntOrNull()
@@ -96,5 +110,6 @@ class RabbitholeParser {
 
     companion object {
         private const val SOLD_OUT = "예약불가"
+        private const val AVAILABLE = "예약가능"
     }
 }
