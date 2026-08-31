@@ -1,6 +1,7 @@
 package com.my_dream.server.crawler.jigubyeol
 
 import com.my_dream.server.crawler.FetchUnit
+import com.my_dream.server.crawler.openWithin
 import com.my_dream.server.crawler.StoreAdapter
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -18,7 +19,9 @@ class JigubyeolAdapter(private val crawler: JigubyeolCrawler) : StoreAdapter {
 
     override fun plan(dates: List<LocalDate>): List<FetchUnit> =
         JigubyeolBranch.entries.flatMap { branch ->
-            dates.map { date ->
+            // 지점마다 창이 다르다 — 대구만 2주다. 창 밖 날짜를 물으면 302 가 오고
+            // 크롤러가 예외로 끊으므로, 안 거르면 매 바퀴 실패가 쌓인다
+            dates.openWithin(branch.openDays).map { date ->
                 FetchUnit("${branch.branchName} $date") { crawler.fetch(branch, date) }
             }
         }

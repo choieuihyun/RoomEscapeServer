@@ -133,6 +133,7 @@ class ScheduleSyncServiceTest @Autowired constructor(
         store = Play33Branch.KONKUK.toStoreRef(),
         date = date,
         reservationRangeDays = 7,
+        openDays = 7,
         themes = listOf(
             ThemeSchedule(
                 externalId = "18",

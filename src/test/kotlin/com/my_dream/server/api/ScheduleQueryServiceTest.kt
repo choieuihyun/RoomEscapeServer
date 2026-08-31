@@ -148,6 +148,7 @@ class ScheduleQueryServiceTest @Autowired constructor(
         store = Play33Branch.KONKUK.toStoreRef(),
         date = on,
         reservationRangeDays = 7,
+        openDays = 7,
         themes = listOf(
             ThemeSchedule(
                 externalId = "18",

@@ -37,6 +37,7 @@ class Play33Crawler(
             store = branch.toStoreRef(),
             date = date,
             reservationRangeDays = page.reservationRangeDays,
+            openDays = branch.openDays,
             themes = page.themes,
         )
     }

@@ -27,7 +27,18 @@ enum class KeyescapeBranch(val zizumNum: Int, val branchName: String, val key: S
 
     fun toStoreRef() = StoreRef(key = key, brand = BRAND, branchName = branchName)
 
+    /**
+     * 예약이 며칠치 열려 있나 (오늘 포함). **지점마다 다를 수 있는 값이다** —
+     * 지구별이 대구만 2주, 홍대 두 곳이 1주였다. 매장 단위로 하나라고 믿지 않는다.
+     *
+     * ⚠️ **미측정.** 지금 동작을 그대로 두려고 7 로 적었다. 재 본 적이 없으므로 **실측이 아니다** — 11지점이라 지점마다 다를 수도 있다.
+     */
+    val openDays: Int get() = OPEN_DAYS
+
     companion object {
+        /** 위 [openDays] 참고. 지점마다 갈리면 이 상수를 지우고 생성자 인자로 내린다 */
+        const val OPEN_DAYS = 7
+
         const val BRAND = "키이스케이프"
         const val HOST = "www.keyescape.com"
     }

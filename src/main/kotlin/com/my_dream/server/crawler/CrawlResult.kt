@@ -20,6 +20,15 @@ data class DaySchedule(
     val date: LocalDate,
     /** 사이트가 밝힌 예약 오픈 범위(일). 모르면 null */
     val reservationRangeDays: Int?,
+    /**
+     * **우리가 이 지점을 며칠치로 보고 있나.** [reservationRangeDays] 와 어긋나면 경고한다.
+     *
+     * 전에는 이 값이 전역 상수 하나(`RESERVATION_RANGE_DAYS = 7`)였는데,
+     * 지점마다 창이 다르다는 걸 알고(지구별 대구 2주) **지점별 값으로 내렸다.**
+     * 전역으로 두면 대구를 15로 맞추는 순간 **플레이33이 매 바퀴 "범위가 7일로 바뀌었다" 고
+     * 경고를 뱉는다** — 정상인데 시끄러워지고, 그러면 진짜 경고가 묻힌다.
+     */
+    val openDays: Int,
     val themes: List<ThemeSchedule>,
 )
 

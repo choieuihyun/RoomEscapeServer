@@ -116,7 +116,6 @@ class StoreCollector(
 
     companion object {
         /** 사이트가 `reservation_range_day` 로 밝힌 값. `[오늘, 오늘+6]` 이 열린다 */
-        const val RESERVATION_RANGE_DAYS = 7
     }
 }
 

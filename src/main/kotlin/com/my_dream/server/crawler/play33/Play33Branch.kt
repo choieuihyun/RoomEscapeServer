@@ -27,7 +27,18 @@ enum class Play33Branch(val id: Int, val branchName: String, val key: String) {
     /** 공통 모양으로. 저장·조회는 매장 종류를 몰라도 되게 여기서 끊는다 */
     fun toStoreRef() = StoreRef(key = key, brand = BRAND, branchName = branchName)
 
+    /**
+     * 예약이 며칠치 열려 있나 (오늘 포함). **지점마다 다를 수 있는 값이다** —
+     * 지구별이 대구만 2주, 홍대 두 곳이 1주였다. 매장 단위로 하나라고 믿지 않는다.
+     *
+     * **사이트가 스스로 밝힌다** — 예약 페이지의 `#reservation_range_day` 가 `7` 이다. 실측이 아니라 사이트 선언값이라 바뀌면 `warnIfRangeChanged` 가 알려 준다.
+     */
+    val openDays: Int get() = OPEN_DAYS
+
     companion object {
+        /** 위 [openDays] 참고. 지점마다 갈리면 이 상수를 지우고 생성자 인자로 내린다 */
+        const val OPEN_DAYS = 7
+
         const val BRAND = "플레이33"
         const val HOST = "play33.kr"
     }

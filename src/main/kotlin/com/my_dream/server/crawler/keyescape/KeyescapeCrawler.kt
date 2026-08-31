@@ -32,6 +32,7 @@ class KeyescapeCrawler(private val client: KeyescapeClient) {
             date = date,
             // 사이트가 예약 범위를 밝히지 않는다. 모르면 null 이고, 경고도 안 뜬다
             reservationRangeDays = null,
+            openDays = branch.openDays,
             themes = listOf(
                 ThemeSchedule(
                     externalId = theme.themeNum.toString(),

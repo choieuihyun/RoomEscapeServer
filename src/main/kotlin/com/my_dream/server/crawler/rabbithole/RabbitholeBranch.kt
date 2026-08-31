@@ -11,7 +11,18 @@ enum class RabbitholeBranch(val id: Int, val branchName: String, val key: String
 
     fun toStoreRef() = StoreRef(key = key, brand = BRAND, branchName = branchName)
 
+    /**
+     * 예약이 며칠치 열려 있나 (오늘 포함). **지점마다 다를 수 있는 값이다** —
+     * 지구별이 대구만 2주, 홍대 두 곳이 1주였다. 매장 단위로 하나라고 믿지 않는다.
+     *
+     * ⚠️ **미측정.** 지금 동작을 그대로 두려고 7 로 적었다. 재 본 적이 없으므로 **실측이 아니다** — 이 매장의 창을 넓힐 일이 생기면 그때 재고 이 주석을 고친다.
+     */
+    val openDays: Int get() = OPEN_DAYS
+
     companion object {
+        /** 위 [openDays] 참고. 지점마다 갈리면 이 상수를 지우고 생성자 인자로 내린다 */
+        const val OPEN_DAYS = 7
+
         /**
          * **화면에 보이는 이름과 내부 이름이 일부러 다르다. 맞추려고 하지 말 것.**
          *

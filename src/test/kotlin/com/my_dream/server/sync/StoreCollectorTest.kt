@@ -48,7 +48,7 @@ class StoreCollectorTest @Autowired constructor(private val ingest: ScheduleInge
                             synchronized(hits) { hits += host to System.nanoTime() / 1_000_000 }
                             // 겹치는 구간을 만들어 줘야 동시 실행 수가 측정된다
                             Thread.sleep(delayMs / 2)
-                            DaySchedule(StoreRef("$brand-$b", brand, b), d, 7, emptyList())
+                            DaySchedule(StoreRef("$brand-$b", brand, b), d, 7, 7, emptyList())
                         } finally {
                             inFlight.decrementAndGet()
                         }
@@ -59,7 +59,7 @@ class StoreCollectorTest @Autowired constructor(private val ingest: ScheduleInge
     }
 
     private fun collector(vararg adapters: StoreAdapter, concurrency: Int = 4) =
-        StoreCollector(adapters.toList(), ingest, PollingSchedule(rangeDays = 7, intervalMs = 300_000), concurrency, dbPoolSize = 24)
+        StoreCollector(adapters.toList(), ingest, PollingSchedule(rangeDays = 7, farRangeDays = 7, intervalMs = 300_000), concurrency, dbPoolSize = 24)
 
     private fun gaps(host: String) =
         hits.filter { it.first == host }.map { it.second }.sorted().zipWithNext { a, b -> b - a }
@@ -141,7 +141,7 @@ class StoreCollectorTest @Autowired constructor(private val ingest: ScheduleInge
             override fun plan(dates: List<LocalDate>) = dates.mapIndexed { i, d ->
                 FetchUnit("$i") {
                     if (i == 0) throw IllegalStateException("첫 요청 실패")
-                    DaySchedule(StoreRef("c-1", "다", "1지점"), d, 7, emptyList())
+                    DaySchedule(StoreRef("c-1", "다", "1지점"), d, 7, 7, emptyList())
                 }
             }
         }

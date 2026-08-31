@@ -1,6 +1,7 @@
 package com.my_dream.server.crawler.keyescape
 
 import com.my_dream.server.crawler.FetchUnit
+import com.my_dream.server.crawler.openWithin
 import com.my_dream.server.crawler.StoreAdapter
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -34,7 +35,7 @@ class KeyescapeAdapter(
     override fun plan(dates: List<LocalDate>): List<FetchUnit> =
         KeyescapeBranch.entries.flatMap { branch ->
             catalog.themes(branch).flatMap { theme ->
-                dates.map { date ->
+                dates.openWithin(branch.openDays).map { date ->
                     FetchUnit("${branch.branchName} ${theme.name} $date") {
                         crawler.fetch(branch, theme, date)
                     }

@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
  */
 class PollingScheduleTest {
 
-    private val schedule = PollingSchedule(rangeDays = 7, intervalMs = 300_000)
+    private val schedule = PollingSchedule(rangeDays = 7, farRangeDays = 7, intervalMs = 300_000)
 
     /** 2026-08-27 은 목요일. 창은 목금토일월화수 */
     private val thursday = LocalDate.of(2026, 8, 27)
@@ -74,7 +74,7 @@ class PollingScheduleTest {
     @Test
     fun `주말이 창 밖이어도 나머지는 돈다`() {
         // 창을 3일로 줄이면 주말이 없을 수 있다. 그래도 평일 순환은 계속돼야 한다
-        val short = PollingSchedule(rangeDays = 3, intervalMs = 300_000)
+        val short = PollingSchedule(rangeDays = 3, farRangeDays = 3, intervalMs = 300_000)
         val monday = LocalDate.of(2026, 8, 31)
         repeat(4) { n ->
             assertTrue(short.datesForSweep(n.toLong(), monday).isNotEmpty(), "$n 번째가 비었다")

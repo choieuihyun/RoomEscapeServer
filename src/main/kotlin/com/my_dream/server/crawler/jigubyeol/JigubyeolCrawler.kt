@@ -41,6 +41,7 @@ class JigubyeolCrawler(
             store = branch.toStoreRef(),
             date = date,
             reservationRangeDays = page.reservationRangeDays,
+            openDays = branch.openDays,
             themes = page.themes,
         )
     }

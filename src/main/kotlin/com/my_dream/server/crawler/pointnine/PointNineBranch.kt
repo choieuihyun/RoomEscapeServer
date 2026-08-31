@@ -22,7 +22,18 @@ enum class PointNineBranch(val id: Int, val branchName: String, val key: String)
 
     fun toStoreRef() = StoreRef(key = key, brand = BRAND, branchName = branchName)
 
+    /**
+     * 예약이 며칠치 열려 있나 (오늘 포함). **지점마다 다를 수 있는 값이다** —
+     * 지구별이 대구만 2주, 홍대 두 곳이 1주였다. 매장 단위로 하나라고 믿지 않는다.
+     *
+     * **실측** (2026-08-31) — `+6` 은 회차가 오고 `+7` 부터 200 인데 회차가 0개다. 지점 셋 다 같다.
+     */
+    val openDays: Int get() = OPEN_DAYS
+
     companion object {
+        /** 위 [openDays] 참고. 지점마다 갈리면 이 상수를 지우고 생성자 인자로 내린다 */
+        const val OPEN_DAYS = 7
+
         const val BRAND = "포인트나인"
         const val HOST = "point-nine.com"
     }

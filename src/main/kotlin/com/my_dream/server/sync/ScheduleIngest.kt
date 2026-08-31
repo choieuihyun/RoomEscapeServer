@@ -66,10 +66,12 @@ class ScheduleIngest(
     /** 사이트가 예약 오픈 범위를 바꾸면 우리 순회 범위도 바뀌어야 한다. 조용히 어긋나지 않게 알린다. */
     private fun warnIfRangeChanged(day: DaySchedule) {
         val reported = day.reservationRangeDays ?: return
-        if (reported != StoreCollector.RESERVATION_RANGE_DAYS) {
+        if (reported != day.openDays) {
+            // **전역 상수와 비교하면 안 된다.** 창은 지점마다 다르다(지구별 대구 2주 / 홍대 1주).
+            // 하나로 비교하면 정상인 지점이 매 바퀴 경고를 뱉고, 그 잡음에 진짜 변화가 묻힌다
             log.warn(
-                "예약 오픈 범위가 {}일로 바뀌었다 (코드 기준 {}일). 순회 범위를 조정해야 한다",
-                reported, StoreCollector.RESERVATION_RANGE_DAYS,
+                "예약 오픈 범위가 {}일로 바뀌었다 — {} {} (우리는 {}일로 보고 있다). 지점 openDays 를 조정할 것",
+                reported, day.store.branchName, day.date, day.openDays,
             )
         }
     }

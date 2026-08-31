@@ -1,6 +1,7 @@
 package com.my_dream.server.crawler.pointnine
 
 import com.my_dream.server.crawler.FetchUnit
+import com.my_dream.server.crawler.openWithin
 import com.my_dream.server.crawler.StoreAdapter
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -18,7 +19,7 @@ class PointNineAdapter(private val crawler: PointNineCrawler) : StoreAdapter {
 
     override fun plan(dates: List<LocalDate>): List<FetchUnit> =
         PointNineBranch.entries.flatMap { branch ->
-            dates.map { date ->
+            dates.openWithin(branch.openDays).map { date ->
                 FetchUnit("${branch.branchName} $date") { crawler.fetch(branch, date) }
             }
         }
