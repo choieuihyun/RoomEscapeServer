@@ -177,6 +177,12 @@ class KeyescapeNotOpenTest {
         // 빈 리스트로 뭉개면 저장 단계가 멀쩡한 데이터를 지운다.
         // 문구가 바뀌어도 조용히 비우는 것보다 시끄럽게 깨지는 쪽이 낫다
         assertTrue(!KeyescapeClient.isNotOpen("서버 점검 중입니다"))
+        // 정기 휴무일. 2026-08-31 부산점 월요일에 실제로 왔다 —
+        // **그날 회차가 없다는 답**이라 0개로 본다. 안 넣으면 매주 그 요일에 실패 5건이 쌓인다
+        assertTrue(KeyescapeClient.isNotOpen("지점휴일 입니다."))
+        // ⚠️ 반대로 이건 **넣지 않는다.** "아직 대답할 시각이 아니다" 는 결론이 아니라 보류다.
+        // 0개로 뭉개면 "오픈 전" 과 "진짜 못 받았다" 가 같은 값이 된다
+        assertTrue(!KeyescapeClient.isNotOpen("예약가능시간이 아닙니다. 예약오픈시간 : 11:30"))
         assertTrue(!KeyescapeClient.isNotOpen(null))
     }
 }
