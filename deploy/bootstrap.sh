@@ -237,6 +237,19 @@ done
 }
 ok "앱 응답 정상 (서버 내부에서 https://${DOMAIN} → 200)"
 
+# ── 10. 자동 배포 ────────────────────────────────────────
+# **서버가 GitHub 을 당겨온다. GitHub 이 서버에 밀어넣지 않는다.**
+# Actions 로 하려면 SSH 개인키를 GitHub Secrets 에 맡겨야 하는데, 이 기계를 키 전용으로
+# 잠가 놓고 그 키를 남의 시스템에 두는 것은 앞뒤가 안 맞는다. 당겨오면 **나가는 자격증명이 없다.**
+say "자동 배포"
+mkdir -p "$HOME/.roomescape"
+install -m 700 "$APP_DIR/deploy/autodeploy.sh" "$HOME/.roomescape/autodeploy.sh"
+# `flock -n` 으로 겹침을 막는다 — ARM 빌드가 10분 걸리는데 크론은 5분마다 온다.
+# 없으면 빌드 두 개가 같은 디렉터리에서 서로를 밟는다
+( { crontab -l 2>/dev/null || true; } | grep -v roomescape/autodeploy.sh || true
+  echo "*/5 * * * * flock -n /tmp/roomescape-autodeploy.lock bash $HOME/.roomescape/autodeploy.sh" ) | crontab -
+ok "5분마다 새 커밋 확인 (코드가 바뀐 커밋에서만 재빌드)"
+
 echo
 printf '\033[1;32m배포 끝났다.\033[0m\n\n'
 printf '  서버 내부 확인 :  curl -sk https://localhost/api/branches\n'
