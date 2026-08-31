@@ -8,6 +8,10 @@
 		reverse_proxy app:8080
 	}
 
+	# ⚠️ 여기 블록이 `{$DOMAIN}` 하나뿐이라 **`Host: localhost` 로 오는 요청에는 안 답한다.**
+	# 그래서 bootstrap 과 autodeploy 의 확인 단계가 `curl --resolve` 로 도메인을 흉내낸다 —
+	# 그냥 `curl localhost` 로 바꾸면 앱이 멀쩡해도 배포가 실패한 것처럼 보인다.
+
 	# /debug 를 비롯한 나머지는 앱까지 가지도 않는다.
 	# 앱 쪽에서도 DEBUG_ENDPOINTS=false 로 꺼 두지만, 둘 다 걸어 둔다.
 	handle {
