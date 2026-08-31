@@ -26,3 +26,13 @@ fun List<LocalDate>.openWithin(openDays: Int, today: LocalDate = LocalDate.now()
     val last = today.plusDays((openDays - 1).toLong())
     return filter { !it.isAfter(last) }
 }
+
+/**
+ * **창의 마지막 날인가.** 매일 하루씩 예약을 여는 사이트에서 이 날짜는
+ * 그날 오픈 시각이 지나기 전까지 회차가 0개로 온다 — 정상이다 (아키텍처 D22).
+ *
+ * 여기가 하루 어긋나면 **매일 지점 수만큼 헛경고가 뜨거나**(너무 좁게 잡으면),
+ * **진짜 빈 날짜를 정상으로 넘긴다**(너무 넓게 잡으면).
+ */
+fun LocalDate.isLastOpenDay(openDays: Int, today: LocalDate): Boolean =
+    this == today.plusDays((openDays - 1).toLong())

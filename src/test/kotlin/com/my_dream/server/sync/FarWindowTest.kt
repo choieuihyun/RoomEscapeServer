@@ -5,6 +5,7 @@ import com.my_dream.server.crawler.jigubyeol.JigubyeolAdapter
 import com.my_dream.server.crawler.jigubyeol.JigubyeolClient
 import com.my_dream.server.crawler.jigubyeol.JigubyeolCrawler
 import com.my_dream.server.crawler.jigubyeol.JigubyeolParser
+import com.my_dream.server.crawler.isLastOpenDay
 import com.my_dream.server.crawler.openWithin
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -75,6 +76,17 @@ class FarWindowTest {
         assertEquals(4, units.size, units.toString())
         assertEquals(1, units.count { it.endsWith(" $먼날짜") }, units.toString())
         assertTrue(units.any { it == "대구점 $먼날짜" }, units.toString())
+    }
+
+    @Test
+    fun `창의 마지막 날을 정확히 짚는다 — 비트포비아 오픈 전 판정의 근거다`() {
+        // 매일 하루씩 여는 사이트는 **창의 마지막 날**이 오픈 시각 전까지 회차 0개다 (D22).
+        // 여기가 하루 어긋나면 둘 중 하나가 된다 —
+        //   좁게 잡으면 매일 지점 수만큼 헛경고, 넓게 잡으면 진짜 빈 날짜를 정상으로 넘긴다
+        assertTrue(monday.plusDays(6).isLastOpenDay(7, monday))
+        assertTrue(!monday.plusDays(5).isLastOpenDay(7, monday), "마지막 전날은 아니다")
+        assertTrue(!monday.plusDays(7).isLastOpenDay(7, monday), "창 밖은 마지막 날이 아니다")
+        assertTrue(monday.plusDays(14).isLastOpenDay(15, monday), "대구는 15일치")
     }
 
     @Test
