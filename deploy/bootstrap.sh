@@ -25,13 +25,22 @@ say() { printf '\n\033[1;34m▶ %s\033[0m\n' "$*"; }
 ok()  { printf '  \033[32m✓\033[0m %s\n' "$*"; }
 die() { printf '\n\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
+# `unattended-upgrades` 가 매일 알아서 apt 를 돌린다 — 이 스크립트가 켜 준 것이다(아래 (2)).
+# 하필 그때 배포하면 dpkg 잠금이 겹쳐 `Could not get lock ...` 로 **중간에 죽는다.**
+# 2026-08-31 재배포가 실제로 여기서 멈췄다. 앱은 안 건드린 뒤라 피해는 없었지만,
+# "몇 번을 돌려도 안전하다" 는 약속이 시간대에 따라 깨지고 있었던 것이다.
+#
+# 기다리면 되는 일이라 기다린다. `DPkg::Lock::Timeout` 은 잠금을 만나면
+# 즉시 실패하는 대신 그 초만큼 기다린다 (apt 2.0+ · 우분투 22.04 이상).
+apt_get() { sudo apt-get -o DPkg::Lock::Timeout=600 "$@"; }
+
 [ -n "$DOMAIN" ] || die "도메인을 인자로 넘겨야 한다.  예: bash -s -- roomescape.duckdns.org <토큰>"
 [ "$(id -u)" -ne 0 ] || die "root 말고 일반 사용자(ubuntu)로 실행할 것. 필요할 때만 sudo 를 쓴다."
 
 # ── 1. 패키지 ────────────────────────────────────────────
 say "패키지 준비"
-sudo apt-get update -qq
-sudo apt-get install -y -qq ca-certificates curl git iptables-persistent >/dev/null
+apt_get update -qq
+apt_get install -y -qq ca-certificates curl git iptables-persistent >/dev/null
 ok "기본 패키지"
 
 # ── 2. 도커 ──────────────────────────────────────────────
@@ -47,8 +56,8 @@ else
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
 https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" |
     sudo tee /etc/apt/sources.list.d/docker.list >/dev/null
-  sudo apt-get update -qq
-  sudo apt-get install -y -qq docker-ce docker-ce-cli containerd.io \
+  apt_get update -qq
+  apt_get install -y -qq docker-ce docker-ce-cli containerd.io \
     docker-buildx-plugin docker-compose-plugin >/dev/null
   ok "설치 완료"
 fi
@@ -121,7 +130,7 @@ fi
 # (2) 자동 보안 업데이트
 #     안 하면 알려진 취약점이 그대로 남는다. 잊어버려도 돌아가는 게 서버의 값이라
 #     "가끔 손으로 apt upgrade" 는 계획이 아니다.
-sudo apt-get install -y -qq unattended-upgrades >/dev/null
+apt_get install -y -qq unattended-upgrades >/dev/null
 sudo tee /etc/apt/apt.conf.d/20auto-upgrades >/dev/null <<'AUTOUP'
 APT::Periodic::Update-Package-Lists "1";
 APT::Periodic::Unattended-Upgrade "1";
@@ -135,7 +144,7 @@ REBOOT
 ok "자동 보안 업데이트 (필요 시 04:00 재부팅)"
 
 # (3) fail2ban — SSH 무차별 대입을 차단한다
-sudo apt-get install -y -qq fail2ban >/dev/null
+apt_get install -y -qq fail2ban >/dev/null
 sudo tee /etc/fail2ban/jail.d/sshd.local >/dev/null <<'JAIL'
 [sshd]
 enabled  = true
