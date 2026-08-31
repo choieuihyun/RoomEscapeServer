@@ -1,0 +1,217 @@
+<!DOCTYPE HTML>
+<html lang="ko">
+	<head>
+		<title>포인트나인</title>
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+		<meta name="format-detection" content="telephone=no">
+				<meta name="publisher" content="(주)신비웹,신비웹,sinbiweb,sinbiweb.co.kr,www.sinbiweb.co.kr" />
+		<link rel="stylesheet" type="text/css" href="../css/style.css" />
+		<link rel="stylesheet" type="text/css" href="../css/slick.css" />
+		<link rel="stylesheet" type="text/css" href="../css/slick-theme.css" />
+		<link rel="stylesheet" type="text/css" href="../css/swiper.css">
+
+		<script type="text/javascript" src="../js/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript" src="../js/jquery.easing.1.3.js"></script>
+		<script type="text/javascript" src="../js/ui.js"></script>
+		<script type="text/javascript" src="../js/slick.min.js"></script>
+		<script type="text/javascript" src="../js/swiper.js"></script>
+
+		<link rel="stylesheet" type="text/css" href="../css/board_reaction.css">
+		<script type="text/javascript" src="../../core/res/common.js"></script>
+		<script type="text/javascript" src="../../core/js/board.js"></script>
+		<script type="text/javascript" src="../../cheditor/cheditor.js"></script>
+
+		<!--[if IE 7]>
+			<link rel="stylesheet" type="text/css" href="../css/ie7.css" media="all" />
+		<![endif]-->
+		<!--[if lte IE 8]>
+			<script src="./js/lib/respond.min.js" type="text/javascript" charset="utf-8"></script>
+			<script src="./js/lib/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+		<![endif]-->
+	</head>
+
+
+	<!-- 달력 -->
+    <div id=popCal  style='position:absolute; left:-400px; top:0px; width:0; height=0; z-index:1; VISIBILITY:hidden;'>
+    <iframe name='pop_frame_cal' src='' frameborder='0' scrolling='no' width='300' height='320'></iframe>
+    </div>
+
+	<!-- submit 사용시 -->
+	<div style='position:absolute'>
+	<iframe src='' name='ifr_ok'  width=0 height=0 frameborder=0 scrolling=no></iframe>
+	</div>
+
+	<body>
+		<div id="wrap">
+			<dl id="skip">
+				<dt class="hide">메뉴 바로가기</dt>
+				<dd><a href="#self">주메뉴 바로가기</a></dd>
+				<dd><a href="#self">컨텐츠 바로가기</a></dd>
+			</dl>
+
+			<nav class="right_Box">
+				<div class="nav_top">
+					<div class="logo"><a href="home.php?go=main"><img src="../images/common/logo.png" alt=""></a></div>
+					<div class="close"><img src="../images/ico/close.png" alt="닫기"></div>
+				</div><!-- end : class : nav_top -->
+				<div class="nav_in">
+					<ul class="m_gnb">
+						<li><a href="home.php?go=company">ABOUT</a></li>
+						<li><a href="home.php?go=theme.list">THEME</a></li>
+						<li><a href="home.php?go=location">LOCATION</a>
+						<li><a href="home.php?go=rev.make">RESERVATION</a>
+						<li><a href="home.php?go=contact.make&s_gubun=A">가맹문의</a>
+					</ul>
+				</div>
+			</nav><!--right_Box-->
+			<div class="wrap_bg"></div>
+
+			<header>
+				<div id="header">
+					<div class="in_Layer">
+						<div class="call">
+							<a href="#self"><img src="../images/ico/call_ico.png"></a>
+							<ul class="depth">
+					<li><a href="tel:070-7733-7879">강남점 전화걸기</a></li><li><a href="tel:070-7537-0869">건대점 전화걸기</a></li><li><a href="tel:010-2131-0538">홍대점 전화걸기</a></li>							</ul><!--depth-->
+						</div>
+						<h1 class="logo"><a href="home.php?go=main"><img src="../images/common/logo.png"></a></h1>
+						<div class="m_menu"><img src="../images/ico/m_menu.png"></div>
+						<div class="gnb_area">
+							<ul class="gnb">
+								<li><a href="home.php?go=company">ABOUT</a></li>
+								<li><a href="home.php?go=theme.list">THEME</a></li>
+								<li><a href="home.php?go=location">LOCATION</a>
+								<li><a href="home.php?go=rev.make">RESERVATION</a>
+								<li><a href="home.php?go=contact.make&s_gubun=A">가맹문의</a>
+							</ul><!--gnb-->
+						</div><!--gnb_area-->
+					</div><!--in_Layer-->
+				</div><!-- end : id : header -->
+			</header><!-- end : header -->
+
+
+			<div id="visual">
+				<div class="sub_visual" style="background-image:url('../images/contents/sub_visual.jpg')">
+					<h2>RESERVATION</h2>
+				</div><!--sub_visual-->
+			</div><!-- end : id : visual -->
+
+			<div id="contents">
+				<div class="sub_contents">
+					<div class="in_Layer">
+
+
+<script>
+function fun_rev_change() {
+    f = eval('document.register'); 
+	f.submit();
+}
+</script>
+
+	<div class="process">
+		<ul>
+			<li class="on">01.날짜/룸 선택</li>
+			<li>02.예약정보 입력</li>
+			<li>03.결제하기</li>
+			<li>04.예약완료</li>
+		</ul>
+	</div>
+
+	<form name=register method=get action=home.php>	
+	<div class="reserve_Box">
+		<dl class="reserve_Dl">
+			<div class="reserve_in">
+				<dt><label for="day">예약날짜</label></dt>
+				<dd>
+					<input type="text" name=rev_days id=rev_days value='2026-09-10' size=20 maxlength=10 readonly class="selectType" onclick=fun_calendar('register.rev_days','B','img_001');  onChange=fun_rev_change()>
+					<img src='../images/board/blank.gif' style='width:0px; height:0px;' name=img_001>
+				</dd>
+			</div>
+			<div class="reserve_in">
+				<dt><label for="theme">지점선택</label></dt>
+				<dd>
+					<select name=s_zizum onChange=fun_rev_change() class='selectType'>
+			<option value='1' selected >강남점</option><option value='5'  >건대점</option><option value='6'  >홍대점</option>					</select>
+				</dd>
+			</div>
+		</dl>
+	</div>
+
+		<input type=hidden name=go value='rev.make'>
+	</form>
+
+<div class='reserve_info'>예약가능일이 아닙니다</div>
+<!---------------------------
+	<div class="rev_zizum_info">
+		<table border="0" cellspacing="0" cellpadding="0">
+		<colgroup>
+			<col width=25%>
+		</colgroup>
+		<tr>
+			<td class='tit'>매장번호</td>
+			<td class='text'>070-7733-7879</td>
+		</tr>
+		<tr>
+			<td class='tit'>이용금액</td>
+			<td class='text'></td>
+		</tr>
+		<tr>
+			<td class='tit'>계좌번호</td>
+			<td class='text'></td>
+		</tr>
+		<tr>
+			<td class='tit'>매장주소</td>
+			<td class='text'>서울시 강남구 역삼동 618-3 지하1층</td>
+		</tr>
+		<tr>
+			<td class='tit'>오시는길</td>
+			<td class='text'></td>
+		</tr>
+		<tr>
+			<td class='tit'>지점소개</td>
+			<td class='text'></td>
+		</tr>
+		</table>
+	</div>
+--------------->
+
+					</div><!--in_Layer-->
+				</div><!--sub_contents-->
+			</div><!-- end : id : contents -->
+
+			<footer>
+				<div id="footer">
+					<div class="f_top">
+						<div class="in_Layer">
+							<ul>
+								<li><a href="home.php?go=pds.list&pds_type=1">공지사항</a></li>
+								<li><a href="home.php?go=rev.login">예약확인</a></li>
+								<li><a href="home.php?go=contact.make&s_gubun=B">제휴문의</a></li>
+								<li><a href="javascript:fun_pop_privacy()">개인정보취급방침</a></li>
+							</ul>
+						</div>
+					</div><!--f_top-->
+					<div class="f_mid">
+						<div class="in_Layer">
+							<p>
+								상호 : 포인트나인   ㅣ   대표자 : 정석영 외 1명   ㅣ   사업자번호 : 516-49-00519   ㅣ   통신판매번호 : 제 2023-서울강남-02534 호<br/>
+								전화 : 070-7733-7879 <br/>
+								주소 : 서울시 강남구 역삼동 618-3 지하1층
+								<!--계좌번호 : 신한 110-279-597253 (포인트나인)-->
+							</p>
+						</div>
+					</div><!--f_mid-->
+					<div class="f_bot">
+						<div class="in_Layer">
+							<p>COPYRIGHT ⓒ 2020 포인트나인.  All right reserved.  /  CREATED BY <a href="http://sinbiweb.co.kr?s_url=pointnine" target=_blank>SINBIWEB</a>.</p>
+						</div>
+					</div><!--f_bot-->
+				</div><!-- end : id : footer -->
+			</footer><!-- end : footer -->
+		</div><!-- end : id : wrap -->
+	</body>
+</html>
+
+
