@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
  */
 class PollingScheduleTest {
 
-    private val schedule = PollingSchedule(rangeDays = 7, farRangeDays = 7, intervalMs = 300_000)
+    private val schedule = PollingSchedule(rangeDays = 7, farRangeDays = 7)
 
     /** 2026-08-27 은 목요일. 창은 목금토일월화수 */
     private val thursday = LocalDate.of(2026, 8, 27)
@@ -64,17 +64,35 @@ class PollingScheduleTest {
     }
 
     @Test
-    fun `바퀴 번호는 시계에서 나온다`() {
-        // 카운터를 들고 있으면 재시작할 때마다 0 으로 돌아가 같은 평일만 계속 본다
-        val a = schedule.sweepIndex(java.time.Instant.ofEpochMilli(1_800_000))
-        val b = schedule.sweepIndex(java.time.Instant.ofEpochMilli(1_800_000 + 300_000))
-        assertEquals(a + 1, b)
+    fun `번호가 1씩 오른다는 전제 위에 서 있다`() {
+        // ⚠️ 여기 있던 `바퀴 번호는 시계에서 나온다` 를 지웠다 (2026-09-01).
+        // 그 테스트는 시각을 **정확히 +300_000ms** 밀고 번호가 1 오르는지 봤는데,
+        // 300_000ms 는 설정값이지 실제 주기가 아니다 — 실제로는 470초쯤 지난다.
+        // **운영에서 한 번도 일어나지 않는 상황을 재고 통과하고 있었다.**
+        //
+        // 번호를 만드는 일은 SweepTicker 로 옮겼고 (SweepTickerTest 가 1씩 오르는지 잰다),
+        // 여기서는 **그 전제가 깨지면 순환이 어떻게 망가지는지**를 박아 둔다.
+        // 이게 있어야 나중에 누가 번호 매기는 방식을 다시 건드릴 때 이유가 보인다.
+        val 금요일 = LocalDate.of(2026, 8, 28)
+        // **횟수가 아니라 간격을 잰다.** 8바퀴에 4번 나오는 것은 양쪽 다 같을 수 있다 —
+        // 실제로 아팠던 것은 "몰려서 나오고 오래 안 나오는" 것이었다 (실측 ✗✗●●✗✗●●)
+        fun 간격(번호: (Int) -> Long): Set<Int> =
+            (0 until 8).filter { 금요일 in schedule.datesForSweep(번호(it), thursday) }
+                .zipWithNext { a, b -> b - a }.toSet()
+
+        assertEquals(setOf(2), 간격 { it.toLong() }, "1씩 오르면 금요일은 정확히 2바퀴마다다")
+
+        // 시계에서 뽑던 옛 방식을 흉내낸다 — 470초를 300초로 나누니 1~2 씩 뛴다
+        assertTrue(
+            간격 { (it * 470L * 1000) / 300_000 }.size > 1,
+            "번호가 1씩 오르지 않으면 간격이 들쭉날쭉해진다 — 이것이 2026-09-01 의 버그다",
+        )
     }
 
     @Test
     fun `주말이 창 밖이어도 나머지는 돈다`() {
         // 창을 3일로 줄이면 주말이 없을 수 있다. 그래도 평일 순환은 계속돼야 한다
-        val short = PollingSchedule(rangeDays = 3, farRangeDays = 3, intervalMs = 300_000)
+        val short = PollingSchedule(rangeDays = 3, farRangeDays = 3)
         val monday = LocalDate.of(2026, 8, 31)
         repeat(4) { n ->
             assertTrue(short.datesForSweep(n.toLong(), monday).isNotEmpty(), "$n 번째가 비었다")

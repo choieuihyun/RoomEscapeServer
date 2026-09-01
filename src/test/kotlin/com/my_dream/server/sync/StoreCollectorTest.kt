@@ -21,7 +21,11 @@ import kotlin.test.assertTrue
  */
 @DataJpaTest
 @Import(ScheduleSyncService::class, NotificationService::class, LoggingNotifier::class, ScheduleIngest::class)
-class StoreCollectorTest @Autowired constructor(private val ingest: ScheduleIngest) {
+class StoreCollectorTest @Autowired constructor(
+    private val ingest: ScheduleIngest,
+    // collectAll() 을 안 쓰는 테스트지만 생성자에 필요하다. 바퀴 번호는 여기서 검증하지 않는다
+    private val counters: SweepCounterRepository,
+) {
 
     private val delayMs = 60L
     private val limiter = HostRateLimiter(delayMs)
@@ -59,7 +63,10 @@ class StoreCollectorTest @Autowired constructor(private val ingest: ScheduleInge
     }
 
     private fun collector(vararg adapters: StoreAdapter, concurrency: Int = 4) =
-        StoreCollector(adapters.toList(), ingest, PollingSchedule(rangeDays = 7, farRangeDays = 7, intervalMs = 300_000), concurrency, dbPoolSize = 24)
+        StoreCollector(
+            adapters.toList(), ingest, PollingSchedule(rangeDays = 7, farRangeDays = 7),
+            SweepTicker(counters), concurrency, dbPoolSize = 24,
+        )
 
     private fun gaps(host: String) =
         hits.filter { it.first == host }.map { it.second }.sorted().zipWithNext { a, b -> b - a }

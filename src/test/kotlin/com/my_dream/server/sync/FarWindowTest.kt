@@ -26,8 +26,8 @@ class FarWindowTest {
     /** 2026-08-31 은 월요일 */
     private val monday = LocalDate.of(2026, 8, 31)
 
-    private val 예전 = PollingSchedule(rangeDays = 7, farRangeDays = 7, intervalMs = 300_000)
-    private val 지금 = PollingSchedule(rangeDays = 7, farRangeDays = 15, intervalMs = 300_000)
+    private val 예전 = PollingSchedule(rangeDays = 7, farRangeDays = 7)
+    private val 지금 = PollingSchedule(rangeDays = 7, farRangeDays = 15)
 
     @Test
     fun `먼 창을 켜도 가까운 날짜 선택은 한 글자도 안 바뀐다`() {
@@ -98,5 +98,31 @@ class FarWindowTest {
         assertEquals(monday.plusDays(14), dates.openWithin(15, monday).last())
         assertEquals(monday.plusDays(6), dates.openWithin(7, monday).last())
         assertEquals(listOf(monday), dates.openWithin(1, monday))
+    }
+
+    @Test
+    fun `바퀴 번호가 1씩 오르지 않으면 먼 날짜가 굶는다`() {
+        // **운영에서 실제로 본 증상이다** (2026-09-01 · 8바퀴 · 53분).
+        //   먼 창 8일 중 09-08 · 09-13 을 한 번도 안 봤고, 09-09 · 09-12 는 두 번씩 봤다.
+        //
+        // 위 `먼 날짜도 굶지 않는다` 테스트는 번호를 0..7 로 **손으로 넣어서** 통과했다.
+        // 번호가 균등하다는 것이 검증 대상이 아니라 전제였고, 그 전제가 깨져 있었다.
+        // 여기서는 **실제로 들어오던 번호**를 흉내내서 그 차이를 박아 둔다.
+        val 먼창 = (7..14).map { monday.plusDays(it.toLong()) }.toSet()
+
+        fun 여덟바퀴에_본_먼날짜(번호: (Int) -> Long) =
+            (0 until 8).flatMap { 지금.datesForSweep(번호(it), monday) }.toSet() intersect 먼창
+
+        assertEquals(
+            먼창, 여덟바퀴에_본_먼날짜 { it.toLong() },
+            "1씩 오르면 8바퀴에 먼 창 8일을 정확히 한 번씩 다 본다",
+        )
+
+        // 시계 나누기(470초를 300초로) 를 흉내낸다
+        val 굶은날 = 먼창 - 여덟바퀴에_본_먼날짜 { (it * 470L * 1000) / 300_000 }
+        assertTrue(
+            굶은날.isNotEmpty(),
+            "번호가 1~2 씩 뛰면 8바퀴가 지나도 안 본 날짜가 남는다 — 굶는 날짜는 스스로 회복되지 않는다",
+        )
     }
 }

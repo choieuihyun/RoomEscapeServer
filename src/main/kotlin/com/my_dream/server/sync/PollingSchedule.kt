@@ -4,7 +4,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.DayOfWeek
-import java.time.Instant
 import java.time.LocalDate
 
 /**
@@ -23,13 +22,7 @@ import java.time.LocalDate
  *
  * **한 바퀴는 5분이 아니다.** `fixedDelay` 라 "이전 바퀴가 **끝난 뒤** 5분" 이고,
  * 수집 자체가 2.3~2.8분 걸린다 — 실측 2026-09-01 은 436~471초다.
- *
- * ⚠️ **알려진 결함 — 그래서 순환이 균등하지 않다.** [sweepIndex] 가 시계를
- * `interval-ms`(300초)로 나누는데 실제 주기는 470초라, 번호가 한 바퀴에 1~2씩 뛴다.
- * `sweep % 2`(금)도 `sweep % 4`(평일)도 균등하지 않고, **아래 "굶는 날짜가 없게" 라는
- * 약속이 지금 안 지켜진다** — 실측에서 먼 창의 8일 중 2일을 53분 동안 한 번도 안 봤다.
- * **토·일은 영향이 없다** (번호를 안 쓰고 매 바퀴 본다).
- * 원인과 고치는 방향 두 가지는 아키텍처 D14 정정에 적어 뒀다. 아직 안 골랐다.
+ * 그래서 **주기를 분으로 적지 않는다.** 매장이 늘면 또 틀린다.
  *
  * **먼 창을 따로 둔 이유 (2026-08-31)** — 지구별 대구점은 예약이 **2주치** 열리는데
  * 나머지 지점은 1주치다. 창을 통째로 15일로 넓히면 위 규칙이 15일 위에서 돌아
@@ -37,26 +30,27 @@ import java.time.LocalDate
  * 지점 하나 때문에 **모든 매장의 가까운 날짜가 느려진다.** 그건 손해다 —
  * 취소는 임박한 날짜에 몰린다. 그래서 넓히지 않고 **칸을 하나 더 만든다.**
  *
- * **바퀴 번호를 시계에서 뽑는다.** 카운터를 들고 있으면 서버를 재시작할 때마다 0 으로 돌아가서,
- * 개발 중에 자주 껐다 켜면 같은 평일만 계속 보고 나머지는 굶는다.
+ * ### 바퀴 번호는 여기서 만들지 않는다 ([SweepTicker] 가 준다)
+ *
+ * 이 클래스는 **번호를 넣으면 날짜가 나오는 순수 함수**다. DB 도 시계도 모른다.
+ * 그래야 "3번째 바퀴에 무엇을 보나" 를 그냥 부르면서 테스트할 수 있다.
+ *
+ * ⚠️ **다만 그 순수함이 2026-09-01 버그를 숨겼다.** 아래 순환은 전부
+ * **번호가 1씩 오른다**는 전제 위에 서 있는데(나머지 연산), 실제로 들어오던 번호는
+ * 시계에서 나와 1~2씩 뛰고 있었다. 테스트는 0,1,2,3 을 손으로 넣었으니 영원히 통과했다.
+ *
+ * **순수 함수를 테스트하는 것으로는 "실제로 무엇이 들어오는가" 를 못 잡는다.**
+ * 그래서 번호를 만드는 쪽([SweepTicker])에 따로 테스트를 뒀다.
  */
 @Component
 class PollingSchedule(
     @param:Value("\${collector.range-days:7}") private val rangeDays: Int,
     @param:Value("\${collector.far-range-days:15}") private val farRangeDays: Int,
-    @param:Value("\${collector.interval-ms:300000}") private val intervalMs: Long,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun datesFor(today: LocalDate = LocalDate.now(), now: Instant = Instant.now()): List<LocalDate> =
-        datesForSweep(sweepIndex(now), today)
-
-    /** 지금이 몇 번째 바퀴인가. 시계에서 뽑으므로 재시작해도 이어진다 */
-    fun sweepIndex(now: Instant = Instant.now()): Long =
-        now.toEpochMilli() / intervalMs.coerceAtLeast(1)
-
-    fun datesForSweep(sweep: Long, today: LocalDate): List<LocalDate> {
+    fun datesForSweep(sweep: Long, today: LocalDate = LocalDate.now()): List<LocalDate> {
         val window = (0 until rangeDays).map { today.plusDays(it.toLong()) }
         val weekend = window.filter { it.dayOfWeek == DayOfWeek.SATURDAY || it.dayOfWeek == DayOfWeek.SUNDAY }
         val friday = window.filter { it.dayOfWeek == DayOfWeek.FRIDAY }

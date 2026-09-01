@@ -26,6 +26,7 @@ class StoreCollector(
     private val adapters: List<StoreAdapter>,
     private val ingest: ScheduleIngest,
     private val schedule: PollingSchedule,
+    private val ticker: SweepTicker,
     @param:Value("\${collector.site-concurrency:16}") private val siteConcurrency: Int,
     @param:Value("\${spring.datasource.hikari.maximum-pool-size:10}") private val dbPoolSize: Int,
 ) {
@@ -51,8 +52,13 @@ class StoreCollector(
         }
     }
 
-    /** 이번 바퀴 몫만 긁는다. 어느 날짜인지는 [PollingSchedule] 이 정한다 (D14) */
-    fun collectAll(): SweepSummary = collect(schedule.datesFor())
+    /**
+     * 이번 바퀴 몫만 긁는다. **번호는 [SweepTicker] 가, 그 번호로 볼 날짜는 [PollingSchedule] 이** 정한다 (D14).
+     *
+     * 둘을 나눠 둔 이유는 2026-09-01 에 여기서 버그가 났기 때문이다 — 날짜 고르는 계산은
+     * 멀쩡했는데 **번호가 1씩 오르지 않아서** 순환이 굶었다. 나눠 두면 각각을 따로 잴 수 있다.
+     */
+    fun collectAll(): SweepSummary = collect(schedule.datesForSweep(ticker.next()))
 
     fun collect(dates: List<LocalDate>): SweepSummary {
         // 같은 서버를 쓰는 어댑터끼리 묶는다. 브랜드가 달라도 호스트가 같으면 한 줄이다
