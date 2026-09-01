@@ -49,7 +49,7 @@ class WatchServiceTest @Autowired constructor(
     fun `감시를 걸면 목록에 보인다`() {
         service.register("나", requireNotNull(future.id))
 
-        val mine = service.list("나")
+        val mine = service.list("나").watches
         assertEquals(1, mine.size)
         assertEquals("대전점", mine.single().branch)
         assertEquals(19 * 60 + 35, mine.single().t, "자정부터의 분 — 조회 API 와 같은 형식")
@@ -69,7 +69,7 @@ class WatchServiceTest @Autowired constructor(
     fun `남의 감시는 내 목록에 없다`() {
         service.register("너", requireNotNull(future.id))
 
-        assertTrue(service.list("나").isEmpty())
+        assertTrue(service.list("나").watches.isEmpty())
     }
 
     @Test
@@ -116,7 +116,48 @@ class WatchServiceTest @Autowired constructor(
         watches.save(com.my_dream.server.domain.Watch("나", slot(LocalDate.now().minusDays(2)), Instant.now()))
 
         // 지나간 회차를 지켜보고 있다고 말하면 거짓말이다
-        assertEquals(1, service.list("나").size)
+        assertEquals(1, service.list("나").watches.size)
         assertEquals(2, watches.count().toInt())
+    }
+
+    @Test
+    fun `한도까지만 걸린다`() {
+        // 기본 3개. 크롤 부하와 무관하고(D3) 우리 DB 를 지키는 값이다
+        repeat(3) { i -> service.register("나", requireNotNull(slot(LocalDate.now().plusDays(2L + i)).id)) }
+
+        val e = assertFailsWith<WatchLimitExceeded> {
+            service.register("나", requireNotNull(future.id))
+        }
+        assertEquals(3, e.limit)
+        assertEquals(3, service.list("나").watches.size, "실패했는데 늘어나면 안 된다")
+    }
+
+    @Test
+    fun `이미 내 것인 자리는 한도가 차 있어도 다시 눌린다`() {
+        // ⚠️ 한도 검사를 먼저 하면 여기서 막힌다. 이미 내 감시인데 "한도 초과" 가 뜨면
+        // 사용자는 **뭘 지워야 할지 알 수 없다** — 지울 것이 없기 때문이다
+        val slots3 = List(3) { i -> slot(LocalDate.now().plusDays(2L + i)) }
+        slots3.forEach { service.register("나", requireNotNull(it.id)) }
+
+        val again = service.register("나", requireNotNull(slots3.first().id))
+
+        assertEquals(3, service.list("나").watches.size, "행이 늘면 알림이 두 번 간다")
+        assertTrue(again.id > 0)
+    }
+
+    @Test
+    fun `남이 건 감시는 내 한도를 안 먹는다`() {
+        repeat(3) { i -> service.register("너", requireNotNull(slot(LocalDate.now().plusDays(2L + i)).id)) }
+
+        service.register("나", requireNotNull(future.id))
+
+        assertEquals(1, service.list("나").watches.size)
+    }
+
+    @Test
+    fun `목록이 한도를 같이 알려 준다`() {
+        // 화면이 `2 / 3` 을 그리려면 한도를 알아야 한다. 프론트에 숫자를 박으면
+        // 서버에서 바꿨을 때 두 값이 조용히 갈라진다
+        assertEquals(3, service.list("나").limit)
     }
 }
