@@ -3,6 +3,7 @@ package com.my_dream.server.notify
 import com.my_dream.server.domain.NotificationLog
 import com.my_dream.server.domain.NotificationLogRepository
 import com.my_dream.server.domain.WatchRepository
+import com.my_dream.server.domain.isPast
 import com.my_dream.server.sync.SlotTransition
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalDateTime
 
 /**
  * 전이가 났을 때 **누구에게 보낼지, 지금 보내도 되는지**를 판정한다.
@@ -41,14 +43,24 @@ class NotificationService(
         if (watching.isEmpty()) return NotifySummary(0, 0, 0)
 
         val now = Instant.now()
+        val today = LocalDateTime.now()
         val cooldown = Duration.ofMinutes(cooldownMinutes)
         var sent = 0
         var cooled = 0
         var failed = 0
         var unreachable = 0
+        var expired = 0
 
         for (watch in watching) {
             val transition = bySlotId[watch.timeSlot.id] ?: continue
+
+            // 지난 자리가 다시 "예약 가능" 으로 보이는 일이 있다 — 사이트가 당일 지난 회차를
+            // 정리하지 않으면 그렇게 읽힌다. 그걸 알려 봐야 예약할 수 없으니 헛알림이다.
+            // 감시 등록·목록·한도와 **같은 판정**을 쓴다 (domain/PastSlot.kt)
+            if (watch.timeSlot.isPast(today)) {
+                expired++
+                continue
+            }
 
             val last = logs.findTopByWatchAndOutcomeOrderBySentAtDesc(watch, NotificationLog.SENT)
             if (last != null && Duration.between(last.sentAt, now) < cooldown) {
@@ -87,13 +99,13 @@ class NotificationService(
             }
         }
 
-        if (sent + cooled + failed + unreachable > 0) {
+        if (sent + cooled + failed + unreachable + expired > 0) {
             log.info(
-                "알림 판정 — 발송 {}건, 쿨다운으로 보류 {}건, 실패 {}건, 받을 기기 없음 {}건",
-                sent, cooled, failed, unreachable,
+                "알림 판정 — 발송 {}건, 쿨다운으로 보류 {}건, 실패 {}건, 받을 기기 없음 {}건, 지난 자리라 제외 {}건",
+                sent, cooled, failed, unreachable, expired,
             )
         }
-        return NotifySummary(sent, cooled, failed, unreachable)
+        return NotifySummary(sent, cooled, failed, unreachable, expired)
     }
 }
 
@@ -103,5 +115,15 @@ class NotificationService(
  *
  * [unreachable] 은 **고장이 아니라 설정 상태다** — 감시는 걸었는데 푸시 권한을 준 기기가 없다.
  * [failed] 와 반드시 나눠서 본다. 섞으면 "실패가 계속 난다" 로 보여 진짜 고장을 못 찾는다.
+ *
+ * [expired] 는 **이미 지나간 자리라 안 보냈다**는 뜻이다. 이것도 [failed] 와 섞지 않는다 —
+ * 이 값이 계속 크면 고장이 아니라 **어느 매장이 당일 지난 회차를 정리하지 않는다**는 신호이고,
+ * 대응은 코드 수정이 아니라 그 매장 어댑터를 다시 보는 것이다.
  */
-data class NotifySummary(val sent: Int, val cooled: Int, val failed: Int, val unreachable: Int = 0)
+data class NotifySummary(
+    val sent: Int,
+    val cooled: Int,
+    val failed: Int,
+    val unreachable: Int = 0,
+    val expired: Int = 0,
+)

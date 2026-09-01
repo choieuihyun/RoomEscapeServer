@@ -205,4 +205,47 @@ class NotificationServiceTest @Autowired constructor(
         assertEquals(1, summary.sent)
         assertEquals(0, summary.cooled)
     }
+
+    @Test
+    fun `지난 자리가 풀려도 알리지 않는다`() {
+        // 사이트가 당일 지난 회차를 정리하지 않으면 우리 눈에는 "예약 불가 → 가능" 전이로 보인다.
+        // 그런데 **이미 지나간 시각이라 예약할 수 없다.** 알리면 헛알림이다.
+        //
+        // 등록·목록·한도와 **같은 판정**(domain/PastSlot.kt)을 쓴다. 여기만 다르면
+        // "목록에 없는 감시가 알림은 보낸다" 가 된다
+        val 지난자리 = slots.save(
+            TimeSlot(slot.theme, LocalDate.now(), LocalTime.MIN, available = true, lastCheckedAt = Instant.now()),
+        )
+        watches.save(Watch("나", 지난자리, Instant.now()))
+
+        val summary = service().onTransitions(
+            listOf(
+                SlotTransition(
+                    timeSlotId = requireNotNull(지난자리.id),
+                    storeKey = "play33-daejeon",
+                    branchName = "대전점",
+                    themeName = "우울해서 빵 샀어",
+                    date = LocalDate.now(),
+                    time = LocalTime.MIN,
+                ),
+            ),
+        )
+
+        assertEquals(0, summary.sent)
+        assertEquals(1, summary.expired, "실패가 아니라 '지난 자리라 제외' 로 세어야 원인이 보인다")
+        assertTrue(notifier.sent.isEmpty())
+        // 시도한 적이 없으므로 기록도 남기지 않는다 — 남기면 진짜 발송 실패와 안 섞인다
+        assertEquals(0, logs.count().toInt())
+    }
+
+    @Test
+    fun `아직 안 지난 자리는 그대로 간다`() {
+        // 위 테스트가 "전부 막는" 것으로 통과하지 않게 반대쪽을 같이 잡아 둔다
+        watch("나")
+
+        val summary = service().onTransitions(listOf(transition()))
+
+        assertEquals(1, summary.sent)
+        assertEquals(0, summary.expired)
+    }
 }

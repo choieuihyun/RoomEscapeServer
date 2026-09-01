@@ -1,6 +1,7 @@
 package com.my_dream.server.api
 
 import com.my_dream.server.domain.TimeSlotRepository
+import com.my_dream.server.domain.isPast
 import com.my_dream.server.domain.Watch
 import com.my_dream.server.domain.WatchRepository
 import org.springframework.beans.factory.annotation.Value
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
+import java.time.LocalDateTime
 
 /** 감시를 걸 자리. [slotId] 는 `GET /api/schedule` 이 회차마다 내려준 `id` 다. */
 data class WatchRequest(val slotId: Long)
@@ -129,16 +130,30 @@ class WatchService(
 ) {
 
     @Transactional(readOnly = true)
-    fun list(userId: String): WatchListDto =
-        WatchListDto(maxPerUser, watches.findActiveByUserId(userId, LocalDate.now(), LocalTime.now()).map { it.toDto() })
+    fun list(userId: String): WatchListDto = WatchListDto(maxPerUser, activeWatches(userId).map { it.toDto() })
+
+    /**
+     * 목록과 한도가 **같은 함수**를 쓴다. 여기가 갈라지면 "목록은 비었는데 못 건다" 가 된다.
+     *
+     * **`LocalDateTime.now()` 를 한 번만 읽는다.** 전에는 `LocalDate.now()` 와 `LocalTime.now()` 를
+     * 따로 불렀는데, 자정을 사이에 두고 두 번째 호출이 넘어가면 날짜는 어제인데 시각은 00:00 이 되어
+     * 하루치가 통째로 사라진다. 드물지만 재현이 거의 불가능한 종류의 버그다.
+     */
+    private fun activeWatches(userId: String, now: LocalDateTime = LocalDateTime.now()) =
+        watches.findActiveByUserId(userId, now.toLocalDate(), now.toLocalTime())
 
     @Transactional
     fun register(userId: String, slotId: Long): WatchDto {
         val slot = slots.findById(slotId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "그런 회차가 없습니다")
         }
-        // 지난 자리를 지켜보겠다는 건 성립하지 않는다. 조용히 받아 두면 영영 안 울리는 감시가 쌓인다
-        if (slot.date < LocalDate.now()) {
+        // 지난 자리를 지켜보겠다는 건 성립하지 않는다. 조용히 받아 두면 영영 안 울리는 감시가 쌓인다.
+        //
+        // **날짜만 보면 안 된다** (2026-09-01 수정). `slot.date < today` 였을 때
+        // 운영에서 10:55 에 만든 10:20 자리 감시가 3건 저장됐다 — 목록(시각까지 본다)에는
+        // 안 나오고 한도에도 안 세니, **사용자가 존재를 모르고 지우지도 못하는 행**이 됐다.
+        // 판정은 [isPast] 한 곳에서만 한다
+        if (slot.isPast(LocalDateTime.now())) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 지난 회차입니다")
         }
         // 두 번 눌러도 같은 감시 하나다. 새로 만들면 알림이 두 번 간다.
@@ -147,9 +162,8 @@ class WatchService(
         val existing = watches.findByUserIdAndTimeSlot(userId, slot)
         if (existing != null) return existing.toDto()
 
-        // **목록과 똑같은 쿼리**로 센다. 지난 자리는 목록에서도 빠지고 한도에서도 빠진다 —
-        // 둘이 갈라지면 "목록은 비었는데 못 건다" 가 된다
-        val used = watches.findActiveByUserId(userId, LocalDate.now(), LocalTime.now()).size
+        // **목록과 똑같이 센다** — 지난 자리는 목록에서도 빠지고 한도에서도 빠진다
+        val used = activeWatches(userId).size
         if (used >= maxPerUser) throw WatchLimitExceeded(maxPerUser)
 
         return watches.save(Watch(userId, slot, Instant.now())).toDto()

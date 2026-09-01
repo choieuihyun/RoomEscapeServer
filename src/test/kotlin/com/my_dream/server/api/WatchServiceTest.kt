@@ -165,11 +165,19 @@ class WatchServiceTest @Autowired constructor(
     fun `오늘인데 시각이 지난 자리는 목록에서도 한도에서도 빠진다`() {
         // ⚠️ 전에는 날짜만 봐서 **오늘 오전 자리가 저녁까지 한 칸을 잡고 있었다.**
         // 오후 6시에 오전 10시 자리가 풀려 봐야 예약을 못 하므로 그 감시는 이미 의미가 없다.
-        val 지난시각 = LocalTime.now().minusHours(2)
         val 남은시각 = LocalTime.now().plusHours(2)
-        service.register("나", requireNotNull(slots.save(
-            TimeSlot(theme, LocalDate.now(), 지난시각, available = false, lastCheckedAt = Instant.now()),
-        ).id))
+        // 지난 시각 자리는 **등록 경로로는 못 들어간다**(아래 `오늘인데 시각이 지난 자리는 감시를 걸 수 없다`).
+        // 이미 걸려 있던 감시가 시간이 지나 이 상태가 되는 것을 흉내내려고 직접 심는다.
+        //
+        // ⚠️ 2026-09-01 이전에는 여기서 `service.register` 를 불렀고 **그게 통과했다.**
+        // 그 통과가 곧 버그였다 — 이 테스트가 구멍에 기대고 있었던 것이다
+        watches.save(
+            com.my_dream.server.domain.Watch(
+                "나",
+                slots.save(TimeSlot(theme, LocalDate.now(), LocalTime.MIN, available = false, lastCheckedAt = Instant.now())),
+                Instant.now(),
+            ),
+        )
         service.register("나", requireNotNull(slots.save(
             TimeSlot(theme, LocalDate.now(), 남은시각, available = false, lastCheckedAt = Instant.now()),
         ).id))
@@ -184,5 +192,54 @@ class WatchServiceTest @Autowired constructor(
         service.register("나", requireNotNull(slot(LocalDate.now().plusDays(2)).id))
         service.register("나", requireNotNull(slot(LocalDate.now().plusDays(3)).id))
         assertEquals(3, service.list("나").watches.size)
+    }
+
+    @Test
+    fun `오늘인데 시각이 지난 자리는 감시를 걸 수 없다`() {
+        // ⚠️ 이것이 2026-09-01 에 운영에서 실제로 뚫려 있던 구멍이다.
+        // 등록은 `date < today` 만 봤고 목록·한도는 시각까지 봤다. 그래서
+        // **10:55 에 만든 10:20 자리 감시가 저장은 되고 목록엔 안 보이는** 행이 3건 생겼다.
+        // 화면에 id 가 안 나오니 사용자는 지울 수도 없다.
+        //
+        // `LocalTime.MIN`(00:00) 은 자정 정각에 돌려도 "지난 것"이다 — 경계가 `<=` 라서다
+        val 오늘_지난시각 = slot(LocalDate.now(), LocalTime.MIN)
+
+        val e = assertFailsWith<ResponseStatusException> {
+            service.register("나", requireNotNull(오늘_지난시각.id))
+        }
+
+        assertEquals(HttpStatus.BAD_REQUEST, e.statusCode)
+        assertEquals(0, watches.count().toInt(), "거부했으면 행이 남으면 안 된다")
+    }
+
+    @Test
+    fun `등록 거부와 목록 제외가 같은 자리에서 갈린다`() {
+        // **이 테스트가 진짜 방어선이다.** 위 두 테스트는 각자 한쪽만 본다 —
+        // 등록이 막히는지, 목록에서 빠지는지. 그런데 이번 버그는 **둘이 서로 다른 답을 한 것**이지
+        // 어느 한쪽이 틀린 게 아니었다. 그래서 "둘이 같은 답을 하는가" 를 따로 재야 한다.
+        //
+        // 시각을 하루에 걸쳐 뿌리고, **기대값을 `isPast` 로 계산한다.**
+        // 테스트가 몇 시에 돌든 경계가 그 사이 어딘가에 있게 되고, 양쪽이 어긋나면 깨진다.
+        val 시각들 = listOf(
+            LocalTime.MIN, LocalTime.of(6, 0), LocalTime.of(12, 0),
+            LocalTime.of(18, 0), LocalTime.of(23, 59, 59),
+        )
+        val 자리들 = 시각들.map { slot(LocalDate.now(), it) }
+
+        // ① 등록이 거부한 자리
+        val 등록거부 = 자리들.filter { s ->
+            runCatching { service.register("나", requireNotNull(s.id)) }.isFailure
+        }.map { it.time }.toSet()
+
+        // ② 목록에 안 나온 자리 — 등록에 성공한 것 중에서
+        val 목록에보임 = service.list("나").watches.map { LocalTime.of(it.t / 60, it.t % 60) }.toSet()
+        val 목록제외 = 자리들.map { it.time }.filter { it.withSecond(0) !in 목록에보임 }.toSet()
+
+        assertEquals(
+            등록거부, 목록제외,
+            "등록이 거부한 자리와 목록에서 빠지는 자리가 다르다 — " +
+                "이 둘이 갈라지면 사용자가 못 보고 못 지우는 감시가 쌓인다",
+        )
+        assertTrue(등록거부.isNotEmpty(), "하루에 걸쳐 뿌렸으니 지난 자리가 하나는 있어야 한다")
     }
 }
