@@ -3,6 +3,7 @@ package com.my_dream.server.domain
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
+import java.time.LocalTime
 
 interface StoreRepository : JpaRepository<Store, Long> {
     fun findByStoreKey(storeKey: String): Store?
@@ -47,6 +48,14 @@ interface WatchRepository : JpaRepository<Watch, Long> {
      *
      * `join fetch` 로 매장까지 한 번에 끌어온다. 없으면 목록을 그리는 동안
      * 감시 하나마다 쿼리가 더 나간다 (N+1).
+     *
+     * **날짜만이 아니라 시각까지 본다** (2026-09-01 수정).
+     * 전에는 `s.date >= :from` 이라 **오늘 오전 자리가 저녁까지 목록에 남았다.**
+     * 오후 6시에 오전 10시 자리가 풀려 봐야 예약을 못 하므로 그 감시는 이미 의미가 없고,
+     * 그런데도 **한 사람당 3개 한도에서 한 칸을 잡고 있었다.**
+     *
+     * 목록과 한도가 **같은 쿼리**를 쓰므로 화면에 보이는 개수와 한도에 세는 개수가 항상 같다 —
+     * 여기가 갈라지면 "목록은 비었는데 못 건다" 가 된다.
      */
     @Query(
         """
@@ -54,11 +63,12 @@ interface WatchRepository : JpaRepository<Watch, Long> {
         join fetch w.timeSlot s
         join fetch s.theme t
         join fetch t.store
-        where w.userId = :userId and s.date >= :from
+        where w.userId = :userId
+          and (s.date > :date or (s.date = :date and s.time > :time))
         order by s.date, s.time
         """,
     )
-    fun findActiveByUserId(userId: String, from: LocalDate): List<Watch>
+    fun findActiveByUserId(userId: String, date: LocalDate, time: LocalTime): List<Watch>
 
     /** 전이가 난 자리들을 감시하던 사람 전부. 전이 한 건마다 쿼리를 날리지 않으려고 묶어서 받는다. */
     @Query(

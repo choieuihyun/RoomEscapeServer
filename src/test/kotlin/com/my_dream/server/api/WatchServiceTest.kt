@@ -160,4 +160,29 @@ class WatchServiceTest @Autowired constructor(
         // 서버에서 바꿨을 때 두 값이 조용히 갈라진다
         assertEquals(3, service.list("나").limit)
     }
+
+    @Test
+    fun `오늘인데 시각이 지난 자리는 목록에서도 한도에서도 빠진다`() {
+        // ⚠️ 전에는 날짜만 봐서 **오늘 오전 자리가 저녁까지 한 칸을 잡고 있었다.**
+        // 오후 6시에 오전 10시 자리가 풀려 봐야 예약을 못 하므로 그 감시는 이미 의미가 없다.
+        val 지난시각 = LocalTime.now().minusHours(2)
+        val 남은시각 = LocalTime.now().plusHours(2)
+        service.register("나", requireNotNull(slots.save(
+            TimeSlot(theme, LocalDate.now(), 지난시각, available = false, lastCheckedAt = Instant.now()),
+        ).id))
+        service.register("나", requireNotNull(slots.save(
+            TimeSlot(theme, LocalDate.now(), 남은시각, available = false, lastCheckedAt = Instant.now()),
+        ).id))
+
+        val mine = service.list("나")
+
+        // 목록과 한도가 **같은 쿼리**를 쓴다. 갈라지면 "목록은 비었는데 못 건다" 가 된다
+        assertEquals(1, mine.watches.size, "지난 시각 자리는 목록에서 빠져야 한다")
+        assertEquals(남은시각.hour * 60 + 남은시각.minute, mine.watches.single().t)
+
+        // 한 칸이 비었으니 두 개를 더 걸 수 있다 (한도 3)
+        service.register("나", requireNotNull(slot(LocalDate.now().plusDays(2)).id))
+        service.register("나", requireNotNull(slot(LocalDate.now().plusDays(3)).id))
+        assertEquals(3, service.list("나").watches.size)
+    }
 }

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 
 /** 감시를 걸 자리. [slotId] 는 `GET /api/schedule` 이 회차마다 내려준 `id` 다. */
 data class WatchRequest(val slotId: Long)
@@ -129,7 +130,7 @@ class WatchService(
 
     @Transactional(readOnly = true)
     fun list(userId: String): WatchListDto =
-        WatchListDto(maxPerUser, watches.findActiveByUserId(userId, LocalDate.now()).map { it.toDto() })
+        WatchListDto(maxPerUser, watches.findActiveByUserId(userId, LocalDate.now(), LocalTime.now()).map { it.toDto() })
 
     @Transactional
     fun register(userId: String, slotId: Long): WatchDto {
@@ -146,8 +147,9 @@ class WatchService(
         val existing = watches.findByUserIdAndTimeSlot(userId, slot)
         if (existing != null) return existing.toDto()
 
-        // 지난 회차는 목록에서도 빠지므로 한도에도 안 센다 — 옛 감시가 자리를 잡아먹지 않는다
-        val used = watches.findActiveByUserId(userId, LocalDate.now()).size
+        // **목록과 똑같은 쿼리**로 센다. 지난 자리는 목록에서도 빠지고 한도에서도 빠진다 —
+        // 둘이 갈라지면 "목록은 비었는데 못 건다" 가 된다
+        val used = watches.findActiveByUserId(userId, LocalDate.now(), LocalTime.now()).size
         if (used >= maxPerUser) throw WatchLimitExceeded(maxPerUser)
 
         return watches.save(Watch(userId, slot, Instant.now())).toDto()
