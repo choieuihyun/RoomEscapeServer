@@ -1,0 +1,873 @@
+<!DOCTYPE HTML>
+<html lang="ko">
+	<head>
+		<title>다이아에그</title>
+		<link rel="shortcut icon" href="../images/common/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="../images/common/favicon.ico" type="image/x-icon">
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+		<meta name="format-detection" content="telephone=no">
+		<meta name="naver-site-verification" content=""/>
+<meta name="author" content="" />
+<meta name="keywords" content="서면방탈출카페,부산놀거리,부산여행,부산가볼만한곳,광안리방탈출,해운대방탈출,엑스더스카이,키자니아부산,피아크,호텔아쿠아펠리스,삼정타워,해운대놀거리,광안리가볼만한곳,아웃도어미션게임,단체프로그램,부산팀빌딩프로그램,탈출게임">
+<meta name="description" content="공간을 넘어선 체험콘텐츠.다이아에그 방탈출 부터 아웃도어미션게임까지! 부산여행은 다이아에그와 함께하세요!" / >
+<meta property="og:type" content="website" />
+<meta property="og:title" content="다이아에그" />
+<meta property="og:description" content="공간을 넘어선 체험콘텐츠.다이아에그 방탈출 부터 아웃도어미션게임까지! 부산여행은 다이아에그와 함께하세요!" />
+<meta property="og:image" content="https://diaegg.com/layout/images/common/logo_og.png">
+<meta property="og:url" content="https://diaegg.com" />
+
+<link rel="canonical" href="https://diaegg.com">
+<link rel="canonical" href="https://www.diaegg.com">
+		<meta name="publisher" content="(주)신비웹,신비웹,sinbiweb,sinbiweb.co.kr,www.sinbiweb.co.kr" />
+		<link rel="stylesheet" type="text/css" href="../css/style.css" />
+		<link rel="stylesheet" type="text/css" href="../css/slick.css" />
+		<link rel="stylesheet" type="text/css" href="../css/slick-theme.css" />
+		<link rel="stylesheet" type="text/css" href="../css/swiper.css">
+
+		<script type="text/javascript" src="../js/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript" src="../js/jquery.easing.1.3.js"></script>
+		<script type="text/javascript" src="../js/ui.js"></script>
+		<script type="text/javascript" src="../js/slick.min.js"></script>
+		<script type="text/javascript" src="../js/swiper.js"></script>
+
+		<link rel="stylesheet" type="text/css" href="../css/board_reaction.css?1788858238">
+		<script type="text/javascript" src="../../core/res/common.js"></script>
+		<script type="text/javascript" src="../../core/js/board.js"></script>
+		<script type="text/javascript" src="../../cheditor/cheditor.js"></script>
+
+		<!--[if IE 7]>
+			<link rel="stylesheet" type="text/css" href="../css/ie7.css" media="all" />
+		<![endif]-->
+		<!--[if lte IE 8]>
+			<script src="./js/lib/respond.min.js" type="text/javascript" charset="utf-8"></script>
+			<script src="./js/lib/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+		<![endif]-->
+	</head>
+
+
+	<!-- 달력 -->
+    <div id=popCal  style='position:absolute; left:-400px; top:0px; width:0; height=0; z-index:1; VISIBILITY:hidden;'>
+    <iframe name='pop_frame_cal' src='' frameborder='0' scrolling='no' width='300' height='320'></iframe>
+    </div>
+
+	<!-- submit 사용시 -->
+	<div style='position:absolute'>
+	<iframe src='' name='ifr_ok'  width=0 height=0 frameborder=0 scrolling=no></iframe>
+	</div>
+
+	<body>
+		<div id="wrap">
+			<dl id="skip">
+				<dt class="hide">메뉴 바로가기</dt>
+				<dd><a href="#self">주메뉴 바로가기</a></dd>
+				<dd><a href="#self">컨텐츠 바로가기</a></dd>
+			</dl>
+			<script>
+				$(document).ready(function(){
+					$("#header .call").click(function () {
+						$('.tel_pop').addClass("on");
+						$('.tel_bg').addClass("on");
+					});
+
+					$('.sp_gra').click(function(){
+						$('.tel_pop').removeClass("on");
+						$('.tel_bg').removeClass("on");
+					})
+
+					$('.tel_close').click(function(){
+						$('.tel_pop').removeClass("on");
+						$('.tel_bg').removeClass("on");
+					})
+				});
+			</script>
+			<div class="tel_pop_box">
+				<div class="tel_pop ">
+					<div class="tel_pop_tit">
+						<h2>지점 번호 목록</h2>
+						<div class="tel_close">
+							<div>
+								<span></span>
+								<span></span>
+							</div>
+						</div>
+					</div>
+					<div class="tel_list_wrap">
+						<div class="tel_list">
+							<dl>
+								<dt><a href="tel:010-8810-2982">다이아에그</a></dt>
+								<dd>
+									<a href="tel:010-8810-2982">
+										<img src="../images/ico/call_ico2.png">
+										<span>010-8810-2982</span>
+									</a>
+								</dd>
+							</dl>
+							<dl>
+								<dt><a href="tel:010-8849-2982">미스테리인</a></dt>
+								<dd>
+									<a href="tel:010-8849-2982">
+										<img src="../images/ico/call_ico2.png">
+										<span> 010-8849-2982</span>
+									</a>
+								</dd>
+							</dl>
+						</div><!--tel_list-->
+					</div><!--tel_list_wrap-->
+				</div><!--tel_pop-->
+				<div class="tel_bg "></div>
+			</div><!--tel_pop_box-->
+		
+			<nav class="right_Box">
+				<div class="nav_top">
+					<div class="logo"><a href="home.php?go=main"><img src="../images/common/logo.png" alt=""></a></div>
+					<div class="close"><img src="../images/ico/close.png" alt="닫기"></div>
+				</div><!-- end : class : nav_top -->
+				<div class="nav_in">
+					<ul class="m_gnb">
+						<li><a href="home.php?go=company">다이아에그 소개</a></li>
+						<li><a href="home.php?go=theme.list">테마</a></li>
+						<li><a href="home.php?go=rev.make">예약하기</a></li>
+					<!--<li><a href="home.php?go=store.list">아웃도어미션 지점안내</a></li>-->
+						<li><a href="home.php?go=location">위치</a></li>
+						<li><a href="home.php?go=faq.list">FAQ</a></li>
+					</ul>
+				</div>
+			</nav><!--right_Box-->
+			<div class="wrap_bg"></div>
+
+			<header>
+				<div id="header">
+					<div class="in_Layer">
+						<div class="call"><a><img src="../images/ico/call_ico.png"></a></div>
+						<h1 class="logo"><a href="home.php?go=main"><img src="../images/common/logo.png"></a></h1>
+						<div class="m_menu"><img src="../images/ico/m_menu.png"></div>
+						<div class="gnb_area">
+							<ul class="gnb">
+								<li><a href="home.php?go=company">다이아에그 소개</a></li>
+								<li><a href="home.php?go=theme.list">테마</a></li>
+								<li><a href="home.php?go=rev.make">예약하기</a></li>
+							<!--<li><a href="home.php?go=store.list">아웃도어미션 지점안내</a></li>-->
+								<li><a href="home.php?go=location">위치</a></li>
+								<li><a href="home.php?go=faq.list">FAQ</a></li>
+							</ul><!--gnb-->
+						</div><!--gnb_area-->
+					</div><!--in_Layer-->
+				</div><!-- end : id : header -->
+			</header><!-- end : header -->
+
+
+			<div id="visual">
+				<div class="sub_visual" style="background-image:url('../images/contents/sub_visual.jpg')">
+					<h2>예약하기</h2>
+				</div><!--sub_visual-->
+			</div><!-- end : id : visual -->
+
+			<div id="contents">
+				<div class="sub_contents">
+					<div class="in_Layer">
+
+
+<script>
+function fun_rev_change() {
+    f = eval('document.register'); 
+	f.submit();
+}
+</script>
+
+	<div class="process">
+		<ul>
+			<li class="on">01.날짜/룸 선택</li>
+			<li>02.예약정보 입력</li>
+			<li>03.결제하기</li>
+			<li>04.예약완료</li>
+		</ul>
+	</div>
+
+	<div class="dg_wrap">
+		<div class="dg_tabs">
+			<ul class="dg_tab swiper-wrapper">
+	<li class="swiper-slide  "><a href="home.php?go=rev.make&s_zizum=1">다이아에그</a></li><li class="swiper-slide   on2 "><a href="home.php?go=rev.make&s_zizum=2">미스테리인</a></li><li class="swiper-slide"><a href="home.php?go=theme.list&s_zizum=3">육향찻집</a></li>			</ul>
+		</div><!--dg_tabs-->
+	</div><!--dg_wrap-->
+	<script>
+		$(document).ready(function(){
+			var Swindex2 = $('.swiper-slide.on2').index();
+			var mySwiper2 = new Swiper('.dg_tabs', {
+				wrapperClass: 'dg_tab',
+				slidesPerView: 'auto',
+				initialSlide: Swindex2,
+				navigation: {
+					nextEl: '.dg-next',
+					prevEl: '.dg-prev',
+				},
+			});
+		})
+	</script>
+
+	<form name=register method=get action=home.php>	
+	<div class="reserve_Box">
+		<dl class="reserve_Dl">
+			<div class="reserve_in">
+				<dt><label for="day">예약날짜</label></dt>
+				<dd>
+					<input type="text" name=rev_days id=rev_days value='2026-09-08' size=20 maxlength=10 readonly class="selectType" onclick=fun_calendar('register.rev_days','B','img_001');  onChange=fun_rev_change()>
+					<img src='../images/board/blank.gif' style='width:0px; height:0px;' name=img_001>
+				</dd>
+			</div>
+			<div class="reserve_in">
+			<dt><label for="theme">테마선택</label></dt>
+			<dd>
+				<select name=s_theme_num onChange=fun_rev_change() class='selectType'>
+				<option value=''>전체테마</option>
+		<option value='9'  >[미스테리인]우시마을</option><option value='11'  >[미스테리인]그래버(GRABBER)</option><option value='12'  >[미스테리인]키키키키키(KEY X 5)</option><option value='13'  >[미스테리인]무료한 하루(A Free Day)</option><option value='14'  >[미스테리인]노키즈존</option><option value='15'  >[미스테리인]개연성</option><option value='16'  >[미스테리인]타임크루즈 (Time Cruise)</option>				</select>
+			</dd>
+		</div>
+		</dl>
+	</div>
+		<input type=hidden name=s_zizum value='2'>
+		<input type=hidden name=go		value='rev.make'>
+	</form>
+
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">[미스테리인]우시마을  </h3>
+						<dl class="theme_info">
+							<dd>지난달 어머니가 돌아가셨다.<br/>마지막 유언으로 남긴 말은<br/>우시마을로 가서 아버지의 유산을 찾으라는 말뿐...<br/>그리고 난 어머니의 유언장에 적힌 그 마을에 도착했다.  <br/> <br/>※ English not possible</dd>
+						</dl>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 2~6명
+								 &nbsp; &nbsp; 시간 : 60분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/9_a.jpg?1788858238" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a class="end">
+								<span class="time">10:10 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">11:40 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">13:10 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">14:40 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">16:10 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">17:40 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">19:10 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=514">
+								<span class="time">20:40 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=865">
+								<span class="time">22:10 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">[미스테리인]그래버(GRABBER)  </h3>
+						<dl class="theme_info">
+							<dd>높은 보상을 기대하며 임상실험에 참여한 <br/>당신은 차가운 회색 복도와 <br/>수많은 문들이 있는 <br/>기묘한 공간에 발을 들인다. <br/>그러나 곧 이상한 분위기 속에서  <br/>무엇인가 잘못됐음을 깨닫게 되는데...<br/><br/>※ 최대 9인까지 이용이 가능한 테마입니다. (※ 3인 이상 추천 테마)<br/>※ English not possible</dd>
+						</dl>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 2~9명
+								 &nbsp; &nbsp; 시간 : 65분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/11_a.jpg?1788858238" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a class="end">
+								<span class="time">10:55 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">12:15 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">13:35 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">14:55 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">16:15 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">17:35 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">18:55 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=639">
+								<span class="time">20:15 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=1101">
+								<span class="time">21:35 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">[미스테리인]키키키키키(KEY X 5)  </h3>
+						<dl class="theme_info">
+							<dd>전부 열어보든가<br/><br/>※ 최소 1인, 최대 9인까지 이용이 가능한 테마입니다. <br/>※ Available in English</dd>
+						</dl>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 1~9명
+								 &nbsp; &nbsp; 시간 : 50분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/12_a.jpg?1788858238" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a class="end">
+								<span class="time">10:20 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">11:40 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">13:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">14:20 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">15:40 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">17:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=1055">
+								<span class="time">18:20 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">19:40 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">21:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=1074">
+								<span class="time">22:20 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">[미스테리인]무료한 하루(A Free Day)  </h3>
+						<dl class="theme_info">
+							<dd>부산 배낭여행 중 지갑을 잃고 핸드폰 배터리도 간당간당… 숙박 어플에 뜬 공짜 숙소?! 운명처럼 찾아간 그곳, 어쩐지 평범하지 않은 밤이 시작된다.<br/><br/>※ English available / Chinese unavailable</dd>
+						</dl>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 1~6명
+								 &nbsp; &nbsp; 시간 : 60분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/13_a.jpg?1788858238" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a class="end">
+								<span class="time">10:05 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">11:15 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">12:25 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">13:35 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">14:45 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">15:55 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">17:05 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=760">
+								<span class="time">18:15 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=768">
+								<span class="time">19:25 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=761">
+								<span class="time">20:35 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=999">
+								<span class="time">21:45 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">[미스테리인]노키즈존  </h3>
+						<dl class="theme_info">
+							<dd>신디 누나와 완벽한 데이트를 꿈꾸던 존! 그런데 뜻밖의 문제가 터졌다?!<br/><br/>※ 최소 1인, 최대 9인까지 이용이 가능한 테마입니다.<br/>※ English not possible</dd>
+						</dl>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 1~9명
+								 &nbsp; &nbsp; 시간 : 60분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/14_a.jpg?1788858238" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a class="end">
+								<span class="time">10:25 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">11:45 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">13:05 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">14:25 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">15:45 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">17:05 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=844">
+								<span class="time">18:25 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=1084">
+								<span class="time">19:45 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">21:05 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=1079">
+								<span class="time">22:25 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">[미스테리인]개연성  </h3>
+						<dl class="theme_info">
+							<dd>아주 먼 옛날, 미스테리인 매장 깊은 곳에 빛나는 돌멩이들이 사는 신비한 테마가 있었어요. 어느 날, 가장 작은 돌..ㅁㄱ..ㅐㅇ#$%ㅕ⍩␡⍮⏎⍤⎔ㄴ@ㄷㅌ*&^⏚⍣⎔⍧⎝⏁⏋⍫.....⏏⍫␡<br/><br/>※ English not possible</dd>
+						</dl>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 1~6명
+								 &nbsp; &nbsp; 시간 : 70분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/15_a.jpg?1788858238" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a class="end">
+								<span class="time">10:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">11:30 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">13:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">14:30 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">16:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">17:30 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=806">
+								<span class="time">19:00 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=801">
+								<span class="time">20:30 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=1089">
+								<span class="time">22:00 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">[미스테리인]타임크루즈 (Time Cruise)  </h3>
+						<dl class="theme_info">
+							<dd>30분만에 끝내는 속성 부산여행<br/><br/>※ Available in English & Chinese</dd>
+						</dl>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 1~6명
+								 &nbsp; &nbsp; 시간 : 35분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/16_a.jpg?1788858238" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a class="end">
+								<span class="time">10:40 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">12:20 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">14:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">14:50 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">16:30 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">17:20 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=958">
+								<span class="time">18:10 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">19:50 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-09-08&theme_time_num=973">
+								<span class="time">21:30 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">22:20 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+
+
+					</div><!--in_Layer-->
+				</div><!--sub_contents-->
+			</div><!-- end : id : contents -->
+
+			<footer>
+				<div id="footer">
+					<div class="f_top">
+						<div class="in_Layer">
+							<ul>
+								<li><a href="home.php?go=pds.list&pds_type=1">공지사항</a></li>
+								<li><a href="home.php?go=rev.login">예약확인</a></li>
+								<li><a href="home.php?go=contact.make">컨텐츠제작문의</a></li>
+								<li><a href="javascript:fun_pop_privacy()">개인정보취급방침</a></li>
+							</ul>
+						</div>
+					</div><!--f_top-->
+					<div class="f_mid">
+						<div class="in_Layer">
+							<ul>
+								<li>
+									<a href="https://blog.naver.com/omg_diaegg" target="blank">
+										<img src="../images/ico/sns1.png">
+									</a>
+								</li>
+								<li>
+									<a href="https://instagram.com/diaegg_escape" target="blank">
+										<img src="../images/ico/sns2.png">
+									</a>
+								</li>
+								<li>
+									<a href="https://www.youtube.com/@user-gc6hj5uu2o" target="blank">
+										<img src="../images/ico/sns3.png">
+									</a>
+								</li>
+								<li>
+									<a href="https://smartstore.naver.com/diaegg" target="blank">
+										<img src="../images/ico/sns5.png">
+									</a>
+								</li>
+							</ul>
+							<p>Diaegg 다이아에그 ㅣ 대표자 : 박정환<br/>
+							본사 : 부산광역시 부산진구 동천로61, 3층<br/>
+							미스테리타운 : 부산 광역시 부산진구 전포대로 189번길30 몽뜨레아파트상가 2층 201호<br/>
+							다이아에그 연락처 : 010-8810-2982<br/>
+							
+							통신판매업신고번호 : 제 2018-부산부산진-0200 호<br>
+							계좌번호(다이아에그점) : 하나은행 01088102982 박정환(다이아에그)<br>
+							계좌번호(미스테리인점) : 하나은행 307-910175-98305 (주)미스테리타운<br>
+							사업자번호 : 549-07-00391<br>
+							미스테리타운 사업자번호 : 523-87-03928</p>
+						</div>
+					</div><!--f_mid-->
+					<div class="f_bot">
+						<div class="in_Layer">
+							<p>
+								Copyright ⓒ 2023 다이아에그.  All right reserved.  /  
+								Created by <a href="http://sinbiweb.co.kr?s_url=diaegg.com" target=_blank>sinbiweb</a>
+							</p>
+						</div>
+					</div><!--f_bot-->
+				</div><!-- end : id : footer -->
+			</footer><!-- end : footer -->
+
+			<div class="naver_talk">
+				<!-- Talk Talk Banner Script start -->
+				<script type="text/javascript" src="https://partner.talk.naver.com/banners/script"></script>
+				<div class="talk_banner_div" data-id="134318"></div>
+				<!-- Talk Talk Banner Script end -->
+			</div>
+
+		</div><!-- end : id : wrap -->
+	</body>
+</html>
+
+
+
+

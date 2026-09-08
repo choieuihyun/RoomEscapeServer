@@ -22,10 +22,35 @@ import java.time.LocalDate
  * 크롤러가 날짜 대조에서 예외로 끊는다(D2). 실패가 시끄럽게 쌓이지 조용히 비지 않는다.
  * 그래서 이 필터는 **안전장치가 아니라 잡음을 없애는 장치**다.
  */
-fun List<LocalDate>.openWithin(openDays: Int, today: LocalDate = LocalDate.now()): List<LocalDate> {
-    val last = today.plusDays((openDays - 1).toLong())
-    return filter { !it.isAfter(last) }
+fun List<LocalDate>.openWithin(
+    openDays: Int,
+    today: LocalDate = LocalDate.now(),
+    leadDays: Int = 0,
+): List<LocalDate> {
+    val first = today.plusDays(leadDays.toLong())
+    val last = today.plusDays((leadDays + openDays - 1).toLong())
+    return filter { !it.isBefore(first) && !it.isAfter(last) }
 }
+
+/**
+ * [leadDays] — **창이 오늘부터 시작하지 않는 매장이 있다.** 다이아에그가 그렇다.
+ *
+ * ```
+ * 2026-09-04(금) 실측
+ *   09-04 ~ 09-07   회차 0개    ← 오늘·내일 자리가 아예 없다
+ *   09-08 ~ 09-14   회차 40개
+ *   09-15 ~         회차 0개
+ * ```
+ *
+ * 다른 매장은 전부 오늘부터 열려서 이 값이 0 이었다. 앞을 안 자르면 다이아에그는
+ * **매 바퀴 4일치가 헛요청**이 되고 `warnIfNoThemes` 경고가 지점 수만큼 계속 찍힌다 —
+ * 틀리지는 않지만, 그 경고가 진짜 고장을 가린다.
+ *
+ * ⚠️ **이 창이 롤링인지 주간 오픈인지는 아직 모른다.** 하루치 관측으로는
+ * *"항상 오늘+4 부터 7일"* 과 *"매주 화요일에 다음 7일이 열린다"* 를 구분할 수 없다
+ * (09-08 이 마침 화요일이었다). **다른 요일에 한 번 더 재야 갈린다** —
+ * 그때까지는 롤링으로 가정한다. 틀려도 빈 응답을 받을 뿐 조용히 잘못 저장되지는 않는다.
+ */
 
 /**
  * **창의 마지막 날인가.** 매일 하루씩 예약을 여는 사이트에서 이 날짜는
