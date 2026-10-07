@@ -20,6 +20,13 @@ class ZeroworldThemeCatalog(private val client: ZeroworldClient, private val par
 
     private data class Cached(val on: LocalDate, val themes: List<ZeroworldTheme>)
 
+    /**
+     * **한 번에 한 스레드만** (`@Synchronized`). 전체 바퀴와 감시 빠른 확인이 따로 돌게 되면서
+     * (아키텍처 D27) 날짜가 바뀐 직후 둘이 동시에 "목록이 낡았다" 고 판단할 수 있다.
+     * 잠그지 않으면 같은 목록을 두 번 받아 온다 — 틀리지는 않지만 남의 서버에 수십 요청이 헛나간다.
+     * 늦게 온 쪽은 기다렸다가 방금 채워진 캐시를 읽는다.
+     */
+    @Synchronized
     fun themes(branch: ZeroworldBranch, today: LocalDate = LocalDate.now()): List<ZeroworldTheme> {
         val hit = cache[branch]
         if (hit != null && hit.on == today) return hit.themes

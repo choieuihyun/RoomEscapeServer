@@ -24,18 +24,32 @@ class HostRateLimiter(
 
     private val locks = ConcurrentHashMap<String, Any>()
     private val finishedAt = ConcurrentHashMap<String, Long>()
+    private val lastTookMs = ConcurrentHashMap<String, Long>()
 
     fun <T> throttled(host: String, request: () -> T): T {
         val lock = locks.computeIfAbsent(host) { Any() }
         return synchronized(lock) {
             waitTurn(host)
+            val startedAt = System.nanoTime()
             try {
                 request()
             } finally {
-                finishedAt[host] = System.nanoTime()
+                val now = System.nanoTime()
+                finishedAt[host] = now
+                lastTookMs[host] = (now - startedAt) / 1_000_000
             }
         }
     }
+
+    /**
+     * 이 호스트로 간 **마지막 요청이 걸린 시간**. 아직 한 번도 안 갔으면 `null`.
+     *
+     * **여기서 재는 이유:** 바깥에서 재면 줄 선 시간과 [waitTurn] 의 대기까지 섞여서,
+     * 우리가 기다린 것을 상대 서버가 느린 것으로 읽게 된다. 잠금 안쪽, 요청만 감싼 구간이
+     * 상대가 실제로 답하는 데 쓴 시간이다 — 감시 빠른 확인이 "힘들어 보이면 멈춘다" 를
+     * 이 값으로 판단한다 (아키텍처 D27).
+     */
+    fun lastRequestMs(host: String): Long? = lastTookMs[host]
 
     private fun waitTurn(host: String) {
         val last = finishedAt[host] ?: return

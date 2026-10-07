@@ -44,7 +44,7 @@ class StoreCollectorTest @Autowired constructor(
         override val branches = branchNames.map { StoreRef("$brand-$it", brand, it) }
         override fun plan(dates: List<LocalDate>) = branchNames.flatMap { b ->
             dates.map { d ->
-                FetchUnit("$b $d") {
+                FetchUnit("$b $d", "$brand-$b", d) {
                     limiter.throttled(host) {
                         val now = inFlight.incrementAndGet()
                         peakInFlight.updateAndGet { peak -> maxOf(peak, now) }
@@ -146,7 +146,7 @@ class StoreCollectorTest @Autowired constructor(
             override val brand = "다"
             override val branches = listOf(StoreRef("c-1", "다", "1지점"))
             override fun plan(dates: List<LocalDate>) = dates.mapIndexed { i, d ->
-                FetchUnit("$i") {
+                FetchUnit("$i", "c-1", d) {
                     if (i == 0) throw IllegalStateException("첫 요청 실패")
                     DaySchedule(StoreRef("c-1", "다", "1지점"), d, 7, 7, emptyList())
                 }

@@ -36,7 +36,7 @@ class KeyescapeAdapter(
         KeyescapeBranch.entries.flatMap { branch ->
             catalog.themes(branch).flatMap { theme ->
                 dates.openWithin(branch.openDays).map { date ->
-                    FetchUnit("${branch.branchName} ${theme.name} $date") {
+                    FetchUnit("${branch.branchName} ${theme.name} $date", branch.key, date, theme.themeNum.toString()) {
                         crawler.fetch(branch, theme, date)
                     }
                 }

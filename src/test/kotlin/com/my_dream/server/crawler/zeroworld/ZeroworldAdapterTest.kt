@@ -1,5 +1,7 @@
 package com.my_dream.server.crawler.zeroworld
 
+import com.my_dream.server.crawler.HostRateLimiter
+import java.time.LocalDate
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -38,5 +40,29 @@ class ZeroworldAdapterTest {
     fun `네 지점 다 2주치를 연다`() {
         // 달력(act=calendar)이 밝힌 값이다. 재서 얻은 게 아니다
         assertTrue(ZeroworldBranch.entries.all { it.openDays == 15 })
+    }
+
+    @Test
+    fun `어댑터가 요청에 적은 신원이 실제 응답과 같다`() {
+        // 감시 빠른 확인이 이 값으로 요청을 고른다 (D27). 어긋나면 그 테마의 감시는 조용히 빠진다
+        fun fixture(name: String) =
+            requireNotNull(javaClass.classLoader.getResourceAsStream(name)) { "픽스처 없음: $name" }
+                .bufferedReader().readText()
+        val client = object : ZeroworldClient(HostRateLimiter(0)) {
+            override fun themeList(branch: ZeroworldBranch, date: LocalDate) = fixture("zeroworld-gimpo-themes.html")
+            override fun themeTimeList(branch: ZeroworldBranch, themeNum: String, date: LocalDate) =
+                fixture("zeroworld-gimpo-14-2026-09-05.html")
+        }
+        val parser = ZeroworldParser()
+        val adapter = ZeroworldAdapter(ZeroworldThemeCatalog(client, parser), ZeroworldCrawler(client, parser))
+        val branch = ZeroworldBranch.of("A").first()
+
+        val unit = adapter.plan(listOf(LocalDate.now()))
+            .first { it.storeKey == branch.key && it.themeExternalId == "14" }
+        val day = unit.fetch()
+
+        assertEquals(unit.storeKey, day.store.key)
+        assertEquals(unit.date, day.date)
+        assertEquals(unit.themeExternalId, day.themes.single().externalId)
     }
 }

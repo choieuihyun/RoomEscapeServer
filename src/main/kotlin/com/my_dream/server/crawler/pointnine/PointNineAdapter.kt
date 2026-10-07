@@ -20,7 +20,7 @@ class PointNineAdapter(private val crawler: PointNineCrawler) : StoreAdapter {
     override fun plan(dates: List<LocalDate>): List<FetchUnit> =
         PointNineBranch.entries.flatMap { branch ->
             dates.openWithin(branch.openDays).map { date ->
-                FetchUnit("${branch.branchName} $date") { crawler.fetch(branch, date) }
+                FetchUnit("${branch.branchName} $date", branch.key, date) { crawler.fetch(branch, date) }
             }
         }
 }

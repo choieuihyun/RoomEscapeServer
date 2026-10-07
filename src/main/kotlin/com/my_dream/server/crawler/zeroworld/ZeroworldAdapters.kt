@@ -36,7 +36,7 @@ abstract class ZeroworldAdapterBase(
             val themes = catalog.themes(branch)
             dates.openWithin(branch.openDays).flatMap { date ->
                 themes.map { theme ->
-                    FetchUnit("${branch.branchName} ${theme.name} $date") {
+                    FetchUnit("${branch.branchName} ${theme.name} $date", branch.key, date, theme.themeNum) {
                         crawler.fetchTheme(branch, theme, date)
                     }
                 }

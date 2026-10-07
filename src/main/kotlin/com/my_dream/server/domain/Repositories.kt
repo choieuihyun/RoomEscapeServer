@@ -70,6 +70,28 @@ interface WatchRepository : JpaRepository<Watch, Long> {
     )
     fun findActiveByUserId(userId: String, date: LocalDate, time: LocalTime): List<Watch>
 
+    /**
+     * 감시 빠른 확인의 **후보** — 아직 매진인 채로 감시가 걸려 있는 자리 (아키텍처 D27).
+     *
+     * **`s.date >= :from` 은 거칠게 거르는 용도일 뿐이다.** 오늘 이미 지난 회차가 섞여 오므로
+     * 부르는 쪽이 [isPast] 로 한 번 더 거른다. 여기에 시각 조건까지 적으면 "지난 자리" 의 뜻이
+     * 또 한 군데 생긴다 (`PastSlot.kt` 가 왜 한 곳에 모았는지 적어 뒀다).
+     *
+     * **이미 풀린 자리(`available = true`)는 뺀다.** 알림은 이미 갔고 쿨다운(D11)이 1시간이라,
+     * 그동안 자주 봐도 다시 알릴 수 없다. 다시 매진이 되면 전체 바퀴가 그걸 저장하고,
+     * 그때부터 다시 후보가 된다.
+     */
+    @Query(
+        """
+        select w from Watch w
+        join fetch w.timeSlot s
+        join fetch s.theme t
+        join fetch t.store
+        where s.available = false and s.date >= :from
+        """,
+    )
+    fun findWaitingFrom(from: LocalDate): List<Watch>
+
     /** 전이가 난 자리들을 감시하던 사람 전부. 전이 한 건마다 쿼리를 날리지 않으려고 묶어서 받는다. */
     @Query(
         """

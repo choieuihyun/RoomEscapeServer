@@ -22,7 +22,7 @@ class JigubyeolAdapter(private val crawler: JigubyeolCrawler) : StoreAdapter {
             // 지점마다 창이 다르다 — 대구만 2주다. 창 밖 날짜를 물으면 302 가 오고
             // 크롤러가 예외로 끊으므로, 안 거르면 매 바퀴 실패가 쌓인다
             dates.openWithin(branch.openDays).map { date ->
-                FetchUnit("${branch.branchName} $date") { crawler.fetch(branch, date) }
+                FetchUnit("${branch.branchName} $date", branch.key, date) { crawler.fetch(branch, date) }
             }
         }
 }

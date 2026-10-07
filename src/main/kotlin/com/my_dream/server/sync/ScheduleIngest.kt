@@ -4,6 +4,7 @@ import com.my_dream.server.crawler.DaySchedule
 import com.my_dream.server.notify.NotificationService
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 받아온 하루치를 **저장하고, 알리고, 이상하면 소리내는** 자리.
@@ -19,7 +20,28 @@ class ScheduleIngest(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun ingest(day: DaySchedule): SyncResult {
+    /**
+     * 지점마다 하나씩 두는 잠금. 지점 수(수십 개)만큼만 생기고 더 자라지 않는다.
+     */
+    private val storeLocks = ConcurrentHashMap<String, Any>()
+
+    /**
+     * **같은 지점의 저장과 알림 판정은 한 번에 하나만 한다** (아키텍처 D27).
+     *
+     * 전체 바퀴만 돌 때는 필요 없었다 — 같은 지점의 요청은 한 호스트 줄에 서서 차례로 오기 때문이다.
+     * 감시 빠른 확인이 **다른 스레드**에서 같은 지점·같은 날짜를 가져오면서 겹칠 수 있게 됐다.
+     * [HostRateLimiter] 는 HTTP 요청만 줄 세우고 그 뒤의 저장은 모른다. 겹치면:
+     *
+     * - 둘 다 "아까는 매진" 을 읽고 둘 다 전이로 판정한다 → **알림이 두 번 간다**
+     *   (쿨다운은 "읽고 나서 보낸다" 라 동시에 읽으면 둘 다 통과한다)
+     * - 처음 보는 회차를 둘 다 넣으려다 유니크 제약에 걸려 한쪽이 실패한다
+     *
+     * 알림까지 잠금 안에 두는 이유가 첫째 항목이다. 저장만 잠그면 판정이 다시 겹친다.
+     */
+    fun ingest(day: DaySchedule): SyncResult =
+        synchronized(storeLocks.computeIfAbsent(day.store.key) { Any() }) { ingestLocked(day) }
+
+    private fun ingestLocked(day: DaySchedule): SyncResult {
         warnIfRangeChanged(day)
         warnIfNoThemes(day)
 

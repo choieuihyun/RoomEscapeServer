@@ -29,6 +29,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?}
       # 여기서만 켠다. 개발 기기에서는 꺼져 있어야 한다
       COLLECTOR_ENABLED: "true"
+      # 감시 걸린 자리만 2분마다 한 번 더 보는 길 (아키텍처 D27). 매장 쪽에서 불편해하는 기색이 보이면
+      # .env 에 COLLECTOR_WATCH_ENABLED=false 를 적고 `docker compose up -d` — 코드를 안 고치고 끈다
+      COLLECTOR_WATCH_ENABLED: ${COLLECTOR_WATCH_ENABLED:-true}
       API_CORS_ORIGINS: ${API_CORS_ORIGINS:-https://choieuihyun.github.io}
       # 인증이 없는 엔드포인트다. 배포에서는 반드시 꺼 둔다 (Caddy 도 라우팅하지 않는다)
       DEBUG_ENDPOINTS: "false"

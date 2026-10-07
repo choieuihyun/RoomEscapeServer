@@ -48,7 +48,27 @@ interface StoreAdapter {
 class FetchUnit(
     /** 실패 로그에 쓸 이름. 예: `건대점 2026-08-28` */
     val label: String,
+    /** 이 요청이 답해 주는 지점. [StoreRef.key] 와 같은 값이다 */
+    val storeKey: String,
+    val date: LocalDate,
+    /**
+     * **테마마다 따로 묻는 매장만** 채운다 (키이스케이프 · 제로월드). `null` 이면 지점 전체가 온다.
+     *
+     * 크롤러가 `ThemeSchedule.externalId` 에 넣는 값과 **같은 식**이어야 한다 —
+     * 그 값이 DB 의 `theme.external_id` 가 되고, 감시 빠른 확인이 그것으로 요청을 고른다.
+     * 어긋나면 그 테마의 감시는 빠른 확인에서 조용히 빠진다 (그래서 못 찾으면 경고를 낸다).
+     */
+    val themeExternalId: String? = null,
     private val body: () -> DaySchedule,
 ) {
     fun fetch(): DaySchedule = body()
+
+    /**
+     * 이 요청 하나로 그 자리를 확인할 수 있는가 (아키텍처 D27).
+     *
+     * **라벨로 고르지 않는다.** 라벨은 사람이 읽는 글자라 지점 이름이 바뀌면 같이 바뀐다.
+     */
+    fun covers(storeKey: String, date: LocalDate, themeExternalId: String): Boolean =
+        this.storeKey == storeKey && this.date == date &&
+            (this.themeExternalId == null || this.themeExternalId == themeExternalId)
 }

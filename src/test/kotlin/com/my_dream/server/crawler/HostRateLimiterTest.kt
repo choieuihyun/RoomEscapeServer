@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -81,5 +82,20 @@ class HostRateLimiterTest {
         val g = gaps(hits, "www.keyescape.com")
         assertEquals(6, hits.size)
         assertTrue(g.all { it >= delayMs - 10 }, "간격: $g — 작업 안에서 몰아쳤다")
+    }
+
+    @Test
+    fun `마지막 요청이 걸린 시간은 줄 선 시간을 빼고 잰다`() {
+        // 감시 빠른 확인이 이 값으로 "상대가 느리다" 를 판단한다 (D27).
+        // 우리가 간격을 지키느라 기다린 시간이 섞이면 멀쩡한 서버를 느리다고 읽는다
+        val slow = HostRateLimiter(200)
+        assertNull(slow.lastRequestMs("play33.kr"), "한 번도 안 보냈으면 값이 없다")
+
+        slow.throttled("play33.kr") { }
+        slow.throttled("play33.kr") { Thread.sleep(30) }
+
+        val took = requireNotNull(slow.lastRequestMs("play33.kr"))
+        assertTrue(took in 25..150, "대기 200ms 가 섞였다: ${took}ms")
+        assertNull(slow.lastRequestMs("keyescape.com"), "호스트마다 따로 적는다")
     }
 }

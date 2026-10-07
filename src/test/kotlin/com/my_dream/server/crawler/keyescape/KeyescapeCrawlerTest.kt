@@ -136,6 +136,25 @@ class KeyescapeCrawlerTest {
         assertEquals("키이스케이프", day.store.brand)
         assertEquals("홍대점", day.store.branchName)
     }
+
+    @Test
+    fun `어댑터가 요청에 적은 신원이 실제 응답과 같다`() {
+        // 감시 빠른 확인은 FetchUnit 의 storeKey · themeExternalId 로 "이 자리를 확인해 줄 요청" 을 고른다 (D27).
+        // 그 값이 저장되는 값(DaySchedule)과 어긋나면 그 테마의 감시는 빠른 확인에서 조용히 빠진다.
+        // **특히 info_num 을 적으면 안 된다** — 둘 다 작은 정수라 틀려도 그럴듯해 보인다
+        val client = FakeClient()
+        val adapter = KeyescapeAdapter(KeyescapeThemeCatalog(client), KeyescapeCrawler(client))
+        val today = LocalDate.now()
+
+        val units = adapter.plan(listOf(today)).filter { it.storeKey == KeyescapeBranch.HONGDAE.key }
+        assertEquals(listOf("41", "45", "43"), units.map { it.themeExternalId }, "theme_num 이어야 한다")
+
+        val unit = units.single { it.themeExternalId == "41" }
+        val day = unit.fetch()
+        assertEquals(unit.storeKey, day.store.key)
+        assertEquals(unit.date, day.date)
+        assertEquals(unit.themeExternalId, day.themes.single().externalId)
+    }
 }
 
 /** "안 여는 날짜" 를 실패와 구분하는가. 실제 거절 응답을 물고 있다. */
