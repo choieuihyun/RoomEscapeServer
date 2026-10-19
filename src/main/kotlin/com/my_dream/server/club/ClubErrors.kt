@@ -16,7 +16,13 @@ import org.springframework.http.HttpStatus
  * (`server.error.include-message` 기본값이 `never`). 2026-10-07 에 지난 회차 400 이 그래서
  * "불러오지 못했습니다" 로만 보였다 (작업명세서 ㉣).
  */
-class ClubError(val status: HttpStatus, val code: String, override val message: String) : RuntimeException(message) {
+class ClubError(
+    val status: HttpStatus,
+    val code: String,
+    override val message: String,
+    /** 본문에 같이 실을 것. `EVENT_CONFLICT` 가 최신 일정을 `event` 로 싣는다 — 화면이 "새로 불러올까요?" 를 바로 그리게 */
+    val extra: Map<String, Any?> = emptyMap(),
+) : RuntimeException(message) {
 
     companion object {
         fun kakaoCodeInvalid() = ClubError(HttpStatus.BAD_REQUEST, "KAKAO_CODE_INVALID", "카카오 로그인이 만료됐어요. 다시 눌러 주세요.")
@@ -30,5 +36,17 @@ class ClubError(val status: HttpStatus, val code: String, override val message: 
         fun lastAdmin() = ClubError(HttpStatus.CONFLICT, "LAST_ADMIN", "마지막 운영진은 내보내거나 내릴 수 없어요. 다른 운영진을 먼저 지정해 주세요.")
         fun badState() = ClubError(HttpStatus.CONFLICT, "BAD_STATE", "지금 상태에서는 할 수 없어요. 목록을 새로 불러와 주세요.")
         fun notMember() = ClubError(HttpStatus.FORBIDDEN, "NOT_MEMBER", "동호회 승인을 받은 계정만 빈자리 알림을 걸 수 있어요.")
+
+        // --- 2단계 일정 (Floduler §4.7) ---
+        fun notClubMember() = ClubError(HttpStatus.FORBIDDEN, "NOT_CLUB_MEMBER", "동호회 승인을 받은 계정만 일정을 볼 수 있어요.")
+        fun noSuchEvent() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_EVENT", "일정을 찾을 수 없어요. 지워졌을 수 있어요.")
+        fun notEventOwner() = ClubError(HttpStatus.FORBIDDEN, "NOT_EVENT_OWNER", "일정을 만든 사람이나 운영진만 할 수 있어요.")
+        fun notParticipant() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "참여한 사람, 만든 사람, 운영진만 예약 상태를 바꿀 수 있어요.")
+        fun eventFull() = ClubError(HttpStatus.CONFLICT, "EVENT_FULL", "자리가 다 찼어요.")
+        fun eventConflict(latest: Any) =
+            ClubError(HttpStatus.CONFLICT, "EVENT_CONFLICT", "다른 사람이 먼저 고쳤어요. 새로 불러온 내용을 확인해 주세요.", mapOf("event" to latest))
+        fun capacityTooSmall() = ClubError(HttpStatus.CONFLICT, "CAPACITY_TOO_SMALL", "지금 참여한 사람보다 적게 줄일 수 없어요.")
+        fun badEvent() = ClubError(HttpStatus.BAD_REQUEST, "BAD_EVENT", "일정 내용을 다시 확인해 주세요.")
+        fun badRange() = ClubError(HttpStatus.BAD_REQUEST, "BAD_RANGE", "불러올 날짜 범위를 다시 확인해 주세요. 한 번에 62일까지예요.")
     }
 }

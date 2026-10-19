@@ -179,6 +179,20 @@ POST /api/admin/members/{uid}/approve | reject | remove | role
 ```
 
 **계약 전문(요청·응답·에러 코드·문구)은 Floduler `작업명세서.md` §4.6** 이다. 여기에 두 벌 적지 않는다.
+
+**일정·참여 (2단계)** — 승인 멤버만. 계약 전문은 **§4.7**.
+
+```
+GET    /api/club/events?from=&to=        일정 목록 (최대 62일) · 참여자 닉네임까지
+GET    /api/club/events/{id}
+POST   /api/club/events                  만들기 (만든 사람 자동 참여)
+POST   /api/club/events/{id}             수정 — 받아 둔 version 을 같이 보낸다. 낡았으면 409 + 최신 일정
+DELETE /api/club/events/{id}             삭제 (표시만)
+POST   /api/club/events/{id}/join | leave
+POST   /api/club/events/{id}/participants  { uid }      DELETE …/participants/{uid}     대신 넣기·빼기
+POST   /api/club/events/{id}/booking       { booked }   예약 상태
+GET    /api/club/members                 대신 넣을 사람 고르기용
+```
 카카오는 서버가 확인한 뒤 Firebase 커스텀 토큰을 **직접 서명**해 돌려준다 — Admin SDK 없이 ([아키텍처.md](아키텍처.md) D29).
 관리자인지는 토큰이 아니라 **DB(`club_member`)** 로 본다 (D28).
 

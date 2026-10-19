@@ -60,6 +60,8 @@ class ApiSecurityConfig(
                 // 동호회 (아키텍처 D28). 관리자인지는 여기가 아니라 서비스가 DB 로 본다 — 토큰에는 그 정보가 없다
                 it.requestMatchers("/api/me", "/api/me/**").authenticated()
                 it.requestMatchers("/api/admin/**").authenticated()
+                // 동호회 일정 (D30). 승인 멤버인지는 서비스가 DB 로 본다
+                it.requestMatchers("/api/club/**").authenticated()
                 // 카카오 "연결" 은 이미 로그인한 계정에 붙이는 것이라 로그인이 필요하다.
                 // **`/api/auth/kakao`(로그인) 는 일부러 안 적는다** — 로그인하려고 부르는 경로다
                 it.requestMatchers("/api/auth/kakao/link").authenticated()
