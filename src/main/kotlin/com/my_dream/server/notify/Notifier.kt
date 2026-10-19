@@ -51,6 +51,28 @@ enum class Delivery {
  */
 interface Notifier {
     fun send(notification: Notification): Delivery
+
+    /** 동호회 알림 (D34). 문구는 부르는 쪽이 정해 온다 */
+    fun push(push: Push): PushResult
+}
+
+/**
+ * 동호회 알림 한 건 (아키텍처 D34). 빈자리 알림([Notification])과 달리 **제목·본문이 정해져 온다** —
+ * 알림 종류가 셋(전날 · 마감 · 예약 완료)에 테스트까지라, 문구를 발송 쪽에 두면 발송 쪽이 동호회를 알아야 한다.
+ * [linkFragment] 는 앱 주소 뒤에 붙는다 (`#e=12` → 그 일정)
+ */
+data class Push(val userId: String, val title: String, val body: String, val linkFragment: String = "")
+
+/** 기기 수 · 전해진 수 · 다시 시도할 실패 수. 테스트 알림은 이 셋을 그대로 화면에 보여 준다 */
+data class PushResult(val devices: Int, val delivered: Int, val failed: Int) {
+    /** 빈자리 알림과 같은 세 갈래 (D17) — 기록할지 · 다시 시도할지를 이걸로 정한다 */
+    val delivery: Delivery
+        get() = when {
+            delivered > 0 -> Delivery.DELIVERED
+            failed > 0 -> Delivery.FAILED
+            // 기기가 없거나, 있던 토큰이 전부 죽어서 방금 다 지웠다
+            else -> Delivery.NO_ADDRESS
+        }
 }
 
 /**
@@ -72,5 +94,11 @@ class LoggingNotifier : Notifier {
             notification.date, notification.time, notification.userId,
         )
         return Delivery.DELIVERED
+    }
+
+    override fun push(push: Push): PushResult {
+        log.info("🔔 동호회 알림 — {} / {} {} → 사용자 {}", push.title, push.body, push.linkFragment, push.userId)
+        // send 와 맞춘다 — 개발 중에도 "보냈다" 기록이 쌓여야 판정을 눈으로 확인할 수 있다
+        return PushResult(devices = 1, delivered = 1, failed = 0)
     }
 }

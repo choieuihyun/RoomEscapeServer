@@ -18,6 +18,10 @@ import org.springframework.web.server.ResponseStatusException
  */
 data class DeviceRequest(val token: String, val platform: String? = null)
 
+data class DeviceStatusRequest(val token: String? = null)
+
+data class DeviceStatusDto(val registered: Boolean)
+
 /**
  * 알림 받을 기기 등록 — "이 브라우저로 보내줘".
  *
@@ -45,6 +49,14 @@ class DeviceController(private val devices: DeviceTokens) {
         devices.register(jwt.uid(), token, request.platform)
         return ResponseEntity.noContent().build()
     }
+
+    /**
+     * "이 기기로 알림이 오나" (§4.10 내 정보 화면). **내 토큰일 때만 true** — 남의 토큰도 그냥 false 다.
+     * "남의 것이다" 를 따로 알려 주면 남의 토큰이 있는지 확인하는 수단이 된다 ([unregister] 와 같은 이유)
+     */
+    @PostMapping("/status")
+    fun status(@AuthenticationPrincipal jwt: Jwt, @RequestBody request: DeviceStatusRequest): DeviceStatusDto =
+        DeviceStatusDto(request.token?.trim()?.let { it in devices.of(jwt.uid()) } ?: false)
 
     /**
      * 로그아웃하거나 알림을 끌 때. **경로가 아니라 본문으로 받는다** —

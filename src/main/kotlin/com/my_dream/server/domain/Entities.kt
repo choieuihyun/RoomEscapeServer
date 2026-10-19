@@ -348,3 +348,23 @@ class PlayedTheme(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null
 }
+
+/** 전날 알림 기록 (D34). [outcome] 은 SENT · FAILED — SENT 만 "보냈다" 로 센다 */
+@Entity
+@Table(name = "club_event_reminder")
+class ClubEventReminder(
+    @Column(name = "event_id", nullable = false) val eventId: Long,
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(name = "remind_for", nullable = false) val remindFor: LocalDate,
+    @Column(nullable = false, length = 16) val outcome: String,
+    @Column(name = "sent_at", nullable = false) val sentAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+
+    companion object {
+        const val SENT = "SENT"
+        const val FAILED = "FAILED"
+    }
+}

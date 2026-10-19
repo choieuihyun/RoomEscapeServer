@@ -96,6 +96,34 @@ class FcmNotifierTest {
     }
 
     @Test
+    fun `동호회 알림은 받은 문구 그대로, 링크는 앱 주소 뒤에 일정을 붙이고, 기기 수와 결과를 센다`() {
+        // 빈자리 알림과 같은 발송 고리(D34) — 죽은 토큰 정리까지 그대로 탄다
+        val devices = FakeDevices("죽은토큰", "산토큰")
+        val (notifier, server) = setup(devices)
+        server.expect(requestTo("https://fcm.test/v1/projects/roomescapescheduler/messages:send"))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON).body(fixture("fcm-error-unregistered.json")))
+        server.expect(requestTo("https://fcm.test/v1/projects/roomescapescheduler/messages:send"))
+            .andExpect(jsonPath("$.message.notification.title").value("내일 동호회 일정이 있어요"))
+            .andExpect(jsonPath("$.message.notification.body").value("모임 · 19:00"))
+            .andExpect(jsonPath("$.message.webpush.fcm_options.link").value("https://example.test/#e=12"))
+            .andRespond(withSuccess(fixture("fcm-ok.json"), MediaType.APPLICATION_JSON))
+
+        val r = notifier.push(Push("나", "내일 동호회 일정이 있어요", "모임 · 19:00", "#e=12"))
+        assertEquals(PushResult(devices = 2, delivered = 1, failed = 0), r)
+        assertEquals(Delivery.DELIVERED, r.delivery)
+        assertEquals(listOf("산토큰"), devices.stored)
+        server.verify()
+    }
+
+    @Test
+    fun `동호회 알림도 기기가 없으면 요청을 안 보내고 NO_ADDRESS`() {
+        val (notifier, server) = setup(FakeDevices())
+        assertEquals(PushResult(0, 0, 0), notifier.push(Push("나", "제목", "본문")))
+        assertEquals(Delivery.NO_ADDRESS, PushResult(0, 0, 0).delivery)
+        server.verify()
+    }
+
+    @Test
     fun `등록 해제된 토큰은 지운다`() {
         val devices = FakeDevices("죽은토큰")
         val (notifier, server) = setup(devices)

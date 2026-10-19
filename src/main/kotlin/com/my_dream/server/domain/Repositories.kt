@@ -226,6 +226,9 @@ interface ClubEventRepository : JpaRepository<ClubEvent, Long> {
         """,
     )
     fun findPastJoined(uid: String, before: LocalDate, limit: Limit): List<ClubEvent>
+
+    /** 전날 알림 대상 (D34) */
+    fun findByDateAndDeletedAtIsNull(date: LocalDate): List<ClubEvent>
 }
 
 interface ClubEventSegmentRepository : JpaRepository<ClubEventSegment, Long> {
@@ -302,4 +305,11 @@ interface PlayedThemeRepository : JpaRepository<PlayedTheme, Long> {
     fun findByUserId(userId: String): List<PlayedTheme>
     fun findByUserIdIn(userIds: Collection<String>): List<PlayedTheme>
     fun findByIdAndUserId(id: Long, userId: String): PlayedTheme?
+}
+
+interface ClubEventReminderRepository : JpaRepository<ClubEventReminder, Long> {
+
+    /** 이 날짜 기준으로 이미 **보낸**(SENT) 사람들 — (일정 id, uid) */
+    @Query("select r from ClubEventReminder r where r.remindFor = :date and r.outcome = 'SENT'")
+    fun findSentFor(date: LocalDate): List<ClubEventReminder>
 }

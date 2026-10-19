@@ -46,6 +46,8 @@ class NotificationServiceTest @Autowired constructor(
             sent += notification
             return result
         }
+
+        override fun push(push: Push): PushResult = error("빈자리 알림은 push 를 쓰지 않는다")
     }
 
     private val notifier = FakeNotifier()

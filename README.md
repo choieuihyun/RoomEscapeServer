@@ -200,6 +200,9 @@ GET    /api/me/played                     내 해 본 테마      POST { themeNa
 GET    /api/club/members/{uid}/played     멤버의 해 본 테마
 GET    /api/me/events?before=&limit=      내가 참여한 지난 일정
 GET    /api/themes                        해 본 테마 고르기용 테마 목록 (로그인 없이)
+POST   /api/me/push-test                  테스트 알림 (로그인만 · 1분에 한 번)
+POST   /api/devices/status  { token }     이 기기가 내 알림 기기로 등록돼 있나
+       서버가 보내는 동호회 알림: 전날(20~22시 KST) · 마감 · 예약 완료 (5단계)
 ```
 카카오는 서버가 확인한 뒤 Firebase 커스텀 토큰을 **직접 서명**해 돌려준다 — Admin SDK 없이 ([아키텍처.md](아키텍처.md) D29).
 관리자인지는 토큰이 아니라 **DB(`club_member`)** 로 본다 (D28).

@@ -275,6 +275,32 @@ class ClubEventApiTest @Autowired constructor(
     }
 
     @Test
+    fun `테스트 알림은 로그인만 있으면 되고 1분에 한 번, 넘으면 429 TOO_SOON 본문`() {
+        mvc.perform(post("/api/me/push-test")).andExpect(status().isUnauthorized)
+        mvc.perform(post("/api/me/push-test").with(as_("대기")))   // 승인 전이어도 된다
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.devices").isNumber)
+            .andExpect(jsonPath("$.delivery").doesNotExist())
+        mvc.perform(post("/api/me/push-test").with(as_("대기")))
+            .andExpect(status().isTooManyRequests)
+            .andExpect(jsonPath("$.error").value("TOO_SOON"))
+            .andExpect(jsonPath("$.message").value("1분 뒤에 다시 보내 주세요."))
+    }
+
+    @Test
+    fun `이 기기 상태 — 내 토큰일 때만 true`() {
+        val status = { uid: String, body: String ->
+            mvc.perform(post("/api/devices/status").with(as_(uid)).contentType(MediaType.APPLICATION_JSON).content(body))
+        }
+        mvc.perform(post("/api/devices/status").contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isUnauthorized)
+        mvc.perform(post("/api/devices").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content("""{"token":"tok-나-1"}"""))
+            .andExpect(status().isNoContent)
+        status("나", """{"token":"tok-나-1"}""").andExpect(jsonPath("$.registered").value(true))
+        status("너", """{"token":"tok-나-1"}""").andExpect(jsonPath("$.registered").value(false))
+        status("나", "{}").andExpect(jsonPath("$.registered").value(false))
+    }
+
+    @Test
     fun `테마 고르기 목록은 로그인 없이 열린다`() {
         mvc.perform(get("/api/themes")).andExpect(status().isOk)
     }

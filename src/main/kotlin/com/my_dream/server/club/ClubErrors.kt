@@ -57,5 +57,8 @@ class ClubError(
         // --- 4단계 해 본 테마 (§4.9) ---
         fun badPlayed() = ClubError(HttpStatus.BAD_REQUEST, "BAD_PLAYED", "테마 이름을 확인해 주세요.")
         fun noSuchPlayed() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_PLAYED", "그 기록을 찾을 수 없어요.")
+
+        // --- 5단계 알림 (§4.10) ---
+        fun tooSoon() = ClubError(HttpStatus.TOO_MANY_REQUESTS, "TOO_SOON", "1분 뒤에 다시 보내 주세요.")
     }
 }

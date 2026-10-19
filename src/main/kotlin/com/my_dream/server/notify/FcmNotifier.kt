@@ -107,36 +107,39 @@ class FcmNotifier(
     // `RestClient.create(고정주소)` 로 박으면 진짜 구글 서버 없이는 아무것도 확인할 수 없다
     private val client = builder.clone().baseUrl(baseUrl).build()
 
-    override fun send(notification: Notification): Delivery {
-        val tokens = devices.of(notification.userId)
+    override fun send(notification: Notification): Delivery = deliverAll(notification.userId, message(notification), link).delivery
+
+    /** 동호회 알림 (D34). 발송 고리는 빈자리 알림과 같은 [deliverAll] 이다 */
+    override fun push(push: Push): PushResult = deliverAll(push.userId, MessageText(push.title, push.body), link + push.linkFragment)
+
+    /**
+     * 이 사람의 기기 전부에 하나씩. 빈자리 알림과 동호회 알림이 **같은 고리**를 쓴다 —
+     * 죽은 토큰 정리 · 세 갈래 결과(D17)가 두 벌로 갈라지지 않게 (D34)
+     */
+    private fun deliverAll(userId: String, text: MessageText, link: String): PushResult {
+        val tokens = devices.of(userId)
         if (tokens.isEmpty()) {
             // 실패가 아니다. 감시만 걸고 알림 권한은 안 준 상태다
-            log.debug("보낼 기기가 없다 — 사용자 {}", notification.userId)
-            return Delivery.NO_ADDRESS
+            log.debug("보낼 기기가 없다 — 사용자 {}", userId)
+            return PushResult(0, 0, 0)
         }
 
-        val text = message(notification)
         var delivered = 0
         var retryable = 0
 
         for (token in tokens) {
-            when (deliver(token, text)) {
+            when (deliver(token, text, link)) {
                 Outcome.OK -> delivered++
                 Outcome.RETRY -> retryable++
                 // 지운 건 재시도 대상이 아니다. 다음 바퀴에는 목록에서 아예 빠진다
                 Outcome.DEAD -> devices.forget(token)
             }
         }
-
-        return when {
-            delivered > 0 -> Delivery.DELIVERED
-            retryable > 0 -> Delivery.FAILED
-            // 있던 토큰이 전부 죽어서 방금 다 지웠다. 다시 시도해 봐야 보낼 곳이 없다
-            else -> Delivery.NO_ADDRESS
-        }
+        // 전부 죽어서 다 지웠으면 delivered·retryable 이 0 → NO_ADDRESS. 다시 시도해 봐야 보낼 곳이 없다
+        return PushResult(tokens.size, delivered, retryable)
     }
 
-    private fun deliver(token: String, text: MessageText): Outcome {
+    private fun deliver(token: String, text: MessageText, link: String): Outcome {
         val bearer = runCatching { accessToken.value() }.getOrElse {
             // 키 파일이 잘못됐거나 구글이 안 붙는 상황. 토큰 잘못이 아니므로 **지우지 않는다**
             log.error("FCM 액세스 토큰을 못 받았다 — {}", it.message)
@@ -147,7 +150,7 @@ class FcmNotifier(
             .uri("/v1/projects/{project}/messages:send", projectId)
             .header("Authorization", "Bearer $bearer")
             .contentType(MediaType.APPLICATION_JSON)
-            .body(payload(token, text))
+            .body(payload(token, text, link))
             .exchange { _, response ->
                 if (response.statusCode.is2xxSuccessful) {
                     Outcome.OK
@@ -211,7 +214,7 @@ class FcmNotifier(
      * `notification` 으로 보내면 브라우저가 알아서 띄운다 — `data` 만 보내면 서비스 워커가
      * 직접 그려야 하고, 워커가 잠들어 있으면 아무것도 안 뜬다.
      */
-    private fun payload(token: String, text: MessageText): String =
+    private fun payload(token: String, text: MessageText, link: String): String =
         json.writeValueAsString(
             mapOf(
                 "message" to mapOf(

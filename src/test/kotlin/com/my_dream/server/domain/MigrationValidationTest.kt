@@ -49,6 +49,7 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM club_event_reminder")
         jdbc.update("DELETE FROM played_theme")
         jdbc.update("DELETE FROM club_event_availability")
         jdbc.update("DELETE FROM club_event_candidate")
@@ -60,7 +61,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V10 까지 돌고 엔티티와 맞는다`() {
+    fun `V11 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -186,6 +187,19 @@ class MigrationValidationTest @Autowired constructor(
         jdbc.update(insert, "A", "MANUAL")
         val id = insertEvent()
         assertEquals(1, jdbc.update("UPDATE club_event SET played_recorded_at = now() WHERE id = ?", id))
+    }
+
+    // --- V11 전날 알림 기록 ---
+
+    @Test
+    fun `전날 알림 — 같은 사람 같은 날짜의 SENT 는 하나, FAILED 는 여러 번`() {
+        val id = insertEvent()
+        val insert = "INSERT INTO club_event_reminder (event_id, user_id, remind_for, outcome, sent_at) VALUES (?, 'u', '2026-11-01', ?, now())"
+        jdbc.update(insert, id, "FAILED")
+        jdbc.update(insert, id, "FAILED")
+        jdbc.update(insert, id, "SENT")
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, id, "SENT") }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, id, "MAYBE") }
     }
 
     private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING", nickname: String = "닉") {

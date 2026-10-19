@@ -16,6 +16,7 @@ import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
 import com.my_dream.server.domain.PlayedThemeRepository
 import org.slf4j.LoggerFactory
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Limit
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -136,6 +137,7 @@ class ClubEventService(
     private val answers: ClubEventAvailabilityRepository,
     private val played: PlayedThemeRepository,
     private val members: ClubMemberRepository,
+    private val publisher: ApplicationEventPublisher,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -220,6 +222,8 @@ class ClubEventService(
         if (v.capacity != null && participants.countByEvent(event) > v.capacity) throw ClubError.capacityTooSmall()
         // 후보를 안 보냈으면 지금 있는 후보로 센다 — 2단계 화면이 미정 일정을 고쳐도 BAD_EVENT 가 안 나게 (★ §4.8)
         if (v.date == null && (v.candidates?.size?.toLong() ?: candidates.countByEvent(event)) == 0L) throw ClubError.badEvent()
+        // 예약 완료 알림 (D34) — 잠근 행 안에서 false → true 일 때만. 알림은 커밋 뒤에 따로 나간다
+        if (!event.booked && v.booked) changed(event, AlertKind.BOOKED, uid)
 
         event.title = v.title
         event.date = v.date
@@ -297,6 +301,7 @@ class ClubEventService(
         val isParticipant = participants.findByEventAndUserId(event, uid) != null
         if (!canManage(event, viewer) && !isParticipant) throw ClubError.notParticipant()
         if (event.booked != booked) {
+            if (booked) changed(event, AlertKind.BOOKED, uid)
             event.booked = booked
             event.updatedAt = Instant.now()
             events.flush()
@@ -370,9 +375,19 @@ class ClubEventService(
     private fun seat(event: ClubEvent, uid: String, addedBy: String?) {
         if (participants.findByEventAndUserId(event, uid) != null) return
         val cap = event.capacity
-        if (cap != null && participants.countByEvent(event) >= cap) throw ClubError.eventFull()
+        val before = participants.countByEvent(event)
+        if (cap != null && before >= cap) throw ClubError.eventFull()
         participants.saveAndFlush(ClubEventParticipant(event, uid, addedBy, Instant.now()))
+        // 마감 알림 (D34) — 이 사람으로 **처음** 찼을 때만. 정원을 줄여 같아진 경우(수정)는 여기를 안 지난다
+        if (cap != null && before + 1 == cap.toLong()) changed(event, AlertKind.FULL, addedBy ?: uid)
     }
+
+    /**
+     * "바뀌었다" 를 알린다. **보내는 것은 커밋 뒤**([ClubAlertListener]) — 이 트랜잭션이 롤백되면 아무것도 안 나간다.
+     * 확인(권한 · version · 정원)을 다 지난 자리에서만 부른다 — 지는 요청은 알림을 남기지 않는다
+     */
+    private fun changed(event: ClubEvent, kind: AlertKind, actor: String) =
+        publisher.publishEvent(ClubEventChanged(requireNotNull(event.id), kind, actor))
 
     /** 참여 취소·빼기. **응답도 같이 지운다** — 안 갈 사람의 "됨" 이 남으면 "다 같이 되는 날" 이 틀린다 (D32) */
     private fun unseat(event: ClubEvent, uid: String) {

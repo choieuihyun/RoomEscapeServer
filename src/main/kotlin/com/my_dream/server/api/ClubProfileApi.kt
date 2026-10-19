@@ -7,6 +7,8 @@ import com.my_dream.server.club.EventDto
 import com.my_dream.server.club.PlayedDto
 import com.my_dream.server.club.PlayedInput
 import com.my_dream.server.club.PlayedService
+import com.my_dream.server.club.PushTestDto
+import com.my_dream.server.club.PushTestService
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -34,6 +36,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 class ClubProfileController(
     private val played: PlayedService,
     private val events: ClubEventService,
+    private val pushTest: PushTestService,
 ) {
 
     @GetMapping("/me/played")
@@ -47,6 +50,10 @@ class ClubProfileController(
 
     @GetMapping("/club/members/{uid}/played")
     fun ofMember(@AuthenticationPrincipal jwt: Jwt, @PathVariable uid: String): List<PlayedDto> = played.ofMember(jwt.uid(), uid)
+
+    /** 이 기기들로 알림이 오는지 (§4.10). 로그인만 — 동호회 자격은 필요 없다. 1분에 한 번(`429 TOO_SOON`) */
+    @PostMapping("/me/push-test")
+    fun pushTest(@AuthenticationPrincipal jwt: Jwt): PushTestDto = pushTest.send(jwt.uid())
 
     /** 문자열로 받는다 — 형식이 틀리면 스프링 기본 400 이 아니라 계약의 `BAD_RANGE` 여야 한다 */
     @GetMapping("/me/events")
