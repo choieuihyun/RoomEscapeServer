@@ -107,6 +107,13 @@ class FcmNotifier(
     // `RestClient.create(고정주소)` 로 박으면 진짜 구글 서버 없이는 아무것도 확인할 수 없다
     private val client = builder.clone().baseUrl(baseUrl).build()
 
+    /**
+     * 알림 아이콘 — 앱 주소 옆의 `icon-192.png`. SDK 가 `notification` 으로 띄운 알림에는 이게 없으면 아이콘이 빈다.
+     * (전에는 앱의 서비스 워커가 아이콘을 붙여 **한 번 더** 띄우고 있었다 — 알림이 두 번 뜨던 원인. Floduler 가 2026-10-19 에 고쳤다)
+     * 주소를 따로 설정으로 두지 않고 [link] 에서 만든다 — 앱 주소가 바뀌면 아이콘도 같이 따라간다
+     */
+    private val icon = link.substringBefore('#').let { if (it.endsWith("/")) it else "$it/" } + "icon-192.png"
+
     override fun send(notification: Notification): Delivery = deliverAll(notification.userId, message(notification), link).delivery
 
     /** 동호회 알림 (D34). 발송 고리는 빈자리 알림과 같은 [deliverAll] 이다 */
@@ -221,7 +228,10 @@ class FcmNotifier(
                     "token" to token,
                     "notification" to mapOf("title" to text.title, "body" to text.body),
                     // 알림을 누르면 Floduler 로 간다. 없으면 눌러도 아무 일도 안 일어난다
-                    "webpush" to mapOf("fcm_options" to mapOf("link" to link)),
+                    "webpush" to mapOf(
+                        "fcm_options" to mapOf("link" to link),
+                        "notification" to mapOf("icon" to icon, "badge" to icon),
+                    ),
                     // 같은 주소를 data 에도 싣는다 — 앱의 서비스 워커가 알림을 직접 다룰 때 읽는 자리다
                     // (`fcmOptions` 는 SDK 버전마다 꺼내는 이름이 달라 믿기 어렵다는 Floduler 쪽 요청, 2026-10-19)
                     "data" to mapOf("link" to link),

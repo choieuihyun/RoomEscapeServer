@@ -90,6 +90,9 @@ class FcmNotifierTest {
             // 누르면 Floduler 로 가야 한다. 없으면 눌러도 아무 일이 없다
             .andExpect(jsonPath("$.message.webpush.fcm_options.link").value("https://example.test/"))
             .andExpect(jsonPath("$.message.data.link").value("https://example.test/"))
+            // 없으면 SDK 가 띄운 알림에 아이콘이 빈다
+            .andExpect(jsonPath("$.message.webpush.notification.icon").value("https://example.test/icon-192.png"))
+            .andExpect(jsonPath("$.message.webpush.notification.badge").value("https://example.test/icon-192.png"))
             .andRespond(withSuccess(fixture("fcm-ok.json"), MediaType.APPLICATION_JSON))
 
         notifier.send(notification)
@@ -108,6 +111,7 @@ class FcmNotifierTest {
             .andExpect(jsonPath("$.message.notification.body").value("모임 · 19:00"))
             .andExpect(jsonPath("$.message.webpush.fcm_options.link").value("https://example.test/#e=12"))
             .andExpect(jsonPath("$.message.data.link").value("https://example.test/#e=12"))
+            .andExpect(jsonPath("$.message.webpush.notification.icon").value("https://example.test/icon-192.png"))
             .andRespond(withSuccess(fixture("fcm-ok.json"), MediaType.APPLICATION_JSON))
 
         val r = notifier.push(Push("나", "내일 동호회 일정이 있어요", "모임 · 19:00", "#e=12"))
