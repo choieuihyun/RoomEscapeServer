@@ -119,6 +119,10 @@ interface DeviceTokenRepository : JpaRepository<DeviceToken, Long> {
 
     /** 등록은 upsert 다. 이미 있는 토큰이면 주인과 시각만 갱신한다 */
     fun findByToken(token: String): DeviceToken?
+
+    /** 이 사람들 중 기기가 하나라도 있는 사람. 멤버 관리 화면이 사람마다 묻지 않게 한 번에 */
+    @Query("select distinct d.userId from DeviceToken d where d.userId in :userIds")
+    fun findUserIdsWithDevice(userIds: Collection<String>): List<String>
 }
 
 interface ClubMemberRepository : JpaRepository<ClubMember, Long> {

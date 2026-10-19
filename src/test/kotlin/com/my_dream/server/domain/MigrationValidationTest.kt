@@ -86,10 +86,17 @@ class MigrationValidationTest @Autowired constructor(
         }
     }
 
-    private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING") {
+    @Test
+    fun `닉네임 20자는 이모지여도 들어간다`() {
+        // 서비스는 코드 포인트로 20자까지 받는다. DB 가 다르게 세면 검사를 통과한 닉네임이 500 이 된다
+        insertMember("emoji", nickname = "🙂".repeat(20))
+        assertFailsWith<DataIntegrityViolationException> { insertMember("emoji2", nickname = "🙂".repeat(21)) }
+    }
+
+    private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING", nickname: String = "닉") {
         jdbc.update(
-            "INSERT INTO club_member (user_id, nickname, role, status, created_at) VALUES (?, '닉', ?, ?, now())",
-            uid, role, status,
+            "INSERT INTO club_member (user_id, nickname, role, status, created_at) VALUES (?, ?, ?, ?, now())",
+            uid, nickname, role, status,
         )
     }
 }
