@@ -198,7 +198,7 @@ DELETE /api/club/events/{id}/availability/{date}                                
 GET    /api/club/events/{id}/fresh-themes?date=  그날 열린 테마 중 참여자가 안 해 본 것 (4단계)
 GET    /api/me/played                     내 해 본 테마      POST { themeName, themeKey?, … }   DELETE /api/me/played/{id}
 GET    /api/club/members/{uid}/played     멤버의 해 본 테마
-GET    /api/me/events?before=&limit=      내가 참여한 지난 일정
+GET    /api/me/events?before=&beforeId=&limit=  내가 참여한 지난 일정 { events, total } — (date, id) 커서
 GET    /api/themes                        해 본 테마 고르기용 테마 목록 (로그인 없이)
 POST   /api/me/push-test                  테스트 알림 (로그인만 · 1분에 한 번)
 POST   /api/devices/status  { token }     이 기기가 내 알림 기기로 등록돼 있나
