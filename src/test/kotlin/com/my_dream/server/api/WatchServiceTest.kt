@@ -1,5 +1,10 @@
 package com.my_dream.server.api
 
+import com.my_dream.server.club.ClubError
+import com.my_dream.server.domain.ClubMember
+import com.my_dream.server.domain.ClubMemberRepository
+import com.my_dream.server.domain.MemberRole
+import com.my_dream.server.domain.MemberStatus
 import com.my_dream.server.domain.Store
 import com.my_dream.server.domain.StoreRepository
 import com.my_dream.server.domain.Theme
@@ -30,6 +35,7 @@ class WatchServiceTest @Autowired constructor(
     private val themes: ThemeRepository,
     private val slots: TimeSlotRepository,
     private val watches: WatchRepository,
+    private val members: ClubMemberRepository,
 ) {
 
     private lateinit var theme: Theme
@@ -40,6 +46,40 @@ class WatchServiceTest @Autowired constructor(
         val store = stores.save(Store("play33-daejeon", "플레이33", "대전점"))
         theme = themes.save(Theme(store, "34", "우울해서 빵 샀어"))
         future = slot(LocalDate.now().plusDays(1))
+        // 빈자리 알림은 승인된 동호회 멤버만 건다 (기획 "동호회"). 아래 테스트의 두 사람은 승인돼 있다
+        listOf("나", "너").forEach { members.save(ClubMember(it, it, MemberRole.MEMBER, MemberStatus.APPROVED, Instant.now())) }
+    }
+
+    @Test
+    fun `승인 안 된 사람은 빈자리 알림을 못 건다`() {
+        for ((uid, status) in listOf("대기" to MemberStatus.PENDING, "거절" to MemberStatus.REJECTED, "내보냄" to MemberStatus.REMOVED)) {
+            members.save(ClubMember(uid, uid, MemberRole.MEMBER, status, Instant.now()))
+        }
+        for (uid in listOf("가입안함", "대기", "거절", "내보냄")) {
+            val e = assertFailsWith<ClubError>(uid) { service.register(uid, requireNotNull(future.id)) }
+            assertEquals("NOT_MEMBER", e.code)
+            assertEquals(HttpStatus.FORBIDDEN, e.status)
+            assertEquals("동호회 승인을 받은 계정만 빈자리 알림을 걸 수 있어요.", e.message)
+        }
+        assertEquals(0, watches.count().toInt())
+    }
+
+    @Test
+    fun `승인 확인이 회차 확인보다 먼저다`() {
+        // 반대면 승인 안 된 사람이 "그런 회차 없음" 을 보고 고치다가 결국 승인 문구를 만난다 — 두 번 헛걸음
+        val e = assertFailsWith<ClubError> { service.register("가입안함", 999_999) }
+        assertEquals("NOT_MEMBER", e.code)
+    }
+
+    @Test
+    fun `승인 안 된 사람도 이미 건 알림은 보고 지울 수 있다`() {
+        // 배포 전에 걸어 둔 감시, 또는 내보내진 사람의 감시. 못 지우면 보이지도 않는 감시가 남는다
+        val mine = service.register("나", requireNotNull(future.id))
+        members.findByUserId("나")!!.status = MemberStatus.REMOVED
+
+        assertEquals(1, service.list("나").watches.size)
+        service.cancel("나", mine.id)
+        assertTrue(service.list("나").watches.isEmpty())
     }
 
     private fun slot(date: LocalDate, time: LocalTime = LocalTime.of(19, 35)) =

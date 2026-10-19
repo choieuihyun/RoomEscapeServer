@@ -2,6 +2,8 @@ package com.my_dream.server.domain
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -150,6 +152,61 @@ class DeviceToken(
     @Column(nullable = false) val token: String,
     @Column val platform: String?,
     @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** 동호회 안의 역할. 관리자는 가입 승인·멤버 관리를 한다 (아키텍처 D28) */
+enum class MemberRole { ADMIN, MEMBER }
+
+/**
+ * 가입 상태. **행이 없는 것**(가입 신청 전)은 여기 없다 — API 가 `NONE` 으로 보여 준다.
+ * DB 에 `NONE` 행을 만들지 않는 이유: 로그인만 해 본 사람마다 행이 생기면 "승인 대기" 와 섞인다.
+ */
+enum class MemberStatus { PENDING, APPROVED, REJECTED, REMOVED }
+
+/**
+ * 동호회 멤버 한 사람. [userId] 는 Firebase uid 이고 자연키다.
+ *
+ * **자격을 토큰(커스텀 클레임)이 아니라 여기 두는 이유** — 토큰은 갱신될 때까지 최대 1시간 옛 값이 돈다.
+ * 여기 두면 내보내기가 다음 요청부터 먹는다 (아키텍처 D28).
+ *
+ * `@Enumerated(STRING)` 이어야 한다. 기본값(ORDINAL)은 숫자로 저장해서 enum 순서를 바꾸는 순간
+ * 모든 행의 뜻이 조용히 바뀐다. V6 의 CHECK 도 문자열 기준이다.
+ */
+@Entity
+@Table(name = "club_member", uniqueConstraints = [UniqueConstraint(columnNames = ["user_id"])])
+class ClubMember(
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(nullable = false, length = 20) var nickname: String,
+    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 16) var role: MemberRole,
+    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 16) var status: MemberStatus,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
+    @Column(name = "decided_at") var decidedAt: Instant? = null,
+    @Column(name = "decided_by") var decidedBy: String? = null,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/**
+ * "이 카카오 계정으로 들어오면 이 uid 다".
+ *
+ * 카카오로 처음 들어온 사람은 `kakao:<회원번호>` uid 를 받고, 기존 아이디 계정에 "연결" 하면
+ * 그 계정의 uid 가 들어간다. **양쪽 다 유일하다** — 카카오 하나에 계정 하나, 계정 하나에 카카오 하나.
+ */
+@Entity
+@Table(
+    name = "kakao_link",
+    uniqueConstraints = [UniqueConstraint(columnNames = ["kakao_id"]), UniqueConstraint(columnNames = ["user_id"])],
+)
+class KakaoLink(
+    @Column(name = "kakao_id", nullable = false) val kakaoId: Long,
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

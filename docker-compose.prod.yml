@@ -44,6 +44,15 @@ services:
       FIREBASE_CREDENTIALS_FILE: /run/secrets/firebase-service-account.json
       # 알림을 눌렀을 때 열 주소
       FCM_LINK: ${FCM_LINK:-https://choieuihyun.github.io/RoomEscapeScheduler/}
+      # 카카오 로그인 (아키텍처 D29). 비어 있으면 카카오 로그인만 503 이고 나머지는 돈다.
+      # REST API 키는 비밀이 아니지만 시크릿은 비밀이다 — 둘 다 .env 에만 적는다
+      KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY:-}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
+      # localhost 는 Floduler 를 로컬에서 띄워 운영 서버에 붙여 볼 때 쓴다. 카카오 콘솔에도 같은 값이 있어야 한다
+      KAKAO_ALLOWED_REDIRECT_URIS: ${KAKAO_ALLOWED_REDIRECT_URIS:-https://choieuihyun.github.io/RoomEscapeScheduler/,http://localhost:5173/}
+      # 첫 관리자 uid (아키텍처 D28). 관리자가 0명일 때만 쓰인다. **빈자리 알림이 승인 멤버로 묶여 있어서
+      # 이게 비어 있으면 아무도 알림을 못 건다** — 배포 전에 .env 에 넣는다 (배포.md "⑬")
+      CLUB_BOOTSTRAP_ADMIN_UID: ${CLUB_BOOTSTRAP_ADMIN_UID:-}
       TZ: Asia/Seoul
     volumes:
       # 파이어베이스 서비스 계정 키. **읽기 전용**으로 넣는다 — 앱이 고쳐 쓸 이유가 없고,
