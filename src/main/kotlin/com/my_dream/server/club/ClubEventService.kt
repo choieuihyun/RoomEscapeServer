@@ -14,7 +14,9 @@ import com.my_dream.server.domain.ClubMember
 import com.my_dream.server.domain.ClubMemberRepository
 import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
+import com.my_dream.server.domain.PlayedThemeRepository
 import org.slf4j.LoggerFactory
+import org.springframework.data.domain.Limit
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.text.Collator
@@ -67,7 +69,15 @@ data class SegmentInput(
     val endMin: Int? = null,
 )
 
-data class SegmentDto(val themeName: String, val branchName: String?, val themeKey: String?, val startMin: Int, val endMin: Int?)
+data class SegmentDto(
+    val themeName: String,
+    val branchName: String?,
+    val themeKey: String?,
+    val startMin: Int,
+    val endMin: Int?,
+    /** 그 일정 참여자 중 이 테마를 해 본 사람 (§4.9 · D33). 읽을 때마다 계산한다 — 입력 검사도 이 클래스를 쓰므로 기본값이 있다 */
+    val playedBy: List<String> = emptyList(),
+)
 
 data class PersonDto(val uid: String, val nickname: String)
 
@@ -124,6 +134,7 @@ class ClubEventService(
     private val participants: ClubEventParticipantRepository,
     private val candidates: ClubEventCandidateRepository,
     private val answers: ClubEventAvailabilityRepository,
+    private val played: PlayedThemeRepository,
     private val members: ClubMemberRepository,
 ) {
 
@@ -153,6 +164,15 @@ class ClubEventService(
         val viewer = requireMember(uid)
         val event = events.findById(id).orElse(null)?.takeIf { it.deletedAt == null } ?: throw ClubError.noSuchEvent()
         return toDto(event, viewer)
+    }
+
+    /** 내가 참여한 지난 일정 (§4.9). [before] 가 없으면 오늘(KST), 날짜 미정은 빠진다. 문자열로 받는 이유는 [list] 와 같다 */
+    @Transactional(readOnly = true)
+    fun myPast(uid: String, before: String?, limit: String?, today: LocalDate = todayKst()): List<EventDto> {
+        val viewer = requireMember(uid)
+        val until = if (before == null) today else parseDate(before) ?: throw ClubError.badRange()
+        val n = if (limit == null) 20 else limit.toIntOrNull()?.takeIf { it in 1..50 } ?: throw ClubError.badRange()
+        return toDtos(events.findPastJoined(uid, until, Limit.of(n)), viewer)
     }
 
     /** 대신 넣을 사람 고르기용. 승인 멤버만, **한국어 가나다순** — DB 정렬 규칙(collation)에 맡기면 서버마다 다르다 */
@@ -334,8 +354,7 @@ class ClubEventService(
     // --- 판정 (한 군데씩만) ---
 
     /** 승인된 멤버인가. 모든 일정 API 의 첫 줄 */
-    private fun requireMember(uid: String): ClubMember =
-        members.findByUserId(uid)?.takeIf { it.status == MemberStatus.APPROVED } ?: throw ClubError.notClubMember()
+    private fun requireMember(uid: String): ClubMember = members.requireApproved(uid)
 
     /** 만든 사람이거나 운영진(D28 의 ADMIN·APPROVED). 응답의 `canManage` 도 이 판정이다 */
     private fun canManage(event: ClubEvent, viewer: ClubMember) =
@@ -381,7 +400,7 @@ class ClubEventService(
         segments.saveAll(list.mapIndexed { i, s -> ClubEventSegment(event, i, s.themeName, s.branchName, s.themeKey, s.startMin, s.endMin) })
     }
 
-    // --- 응답 만들기 — 일정 n 개에 쿼리 5개 (구간 · 참여자 · 후보 · 응답 · 닉네임), N+1 을 만들지 않는다 ---
+    // --- 응답 만들기 — 일정 n 개에 쿼리 6개 (구간 · 참여자 · 후보 · 응답 · 해 본 테마 · 닉네임), N+1 을 만들지 않는다 ---
 
     private fun toDto(event: ClubEvent, viewer: ClubMember) = toDtos(listOf(event), viewer).single()
 
@@ -392,6 +411,7 @@ class ClubEventService(
         val peopleByEvent = participants.findByEventIds(ids).groupBy { requireNotNull(it.event.id) }
         val candsByEvent = candidates.findByEventIds(ids).groupBy { requireNotNull(it.event.id) }
         val answersByCand = answers.findByEventIds(ids).groupBy { requireNotNull(it.candidate.id) }
+        val playedByUser = played.findByUserIdIn(peopleByEvent.values.flatten().map { it.userId }.toSet()).groupBy { it.userId }
         val uids = list.map { it.createdBy } + peopleByEvent.values.flatten().map { it.userId }
         // 내보낸 멤버도 행이 남아 있으니 닉네임이 나온다. 행이 아예 없는 경우는 없지만, 있어도 화면이 깨지지 않게 빈 문자열
         val nick = members.findByUserIdIn(uids.toSet()).associate { it.userId to it.nickname }
@@ -409,7 +429,13 @@ class ClubEventService(
                 capacity = e.capacity,
                 booked = e.booked,
                 memo = e.memo,
-                segments = segsByEvent[id].orEmpty().map { SegmentDto(it.themeName, it.branchName, it.themeKey, it.startMin, it.endMin) },
+                segments = segsByEvent[id].orEmpty().map { seg ->
+                    val nameKey = PlayedMatch.nameKey(seg.themeName)
+                    val who = people.map { it.userId }.filter { u ->
+                        playedByUser[u].orEmpty().any { PlayedMatch.same(it.themeKey, it.nameKey, seg.themeKey, nameKey) }
+                    }
+                    SegmentDto(seg.themeName, seg.branchName, seg.themeKey, seg.startMin, seg.endMin, who)
+                },
                 candidates = candsByEvent[id].orEmpty().map { c ->
                     CandidateDto(c.date, answersByCand[c.id].orEmpty().map { ResponseDto(it.userId, it.available, it.startMin, it.endMin) })
                 },

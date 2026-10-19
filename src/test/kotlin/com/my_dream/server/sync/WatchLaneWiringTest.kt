@@ -32,10 +32,11 @@ class WatchLaneWiringTest @Autowired constructor(
     }
 
     @Test
-    fun `스케줄러 스레드가 둘이다`() {
+    fun `스케줄러 스레드가 주기 작업 수만큼 있다`() {
         // 하나면 전체 바퀴가 도는 약 2.5분 동안 빠른 확인이 그 뒤에 줄을 선다 —
-        // "2분마다" 가 최대 4.5분이 되는데, 로그 어디에도 원인이 안 남는다
-        assertEquals(2, context.getBean(ThreadPoolTaskScheduler::class.java).scheduledThreadPoolExecutor.corePoolSize)
+        // "2분마다" 가 최대 4.5분이 되는데, 로그 어디에도 원인이 안 남는다.
+        // 셋째는 해 본 테마 자동 기록(D33, 2026-10-19). 작업을 더하면 이 숫자도 같이 올린다
+        assertEquals(3, context.getBean(ThreadPoolTaskScheduler::class.java).scheduledThreadPoolExecutor.corePoolSize)
     }
 }
 

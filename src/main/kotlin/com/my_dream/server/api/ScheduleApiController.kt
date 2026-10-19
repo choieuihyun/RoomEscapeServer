@@ -20,6 +20,10 @@ class ScheduleApiController(private val query: ScheduleQueryService) {
     @GetMapping("/branches")
     fun branches(): List<BranchDto> = query.branches()
 
+    /** 해 본 테마 고르기용 (§4.9). `/api/branches` 처럼 로그인 없이 — 매장 공개 정보뿐이다 */
+    @GetMapping("/themes")
+    fun themes(): List<ThemeRefDto> = query.themes()
+
     @GetMapping("/schedule")
     fun schedule(
         @RequestParam branch: String,

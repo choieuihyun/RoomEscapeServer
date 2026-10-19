@@ -195,6 +195,11 @@ GET    /api/club/members                 대신 넣을 사람 고르기용
 POST   /api/club/events/{id}/availability  { date, available, startMin, endMin }   후보 날짜에 되는지 (3단계)
 DELETE /api/club/events/{id}/availability/{date}                                  응답 지우기
        날짜 미정 일정 = date 가 null · candidates(후보 날짜 1~14개)
+GET    /api/club/events/{id}/fresh-themes?date=  그날 열린 테마 중 참여자가 안 해 본 것 (4단계)
+GET    /api/me/played                     내 해 본 테마      POST { themeName, themeKey?, … }   DELETE /api/me/played/{id}
+GET    /api/club/members/{uid}/played     멤버의 해 본 테마
+GET    /api/me/events?before=&limit=      내가 참여한 지난 일정
+GET    /api/themes                        해 본 테마 고르기용 테마 목록 (로그인 없이)
 ```
 카카오는 서버가 확인한 뒤 Firebase 커스텀 토큰을 **직접 서명**해 돌려준다 — Admin SDK 없이 ([아키텍처.md](아키텍처.md) D29).
 관리자인지는 토큰이 아니라 **DB(`club_member`)** 로 본다 (D28).

@@ -53,5 +53,9 @@ class ClubError(
         fun badAvailability() = ClubError(HttpStatus.BAD_REQUEST, "BAD_AVAILABILITY", "되는 시간을 다시 확인해 주세요.")
         fun notACandidate() = ClubError(HttpStatus.BAD_REQUEST, "NOT_A_CANDIDATE", "후보 날짜가 아니에요. 새로 불러와 주세요.")
         fun notParticipantAnswer() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT_ANSWER", "참여한 사람만 되는 날짜를 고를 수 있어요.")
+
+        // --- 4단계 해 본 테마 (§4.9) ---
+        fun badPlayed() = ClubError(HttpStatus.BAD_REQUEST, "BAD_PLAYED", "테마 이름을 확인해 주세요.")
+        fun noSuchPlayed() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_PLAYED", "그 기록을 찾을 수 없어요.")
     }
 }

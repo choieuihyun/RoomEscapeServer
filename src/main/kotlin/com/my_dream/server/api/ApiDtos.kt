@@ -62,3 +62,6 @@ data class SessionDto(
     val t: Int,
     val soldout: Boolean,
 )
+
+/** 해 본 테마 고르기용 (§4.9 `GET /api/themes`) */
+data class ThemeRefDto(val themeKey: String, val themeName: String, val branchName: String, val storeName: String)

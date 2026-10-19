@@ -4,11 +4,14 @@ import com.my_dream.server.crawler.StoreAdapter
 import com.my_dream.server.domain.Store
 import com.my_dream.server.domain.StoreRepository
 import com.my_dream.server.domain.Theme
+import com.my_dream.server.domain.ThemeRepository
 import com.my_dream.server.domain.TimeSlot
 import com.my_dream.server.domain.TimeSlotRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.text.Collator
 import java.time.LocalDate
+import java.util.Locale
 
 /**
  * 저장해 둔 시간표를 읽어 외부에 줄 모양으로 바꾼다.
@@ -21,6 +24,7 @@ import java.time.LocalDate
 class ScheduleQueryService(
     private val stores: StoreRepository,
     private val slots: TimeSlotRepository,
+    private val themes: ThemeRepository,
     private val adapters: List<StoreAdapter>,
 ) {
 
@@ -28,7 +32,7 @@ class ScheduleQueryService(
      * 지원 지점 목록은 **어댑터가 알고 있다.** 조회 API 가 매장 종류를 알 필요가 없다.
      * 매장을 추가하면 어댑터 하나만 늘리면 여기까지 따라온다.
      */
-    private fun supportedBranches() = adapters.flatMap { it.branches }
+    fun supportedBranches() = adapters.flatMap { it.branches }
 
     /** 지원하는 지점 전부. 아직 수집 안 된 지점은 [BranchDto.dates] 가 비어 있다. */
     fun branches(today: LocalDate = LocalDate.now()): List<BranchDto> = supportedBranches().map { branch ->
@@ -45,6 +49,23 @@ class ScheduleQueryService(
         )
     }
 
+    /**
+     * 해 본 테마 고르기용 (§4.9 `GET /api/themes`). **지원 지점의 테마 전부** — 사이트에서 사라진 테마도 남긴다.
+     * 해 본 테마는 대개 지난 테마라, 지금 열린 것만 주면 기록할 수가 없다 (D33)
+     */
+    fun themes(): List<ThemeRefDto> {
+        val supported = supportedBranches().map { it.key }.toSet()
+        val korean = Collator.getInstance(Locale.KOREAN)
+        return themes.findAllWithStore()
+            .filter { it.store.storeKey in supported }
+            .map { ThemeRefDto("${it.store.storeKey}:${it.externalId}", it.name, it.store.branchName, it.store.brand) }
+            .sortedWith(
+                compareBy<ThemeRefDto, String>(korean) { it.storeName }
+                    .thenBy(korean) { it.branchName }
+                    .thenBy(korean) { it.themeName },
+            )
+    }
+
     /** 없는 지점이거나 아직 수집되지 않았으면 null. 호출자가 그 사실을 구분해 알릴 수 있게 한다. */
     fun schedule(branchKey: String, date: LocalDate): ScheduleDto? {
         // 모르는 키로 DB 를 뒤지지 않는다. 지원 목록에 있는 지점만 응답한다
@@ -59,48 +80,50 @@ class ScheduleQueryService(
             date = date,
             checkedAt = rows.maxOf { it.lastCheckedAt },
             themes = rows.groupBy { it.theme }.map { (theme, themeSlots) ->
-                theme.toDto(store, themeSlots)
+                theme.toThemeDto(store, themeSlots)
             },
         )
     }
 
-    private fun Theme.toDto(store: Store, themeSlots: List<TimeSlot>): ThemeDto {
-        val (min, max) = capacity.toPeopleRange()
-        return ThemeDto(
-            id = "${store.storeKey}:$externalId",
-            name = name,
-            place = "${store.brand} ${store.branchName}",
-            dur = runningMinutes,
-            genre = genre,
-            capacity = capacity,
-            minPeople = min,
-            maxPeople = max,
-            horrorLevel = horrorLevel,
-            difficulty = difficulty,
-            posterUrl = posterUrl,
-            // 매진 회차도 그대로 넘긴다. 걸러내는 건 화면이 정할 일이다
-            sessions = themeSlots.sortedBy { it.time }.map { it.toSession() },
-        )
-    }
+}
 
-    /**
-     * `2~3인` -> `2..3`, `4인` -> `4..4`. 못 읽으면 둘 다 null.
-     *
-     * 저장은 사이트 표기 그대로 하고 여기서 파생시킨다 — 사이트가 표기를 바꿔도 저장된 값은 사실 그대로 남는다.
-     */
-    private fun String?.toPeopleRange(): Pair<Int?, Int?> {
-        val numbers = this?.let { Regex("\\d+").findAll(it).map { m -> m.value.toInt() }.toList() }.orEmpty()
-        return when (numbers.size) {
-            0 -> null to null
-            1 -> numbers[0] to numbers[0]
-            else -> numbers.min() to numbers.max()
-        }
-    }
-
-    /** `10:35` → `635`. 자정부터의 분. */
-    private fun TimeSlot.toSession() = SessionDto(
-        id = requireNotNull(id),
-        t = time.hour * 60 + time.minute,
-        soldout = !available,
+/** `/api/schedule` 의 테마 모양. 협의 도우미(D33)도 같은 모양을 쓴다 — 회차 id 가 같이 가야 거기서 바로 빈자리 알림을 건다 */
+internal fun Theme.toThemeDto(store: Store, themeSlots: List<TimeSlot>): ThemeDto {
+    val (min, max) = capacity.toPeopleRange()
+    return ThemeDto(
+        id = "${store.storeKey}:$externalId",
+        name = name,
+        place = "${store.brand} ${store.branchName}",
+        dur = runningMinutes,
+        genre = genre,
+        capacity = capacity,
+        minPeople = min,
+        maxPeople = max,
+        horrorLevel = horrorLevel,
+        difficulty = difficulty,
+        posterUrl = posterUrl,
+        // 매진 회차도 그대로 넘긴다. 걸러내는 건 화면이 정할 일이다
+        sessions = themeSlots.sortedBy { it.time }.map { it.toSession() },
     )
 }
+
+/**
+ * `2~3인` -> `2..3`, `4인` -> `4..4`. 못 읽으면 둘 다 null.
+ *
+ * 저장은 사이트 표기 그대로 하고 여기서 파생시킨다 — 사이트가 표기를 바꿔도 저장된 값은 사실 그대로 남는다.
+ */
+private fun String?.toPeopleRange(): Pair<Int?, Int?> {
+    val numbers = this?.let { Regex("\\d+").findAll(it).map { m -> m.value.toInt() }.toList() }.orEmpty()
+    return when (numbers.size) {
+        0 -> null to null
+        1 -> numbers[0] to numbers[0]
+        else -> numbers.min() to numbers.max()
+    }
+}
+
+/** `10:35` → `635`. 자정부터의 분. */
+private fun TimeSlot.toSession() = SessionDto(
+    id = requireNotNull(id),
+    t = time.hour * 60 + time.minute,
+    soldout = !available,
+)

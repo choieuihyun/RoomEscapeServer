@@ -36,7 +36,7 @@ data class BookingRequest(val booked: Boolean? = null)
  */
 @RestController
 @RequestMapping("/api/club")
-class ClubEventController(private val service: ClubEventService) {
+class ClubEventController(private val service: ClubEventService, private val fresh: FreshThemeService) {
 
     /** 날짜를 문자열로 받는다 — `LocalDate` 로 받으면 형식이 틀렸을 때 스프링 기본 400 이 나가서 계약의 `BAD_RANGE` 가 안 된다 */
     @GetMapping("/events")
@@ -86,6 +86,11 @@ class ClubEventController(private val service: ClubEventService) {
     @DeleteMapping("/events/{id}/availability/{date}")
     fun clearAnswer(@AuthenticationPrincipal jwt: Jwt, @PathVariable id: Long, @PathVariable date: String): EventDto =
         service.clearAnswer(jwt.uid(), id, date)
+
+    /** 협의 도우미 (§4.9). `date` 를 안 주면 일정 날짜 */
+    @GetMapping("/events/{id}/fresh-themes")
+    fun freshThemes(@AuthenticationPrincipal jwt: Jwt, @PathVariable id: Long, @RequestParam(required = false) date: String?): FreshDto =
+        fresh.fresh(jwt.uid(), id, date)
 
     @GetMapping("/members")
     fun members(@AuthenticationPrincipal jwt: Jwt): List<ClubMemberDto> = service.members(jwt.uid())

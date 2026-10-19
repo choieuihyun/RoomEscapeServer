@@ -9,6 +9,7 @@ import com.my_dream.server.domain.ClubMember
 import com.my_dream.server.domain.ClubMemberRepository
 import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
+import com.my_dream.server.domain.PlayedThemeRepository
 import org.hamcrest.Matchers.containsString
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -46,6 +47,7 @@ class ClubEventApiTest @Autowired constructor(
     private val segments: ClubEventSegmentRepository,
     private val participants: ClubEventParticipantRepository,
     private val candidates: ClubEventCandidateRepository,
+    private val played: PlayedThemeRepository,
     private val answers: ClubEventAvailabilityRepository,
 ) {
 
@@ -53,6 +55,7 @@ class ClubEventApiTest @Autowired constructor(
 
     @BeforeEach
     fun setUp() {
+        played.deleteAll()
         answers.deleteAll()
         candidates.deleteAll()
         participants.deleteAll()
@@ -74,7 +77,7 @@ class ClubEventApiTest @Autowired constructor(
         return json.readValue(res, Map::class.java)
     }
 
-    /** 일정 API 전부. 하나 늘리면 여기에도 적는다 */
+    /** 동호회 API 전부 (일정 · 시간 협의 · 해 본 테마 · 지난 일정). 하나 늘리면 여기에도 적는다 */
     private fun routes(id: Any): List<MockHttpServletRequestBuilder> = listOf(
         get("/api/club/events").param("from", "2026-11-01").param("to", "2026-11-30"),
         get("/api/club/events/$id"),
@@ -89,6 +92,12 @@ class ClubEventApiTest @Autowired constructor(
         get("/api/club/members"),
         post("/api/club/events/$id/availability").contentType(MediaType.APPLICATION_JSON).content("""{"date":"2026-11-07","available":true}"""),
         delete("/api/club/events/$id/availability/2026-11-07"),
+        get("/api/club/events/$id/fresh-themes"),
+        get("/api/me/played"),
+        post("/api/me/played").contentType(MediaType.APPLICATION_JSON).content("""{"themeName":"목격자"}"""),
+        delete("/api/me/played/1"),
+        get("/api/club/members/kakao:42/played"),
+        get("/api/me/events"),
     )
 
     @Test
@@ -236,6 +245,38 @@ class ClubEventApiTest @Autowired constructor(
             .andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.error").value("NOT_A_CANDIDATE"))
             .andExpect(jsonPath("$.message").value("후보 날짜가 아니에요. 새로 불러와 주세요."))
+    }
+
+    @Test
+    fun `구간에 playedBy 가 실린 EventDto 를 통째로 돌려보내도 수정된다`() {
+        // 입력 검사도 SegmentDto 를 쓴다 — playedBy 에 기본값이 없거나 입력이 그 필드를 거절하면 여기서 BAD_EVENT 가 난다
+        val made = create()
+        mvc.perform(post("/api/me/played").with(as_("kakao:42")).contentType(MediaType.APPLICATION_JSON).content("""{"themeName":"ABC"}"""))
+            .andExpect(status().isOk)
+        mvc.perform(post("/api/club/events/${made["id"]}/join").with(as_("kakao:42"))).andExpect(status().isOk)
+        val latest = json.readValue(mvc.perform(get("/api/club/events/${made["id"]}").with(as_("나"))).andReturn().response.contentAsString, Map::class.java)
+        assertTrue(((latest["segments"] as List<*>).single() as Map<*, *>)["playedBy"] == listOf("kakao:42"), "$latest")
+
+        mvc.perform(post("/api/club/events/${made["id"]}").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(latest + mapOf("title" to "고침"))))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.segments[0].playedBy[0]").value("kakao:42"))
+    }
+
+    @Test
+    fun `해 본 테마·지난 일정 경로의 틀린 입력도 계약 본문으로`() {
+        mvc.perform(post("/api/me/played").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content("{"))
+            .andExpect(status().isBadRequest).andExpect(jsonPath("$.error").value("BAD_PLAYED"))
+        mvc.perform(delete("/api/me/played/abc").with(as_("나")))
+            .andExpect(status().isNotFound).andExpect(jsonPath("$.error").value("NO_SUCH_PLAYED"))
+        mvc.perform(get("/api/me/events").param("limit", "많이").with(as_("나")))
+            .andExpect(status().isBadRequest).andExpect(jsonPath("$.error").value("BAD_RANGE"))
+        mvc.perform(get("/api/club/events/abc/fresh-themes").with(as_("나")))
+            .andExpect(status().isNotFound).andExpect(jsonPath("$.error").value("NO_SUCH_EVENT"))
+    }
+
+    @Test
+    fun `테마 고르기 목록은 로그인 없이 열린다`() {
+        mvc.perform(get("/api/themes")).andExpect(status().isOk)
     }
 
     @Test

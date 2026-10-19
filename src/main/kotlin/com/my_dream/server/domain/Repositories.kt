@@ -1,10 +1,12 @@
 package com.my_dream.server.domain
 
 import jakarta.persistence.LockModeType
+import org.springframework.data.domain.Limit
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -15,9 +17,17 @@ interface StoreRepository : JpaRepository<Store, Long> {
 interface ThemeRepository : JpaRepository<Theme, Long> {
     fun findByStoreAndExternalId(store: Store, externalId: String): Theme?
     fun findByStore(store: Store): List<Theme>
+
+    /** `GET /api/themes` — 테마 수백 개에 지점까지 한 번에 */
+    @Query("select t from Theme t join fetch t.store")
+    fun findAllWithStore(): List<Theme>
 }
 
 interface TimeSlotRepository : JpaRepository<TimeSlot, Long> {
+
+    /** 협의 도우미 — 그날 모든 지점의 회차를 테마·지점과 함께 한 번에 (40지점을 하나씩 돌지 않게) */
+    @Query("select s from TimeSlot s join fetch s.theme t join fetch t.store where s.date = :date")
+    fun findAllOnDate(date: LocalDate): List<TimeSlot>
     fun findByThemeAndDate(theme: Theme, date: LocalDate): List<TimeSlot>
 
     /** 조회 API 용. 지점 하루치를 테마와 함께 한 번에 가져온다 (테마당 쿼리를 또 날리지 않도록). */
@@ -190,6 +200,32 @@ interface ClubEventRepository : JpaRepository<ClubEvent, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select e from ClubEvent e where e.id = :id")
     fun findForUpdate(id: Long): ClubEvent?
+
+    /** 해 본 테마 자동 기록 대상 (D33) — 예약 완료 · 안 지움 · 날짜가 지남 · 아직 안 함. 날짜 미정은 `date < :today` 에서 빠진다 */
+    @Query(
+        """
+        select e from ClubEvent e
+        where e.booked = true and e.deletedAt is null and e.date < :today and e.playedRecordedAt is null
+        order by e.date, e.id
+        """,
+    )
+    fun findUnrecordedPast(today: LocalDate): List<ClubEvent>
+
+    /** **벌크로** 단다 — 엔티티로 고치면 `@Version` 이 오른다 (D33). `updatedAt` 도 안 건드린다 */
+    @Modifying(flushAutomatically = true)
+    @Query("update ClubEvent e set e.playedRecordedAt = :at where e.id in :ids")
+    fun markPlayedRecorded(ids: Collection<Long>, at: Instant): Int
+
+    /** 내가 참여한 지난 일정 (§4.9 `GET /api/me/events`). 날짜 미정은 `date < :before` 에서 빠진다 */
+    @Query(
+        """
+        select e from ClubEvent e
+        where e.deletedAt is null and e.date < :before
+          and exists (select 1 from ClubEventParticipant p where p.event = e and p.userId = :uid)
+        order by e.date desc, e.id desc
+        """,
+    )
+    fun findPastJoined(uid: String, before: LocalDate, limit: Limit): List<ClubEvent>
 }
 
 interface ClubEventSegmentRepository : JpaRepository<ClubEventSegment, Long> {
@@ -260,4 +296,10 @@ interface ClubEventAvailabilityRepository : JpaRepository<ClubEventAvailability,
         """,
     )
     fun deleteByEventAndUserId(event: ClubEvent, userId: String): Int
+}
+
+interface PlayedThemeRepository : JpaRepository<PlayedTheme, Long> {
+    fun findByUserId(userId: String): List<PlayedTheme>
+    fun findByUserIdIn(userIds: Collection<String>): List<PlayedTheme>
+    fun findByIdAndUserId(id: Long, userId: String): PlayedTheme?
 }

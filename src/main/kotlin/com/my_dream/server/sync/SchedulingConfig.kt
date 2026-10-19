@@ -5,7 +5,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 /**
- * 스케줄러 스레드 수. **주기 작업이 둘이라 둘이다** — [Play33CollectJob] 과 [WatchedSlotCollectJob].
+ * 스케줄러 스레드 수. **주기 작업 수와 같다** — [Play33CollectJob] · [WatchedSlotCollectJob] ·
+ * 해 본 테마 자동 기록(`PlayedRecorder`, 2026-10-19 D33).
  *
  * 스프링 기본값은 1이다. 하나면 전체 바퀴가 도는 약 2.5분 동안 감시 빠른 확인이 그 뒤에 줄을 서서
  * "2분마다" 가 최대 4.5분이 된다 — 틀린 값을 저장하지는 않지만, 느려진 이유가 로그 어디에도 안 남는다.
@@ -25,6 +26,6 @@ class SchedulingConfig {
     fun schedulerThreads() = ThreadPoolTaskSchedulerCustomizer { it.poolSize = SCHEDULED_JOBS }
 
     companion object {
-        const val SCHEDULED_JOBS = 2
+        const val SCHEDULED_JOBS = 3
     }
 }

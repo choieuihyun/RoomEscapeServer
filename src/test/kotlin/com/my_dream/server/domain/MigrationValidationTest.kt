@@ -49,6 +49,7 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM played_theme")
         jdbc.update("DELETE FROM club_event_availability")
         jdbc.update("DELETE FROM club_event_candidate")
         jdbc.update("DELETE FROM club_event_participant")
@@ -59,7 +60,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V9 까지 돌고 엔티티와 맞는다`() {
+    fun `V10 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -169,6 +170,22 @@ class MigrationValidationTest @Autowired constructor(
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(answer, candId, "g", true, 700, 2880) }
         // CASCADE 를 일부러 안 걸었다 — 응답이 남은 후보는 못 지운다. 서비스가 응답부터 지운다 (D32)
         assertFailsWith<DataIntegrityViolationException> { jdbc.update("DELETE FROM club_event_candidate WHERE id = ?", candId) }
+    }
+
+    // --- V10 해 본 테마 ---
+
+    @Test
+    fun `해 본 테마 — 이모지 40자 이름, 정해진 source 만, 일정 표시 열`() {
+        val insert = "INSERT INTO played_theme (user_id, theme_name, name_key, source, created_at) VALUES ('u', ?, 'k', ?, now())"
+        jdbc.update(insert, "🙂".repeat(40), "MANUAL")
+        jdbc.update(insert, "A", "PLAN")
+        jdbc.update(insert, "A", "EVENT")
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "🙂".repeat(41), "MANUAL") }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "A", "GUESS") }
+        // 같은 테마를 두 번 넣는 것은 DB 가 막지 않는다 — 규칙이 이행적이지 않아 UNIQUE 로 못 건다 (D33)
+        jdbc.update(insert, "A", "MANUAL")
+        val id = insertEvent()
+        assertEquals(1, jdbc.update("UPDATE club_event SET played_recorded_at = now() WHERE id = ?", id))
     }
 
     private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING", nickname: String = "닉") {

@@ -249,6 +249,13 @@ class ClubEvent(
 
     @Column(name = "deleted_at") var deletedAt: Instant? = null
     @Column(name = "deleted_by") var deletedBy: String? = null
+
+    /**
+     * 해 본 테마 자동 기록을 한 때 (D33). **읽기 전용** — 벌크 UPDATE 로만 단다.
+     * 엔티티로 고치면 version 이 올라 편집 중인 사람이 충돌을 받고, 일정 수정이 이 값을 null 로 덮어쓸 수도 있다
+     */
+    @Column(name = "played_recorded_at", insertable = false, updatable = false)
+    var playedRecordedAt: Instant? = null
 }
 
 /** 테마 구간 하나. [position] 순으로 읽는다 */
@@ -312,6 +319,30 @@ class ClubEventAvailability(
     @Column(name = "start_min") var startMin: Int?,
     @Column(name = "end_min") var endMin: Int?,
     @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+enum class PlayedSource { MANUAL, PLAN, EVENT }
+
+/**
+ * 해 본 테마 하나 (D33). "같은 테마인가" 는 [com.my_dream.server.club.PlayedMatch] 한 곳에서만 판정한다 —
+ * 규칙이 이행적이지 않아 UNIQUE 로 못 건다
+ */
+@Entity
+@Table(name = "played_theme")
+class PlayedTheme(
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(name = "theme_key", length = 80) val themeKey: String?,
+    @Column(name = "theme_name", nullable = false, length = 40) val themeName: String,
+    @Column(name = "branch_name", length = 40) val branchName: String?,
+    @Column(name = "name_key", nullable = false, length = 200) val nameKey: String,
+    @Column(name = "played_on") val playedOn: LocalDate?,
+    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 16) val source: PlayedSource,
+    @Column(name = "event_id") val eventId: Long?,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
