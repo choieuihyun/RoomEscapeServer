@@ -11,6 +11,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.Version
 import jakarta.persistence.UniqueConstraint
 import java.time.Instant
 import java.time.LocalDate
@@ -207,6 +208,77 @@ class KakaoLink(
     @Column(name = "kakao_id", nullable = false) val kakaoId: Long,
     @Column(name = "user_id", nullable = false) val userId: String,
     @Column(name = "created_at", nullable = false) val createdAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/**
+ * 동호회 일정 (아키텍처 D30 · D31). 계약은 Floduler `작업명세서.md` §4.7.
+ *
+ * **구간·참여자 컬렉션을 여기 매핑하지 않는다.** 매핑하면 참여만 해도 이 행의 [version] 이 오를 수 있고,
+ * 그러면 편집 중인 사람이 남의 참여 때문에 충돌을 받는다 (D31). 둘 다 자기 쪽에서 `@ManyToOne` 으로만 가리킨다.
+ *
+ * 시각은 자정부터의 분이다 — [startMin]·[endMin] 둘 다 null 이면 "하루 종일".
+ */
+@Entity
+@Table(name = "club_event")
+class ClubEvent(
+    @Column(nullable = false, length = 60) var title: String,
+    @Column(name = "event_date", nullable = false) var date: LocalDate,
+    @Column(name = "start_min") var startMin: Int?,
+    @Column(name = "end_min") var endMin: Int?,
+    @Column(length = 60) var location: String?,
+    @Column var capacity: Int?,
+    @Column(nullable = false) var booked: Boolean,
+    @Column(length = 500) var memo: String?,
+    @Column(name = "created_by", nullable = false) val createdBy: String,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
+    @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+
+    /** 낙관적 잠금. **flush 때 오른다** — 응답을 만들기 전에 flush 해야 새 번호가 나간다 (D31) */
+    @Version
+    @Column(nullable = false)
+    var version: Long = 0
+
+    @Column(name = "deleted_at") var deletedAt: Instant? = null
+    @Column(name = "deleted_by") var deletedBy: String? = null
+}
+
+/** 테마 구간 하나. [position] 순으로 읽는다 */
+@Entity
+@Table(name = "club_event_segment", uniqueConstraints = [UniqueConstraint(columnNames = ["event_id", "position"])])
+class ClubEventSegment(
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id", nullable = false)
+    val event: ClubEvent,
+    @Column(nullable = false) val position: Int,
+    @Column(name = "theme_name", nullable = false, length = 40) val themeName: String,
+    @Column(name = "branch_name", length = 40) val branchName: String?,
+    @Column(name = "theme_key", length = 80) val themeKey: String?,
+    @Column(name = "start_min", nullable = false) val startMin: Int,
+    @Column(name = "end_min") val endMin: Int?,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** 일정에 참여한 사람 하나. [addedBy] 는 대신 넣었을 때 넣은 사람 */
+@Entity
+@Table(name = "club_event_participant", uniqueConstraints = [UniqueConstraint(columnNames = ["event_id", "user_id"])])
+class ClubEventParticipant(
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id", nullable = false)
+    val event: ClubEvent,
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(name = "added_by") val addedBy: String?,
+    @Column(name = "joined_at", nullable = false) val joinedAt: Instant,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

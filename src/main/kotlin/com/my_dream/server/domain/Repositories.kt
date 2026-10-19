@@ -3,6 +3,7 @@ package com.my_dream.server.domain
 import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
 import java.time.LocalTime
@@ -131,6 +132,9 @@ interface ClubMemberRepository : JpaRepository<ClubMember, Long> {
 
     fun findByStatusOrderByCreatedAt(status: MemberStatus): List<ClubMember>
 
+    /** 일정의 참여자·만든 사람 닉네임을 한 번에. 잠그지 않는다 — 일정 작업은 멤버 행을 잠그면 안 된다 (D31) */
+    fun findByUserIdIn(userIds: Collection<String>): List<ClubMember>
+
     fun findAllByOrderByCreatedAt(): List<ClubMember>
 
     /**
@@ -156,4 +160,55 @@ interface KakaoLinkRepository : JpaRepository<KakaoLink, Long> {
     fun findByKakaoId(kakaoId: Long): KakaoLink?
     fun findByUserId(userId: String): KakaoLink?
     fun existsByUserId(userId: String): Boolean
+}
+
+interface ClubEventRepository : JpaRepository<ClubEvent, Long> {
+
+    /**
+     * 날짜 범위의 지워지지 않은 일정. 순서는 날짜 → 시작(**하루 종일 먼저**) → id (§4.7).
+     *
+     * `nulls first` 를 **직접 적는다.** Postgres 는 오름차순에서 NULL 을 맨 뒤에 두고 H2 는 앞에 둔다 —
+     * 안 적으면 테스트(H2)는 통과하고 운영(Postgres)에서 순서가 뒤집힌다
+     */
+    @Query(
+        """
+        select e from ClubEvent e
+        where e.deletedAt is null and e.date between :from and :to
+        order by e.date, e.startMin asc nulls first, e.id
+        """,
+    )
+    fun findLiveBetween(from: LocalDate, to: LocalDate): List<ClubEvent>
+
+    /**
+     * 참여·수정·예약 상태를 바꾸기 전에 **일정 행 하나만** 잠근다 (D31).
+     * 잠금은 version 을 올리지 않는다(`PESSIMISTIC_WRITE`) — 참여가 편집을 막으면 안 된다
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from ClubEvent e where e.id = :id")
+    fun findForUpdate(id: Long): ClubEvent?
+}
+
+interface ClubEventSegmentRepository : JpaRepository<ClubEventSegment, Long> {
+
+    @Query("select s from ClubEventSegment s where s.event.id in :eventIds order by s.event.id, s.position")
+    fun findByEventIds(eventIds: Collection<Long>): List<ClubEventSegment>
+
+    /**
+     * 구간을 통째로 바꾸기 전에 **먼저 내보내는** 지우기 (D30 "순서 함정").
+     * `flushAutomatically` 로 앞의 변경을 먼저 내보낸다. `clearAutomatically` 는 **켜지 않는다** —
+     * 켜면 잠가 둔 일정 엔티티가 떨어져 나가 뒤의 변경이 조용히 안 저장된다
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ClubEventSegment s where s.event = :event")
+    fun deleteByEvent(event: ClubEvent): Int
+}
+
+interface ClubEventParticipantRepository : JpaRepository<ClubEventParticipant, Long> {
+
+    @Query("select p from ClubEventParticipant p where p.event.id in :eventIds order by p.event.id, p.joinedAt, p.id")
+    fun findByEventIds(eventIds: Collection<Long>): List<ClubEventParticipant>
+
+    fun countByEvent(event: ClubEvent): Long
+
+    fun findByEventAndUserId(event: ClubEvent, userId: String): ClubEventParticipant?
 }

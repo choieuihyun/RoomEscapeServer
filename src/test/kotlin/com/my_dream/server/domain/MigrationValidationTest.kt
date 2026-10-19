@@ -49,6 +49,9 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM club_event_participant")
+        jdbc.update("DELETE FROM club_event_segment")
+        jdbc.update("DELETE FROM club_event")
         jdbc.update("DELETE FROM kakao_link")
         jdbc.update("DELETE FROM club_member")
     }
@@ -91,6 +94,50 @@ class MigrationValidationTest @Autowired constructor(
         // 서비스는 코드 포인트로 20자까지 받는다. DB 가 다르게 세면 검사를 통과한 닉네임이 500 이 된다
         insertMember("emoji", nickname = "🙂".repeat(20))
         assertFailsWith<DataIntegrityViolationException> { insertMember("emoji2", nickname = "🙂".repeat(21)) }
+    }
+
+    // --- V7 동호회 일정 ---
+
+    private fun insertEvent(
+        start: Int? = null, end: Int? = null, capacity: Int? = null, date: String = "2026-11-01", title: String = "일정",
+    ): Long = jdbc.queryForObject(
+        """INSERT INTO club_event (title, event_date, start_min, end_min, capacity, booked, created_by, created_at, updated_at, version)
+           VALUES (?, ?::date, ?, ?, ?, false, 'u', now(), now(), 0) RETURNING id""",
+        Long::class.java, title, date, start, end, capacity,
+    )!!
+
+    @Test
+    fun `일정 시각은 둘 다 있거나 둘 다 없고, 0 이상 2879 이하`() {
+        insertEvent()
+        insertEvent(start = 600, end = 2879)
+        assertFailsWith<DataIntegrityViolationException> { insertEvent(start = 600) }
+        assertFailsWith<DataIntegrityViolationException> { insertEvent(start = 700, end = 600) }
+        assertFailsWith<DataIntegrityViolationException> { insertEvent(start = 0, end = 2880) }
+    }
+
+    @Test
+    fun `정원은 없거나 2~8`() {
+        insertEvent(capacity = 2)
+        insertEvent(capacity = 8)
+        assertFailsWith<DataIntegrityViolationException> { insertEvent(capacity = 1) }
+        assertFailsWith<DataIntegrityViolationException> { insertEvent(capacity = 9) }
+    }
+
+    @Test
+    fun `한 일정에 같은 사람은 한 번만, 같은 자리 구간도 하나만`() {
+        val id = insertEvent()
+        val join = "INSERT INTO club_event_participant (event_id, user_id, joined_at) VALUES (?, 'u1', now())"
+        jdbc.update(join, id)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(join, id) }
+        val seg = "INSERT INTO club_event_segment (event_id, position, theme_name, start_min) VALUES (?, 0, '테마', 600)"
+        jdbc.update(seg, id)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(seg, id) }
+    }
+
+    @Test
+    fun `제목 60자는 이모지여도 들어간다`() {
+        insertEvent(title = "🙂".repeat(60))
+        assertFailsWith<DataIntegrityViolationException> { insertEvent(title = "🙂".repeat(61)) }
     }
 
     private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING", nickname: String = "닉") {
