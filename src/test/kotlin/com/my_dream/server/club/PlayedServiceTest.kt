@@ -6,6 +6,8 @@ import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
 import com.my_dream.server.domain.PlayedSource
 import com.my_dream.server.domain.PlayedThemeRepository
+import com.my_dream.server.domain.Store
+import com.my_dream.server.domain.StoreRepository
 import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -32,6 +34,7 @@ class PlayedServiceTest @Autowired constructor(
     private val played: PlayedThemeRepository,
     private val em: EntityManager,
     private val jdbc: JdbcTemplate,
+    private val stores: StoreRepository,
 ) {
 
     private val today = LocalDate.of(2026, 11, 10)
@@ -189,18 +192,52 @@ class PlayedServiceTest @Autowired constructor(
     }
 
     @Test
-    fun `지난 일정은 내가 참여한 것만, 날짜 최근 순, 미정은 빼고`() {
+    fun `지난 일정은 내가 참여한 것만, 날짜 최근 순, 미정은 빼고, total 은 커서와 상관없이 전체`() {
         val old = event(date = "2026-10-01").id
         val newer = event(date = "2026-11-01").id
-        event(date = today.toString())          // 오늘 — before 는 미포함
+        event(date = today.toString())          // 오늘 — 미포함
         event(date = null)
         events.create("너", EventInput("남의 것", "2026-10-15", null, null, null, null, false, null, listOf(seg("X")), null))
 
-        assertEquals(listOf(newer, old), events.myPast("나", null, null, today = today).map { it.id })
-        assertEquals(listOf(newer), events.myPast("나", null, "1", today = today).map { it.id })
-        assertEquals(listOf(old), events.myPast("나", "2026-11-01", null, today = today).map { it.id })
-        listOf<Pair<String?, String?>>("어제" to null, null to "0", null to "51", null to "열").forEach { (b, l) ->
-            assertEquals("BAD_RANGE", code { events.myPast("나", b, l, today = today) }, "$b $l")
+        val all = events.myPast("나", null, null, null, today = today)
+        assertEquals(listOf(newer, old), all.events.map { it.id })
+        assertEquals(2, all.total)
+        assertEquals(listOf(newer), events.myPast("나", null, null, "1", today = today).events.map { it.id })
+        val older = events.myPast("나", "2026-11-01", null, null, today = today)
+        assertEquals(listOf(old), older.events.map { it.id })
+        assertEquals(2, older.total, "커서와 상관없다")
+        listOf<Triple<String?, String?, String?>>(
+            Triple("어제", null, null), Triple(null, null, "0"), Triple(null, null, "51"), Triple(null, null, "열"),
+            Triple(null, "5", null),            // id 만 — 어느 날의 id 인지 모른다
+            Triple("2026-11-01", "다섯", null), Triple("2026-11-01", "0", null),
+        ).forEach { (b, id, l) -> assertEquals("BAD_RANGE", code { events.myPast("나", b, id, l, today = today) }, "$b $id $l") }
+    }
+
+    @Test
+    fun `같은 날 일정이 쪽 경계에 걸쳐도 (date, id) 커서로 빠짐없이 이어진다`() {
+        // 날짜만으로 자르면 둘째 쪽이 "11-01 이전" 이 되어 11-01 의 나머지 일정이 빠진다
+        val ids = List(3) { event(date = "2026-11-01").id } + event(date = "2026-10-01").id
+        val expected = ids.take(3).sortedDescending() + ids[3]
+
+        val seen = mutableListOf<Long>()
+        var page = events.myPast("나", null, null, "2", today = today)
+        while (page.events.isNotEmpty()) {
+            seen += page.events.map { it.id }
+            val last = page.events.last()
+            page = events.myPast("나", last.date.toString(), last.id.toString(), "2", today = today)
         }
+        assertEquals(expected, seen)
+    }
+
+    @Test
+    fun `기록에 서버가 아는 매장 이름이 붙는다 — 키가 없거나 모르는 키면 null`() {
+        stores.save(Store("play33-konkuk", "플레이33", "건대점"))
+        service.add("나", PlayedInput(themeName = "목격자", themeKey = "play33-konkuk:18"))
+        service.add("나", PlayedInput(themeName = "직접"))
+        service.add("나", PlayedInput(themeName = "모름", themeKey = "어디에도-없는:1"))
+        assertEquals(
+            mapOf("목격자" to "플레이33", "직접" to null, "모름" to null),
+            service.mine("나").associate { it.themeName to it.storeName },
+        )
     }
 }

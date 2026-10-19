@@ -3,7 +3,7 @@ package com.my_dream.server.api
 import com.my_dream.server.club.ClubError
 import com.my_dream.server.club.ClubEventService
 import com.my_dream.server.club.DeletedDto
-import com.my_dream.server.club.EventDto
+import com.my_dream.server.club.MyEventsDto
 import com.my_dream.server.club.PlayedDto
 import com.my_dream.server.club.PlayedInput
 import com.my_dream.server.club.PlayedService
@@ -53,8 +53,9 @@ class ClubProfileController(
     fun myPast(
         @AuthenticationPrincipal jwt: Jwt,
         @RequestParam(required = false) before: String?,
+        @RequestParam(required = false) beforeId: String?,
         @RequestParam(required = false) limit: String?,
-    ): List<EventDto> = events.myPast(jwt.uid(), before, limit)
+    ): MyEventsDto = events.myPast(jwt.uid(), before, beforeId, limit)
 }
 
 /** 이 컨트롤러의 **틀린 입력**도 `{ error, message }` 로. 이 컨트롤러에만 건다 (`ClubEventInputAdvice` 와 같은 이유) */

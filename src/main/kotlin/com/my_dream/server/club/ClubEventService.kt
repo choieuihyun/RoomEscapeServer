@@ -116,6 +116,9 @@ data class EventDto(
 
 data class DeletedDto(val id: Long, val deleted: Boolean)
 
+/** `GET /api/me/events` (§4.9). [total] 은 커서와 상관없이 내가 참여한 지난 일정 전체 수 */
+data class MyEventsDto(val events: List<EventDto>, val total: Long)
+
 data class ClubMemberDto(val uid: String, val nickname: String)
 
 /**
@@ -166,13 +169,25 @@ class ClubEventService(
         return toDto(event, viewer)
     }
 
-    /** 내가 참여한 지난 일정 (§4.9). [before] 가 없으면 오늘(KST), 날짜 미정은 빠진다. 문자열로 받는 이유는 [list] 와 같다 */
+    /**
+     * 내가 참여한 지난 일정 (§4.9). 커서는 (date, id) — 화면은 받은 마지막 일정의 date·id 를 [before]·[beforeId] 로 보낸다.
+     * [before] 만 오면 그날 이전, 둘 다 없으면 오늘(KST) 이전. 날짜 미정은 빠진다. 문자열로 받는 이유는 [list] 와 같다
+     */
     @Transactional(readOnly = true)
-    fun myPast(uid: String, before: String?, limit: String?, today: LocalDate = todayKst()): List<EventDto> {
+    fun myPast(uid: String, before: String?, beforeId: String?, limit: String?, today: LocalDate = todayKst()): MyEventsDto {
         val viewer = requireMember(uid)
         val until = if (before == null) today else parseDate(before) ?: throw ClubError.badRange()
+        // id 만 오면 어느 날의 id 인지 모른다
+        val idCursor = when {
+            beforeId == null -> 0L
+            before == null -> throw ClubError.badRange()
+            else -> beforeId.toLongOrNull()?.takeIf { it > 0 } ?: throw ClubError.badRange()
+        }
         val n = if (limit == null) 20 else limit.toIntOrNull()?.takeIf { it in 1..50 } ?: throw ClubError.badRange()
-        return toDtos(events.findPastJoined(uid, until, Limit.of(n)), viewer)
+        return MyEventsDto(
+            events = toDtos(events.findPastJoined(uid, until, idCursor, Limit.of(n)), viewer),
+            total = events.countPastJoined(uid, today),
+        )
     }
 
     /** 대신 넣을 사람 고르기용. 승인 멤버만, **한국어 가나다순** — DB 정렬 규칙(collation)에 맡기면 서버마다 다르다 */

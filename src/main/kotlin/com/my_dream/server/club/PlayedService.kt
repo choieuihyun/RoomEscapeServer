@@ -5,6 +5,7 @@ import com.my_dream.server.domain.MemberStatus
 import com.my_dream.server.domain.PlayedSource
 import com.my_dream.server.domain.PlayedTheme
 import com.my_dream.server.domain.PlayedThemeRepository
+import com.my_dream.server.domain.StoreRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -29,6 +30,8 @@ data class PlayedDto(
     val themeName: String,
     val branchName: String?,
     val playedOn: LocalDate?,
+    /** [themeKey] 로 서버가 아는 매장 이름. 키가 없거나(직접 적음) 모르는 키면 null */
+    val storeName: String?,
     val source: PlayedSource,
     val eventId: Long?,
     val createdAt: Instant,
@@ -39,6 +42,7 @@ data class PlayedDto(
 class PlayedService(
     private val played: PlayedThemeRepository,
     private val members: ClubMemberRepository,
+    private val stores: StoreRepository,
 ) {
 
     @Transactional(readOnly = true)
@@ -81,8 +85,9 @@ class PlayedService(
             else -> throw ClubError.badPlayed()   // EVENT 는 자동 기록만
         }
 
-        played.findByUserId(uid).firstOrNull { PlayedMatch.same(it.themeKey, it.nameKey, key, nameKey) }?.let { return it.toDto() }
-        return played.save(PlayedTheme(uid, key, name, branch, nameKey, playedOn, source, null, Instant.now())).toDto()
+        val row = played.findByUserId(uid).firstOrNull { PlayedMatch.same(it.themeKey, it.nameKey, key, nameKey) }
+            ?: played.save(PlayedTheme(uid, key, name, branch, nameKey, playedOn, source, null, Instant.now()))
+        return withStores(listOf(row)).single()
     }
 
     @Transactional
@@ -96,15 +101,22 @@ class PlayedService(
 
     /** 최근 순 — 다녀온 날, 없으면 적은 날 */
     private fun rowsOf(uid: String): List<PlayedDto> =
-        played.findByUserId(uid)
-            .sortedWith(
+        withStores(
+            played.findByUserId(uid).sortedWith(
                 compareByDescending<PlayedTheme> { it.playedOn ?: it.createdAt.atZone(KST).toLocalDate() }
                     .thenByDescending { it.createdAt }
                     .thenByDescending { it.id },
-            )
-            .map { it.toDto() }
+            ),
+        )
 
-    private fun PlayedTheme.toDto() = PlayedDto(requireNotNull(id), themeKey, themeName, branchName, playedOn, source, eventId, createdAt)
+    /** 매장 이름은 키(`play33-konkuk:18`)의 앞부분으로 찾는다 — 한 번에, 기록마다 쿼리를 날리지 않게 */
+    private fun withStores(rows: List<PlayedTheme>): List<PlayedDto> {
+        val keyOf = { r: PlayedTheme -> r.themeKey?.substringBefore(':', missingDelimiterValue = "") }
+        val brand = stores.findByStoreKeyIn(rows.mapNotNull(keyOf).filter { it.isNotEmpty() }.toSet()).associate { it.storeKey to it.brand }
+        return rows.map {
+            PlayedDto(requireNotNull(it.id), it.themeKey, it.themeName, it.branchName, it.playedOn, keyOf(it)?.let(brand::get), it.source, it.eventId, it.createdAt)
+        }
+    }
 
     /** 앞뒤 공백을 지우고 **코드 포인트**로 센다 (D28). 비면 null — "빈 문자열" 과 "없음" 을 두 가지로 두지 않는다 */
     private fun text(raw: String?, max: Int): String? {

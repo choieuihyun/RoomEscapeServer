@@ -12,6 +12,7 @@ import java.time.LocalTime
 
 interface StoreRepository : JpaRepository<Store, Long> {
     fun findByStoreKey(storeKey: String): Store?
+    fun findByStoreKeyIn(storeKeys: Collection<String>): List<Store>
 }
 
 interface ThemeRepository : JpaRepository<Theme, Long> {
@@ -216,16 +217,31 @@ interface ClubEventRepository : JpaRepository<ClubEvent, Long> {
     @Query("update ClubEvent e set e.playedRecordedAt = :at where e.id in :ids")
     fun markPlayedRecorded(ids: Collection<Long>, at: Instant): Int
 
-    /** 내가 참여한 지난 일정 (§4.9 `GET /api/me/events`). 날짜 미정은 `date < :before` 에서 빠진다 */
+    /**
+     * 내가 참여한 지난 일정 (§4.9 `GET /api/me/events`) — **(date, id) 내림차순 커서.** `(date, id) < (before, beforeId)`.
+     * 날짜만으로 자르면 쪽 경계에 걸친 같은 날 일정이 빠진다. `beforeId = 0` 이면 그날은 통째로 빠진다(= `date < before`).
+     * 날짜 미정(null)은 비교에서 저절로 빠진다
+     */
     @Query(
         """
         select e from ClubEvent e
-        where e.deletedAt is null and e.date < :before
+        where e.deletedAt is null
+          and (e.date < :before or (e.date = :before and e.id < :beforeId))
           and exists (select 1 from ClubEventParticipant p where p.event = e and p.userId = :uid)
         order by e.date desc, e.id desc
         """,
     )
-    fun findPastJoined(uid: String, before: LocalDate, limit: Limit): List<ClubEvent>
+    fun findPastJoined(uid: String, before: LocalDate, beforeId: Long, limit: Limit): List<ClubEvent>
+
+    /** 내가 참여한 지난 일정 **전체 수** — 커서와 상관없이 (프로필의 숫자) */
+    @Query(
+        """
+        select count(e) from ClubEvent e
+        where e.deletedAt is null and e.date < :today
+          and exists (select 1 from ClubEventParticipant p where p.event = e and p.userId = :uid)
+        """,
+    )
+    fun countPastJoined(uid: String, today: LocalDate): Long
 }
 
 interface ClubEventSegmentRepository : JpaRepository<ClubEventSegment, Long> {
