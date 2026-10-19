@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.hamcrest.Matchers.containsString
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -59,7 +61,9 @@ class ClubApiSecurityTest @Autowired constructor(
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.uid").value("u1"))
             .andExpect(jsonPath("$.status").value("NONE"))
-            .andExpect(jsonPath("$.nickname").doesNotExist())
+            // 계약은 `string|null` — **키는 있고 값이 null** 이다. 키가 빠지면 화면의 타입이 거짓말을 한다
+            .andExpect(content().string(containsString("\"nickname\":null")))
+            .andExpect(content().string(containsString("\"role\":null")))
 
         mvc.perform(post("/api/me/join").with(as_("u1")).contentType(MediaType.APPLICATION_JSON).content("""{"nickname":" 철수 "}"""))
             .andExpect(status().isOk)
@@ -111,9 +115,10 @@ class ClubApiSecurityTest @Autowired constructor(
     @Test
     fun `카카오 로그인 경로는 토큰 없이 열려 있다`() {
         // 로그인하려고 부르는 경로라 로그인을 요구할 수 없다. 401 이 아니면 문은 열린 것이다
-        val res = mvc.perform(post("/api/auth/kakao").contentType(MediaType.APPLICATION_JSON).content("""{"code":"c","redirectUri":"https://evil.test/"}"""))
-            .andReturn().response
-        kotlin.test.assertNotEquals(401, res.status)
+        // (여기서는 허용 안 된 주소라 400 이 온다 — 카카오까지 안 나간다)
+        mvc.perform(post("/api/auth/kakao").contentType(MediaType.APPLICATION_JSON).content("""{"code":"c","redirectUri":"https://evil.test/"}"""))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error").value("REDIRECT_NOT_ALLOWED"))
     }
 
     @Test
