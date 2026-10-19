@@ -1,6 +1,8 @@
 package com.my_dream.server.domain
 
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
 import java.time.LocalTime
@@ -117,4 +119,37 @@ interface DeviceTokenRepository : JpaRepository<DeviceToken, Long> {
 
     /** 등록은 upsert 다. 이미 있는 토큰이면 주인과 시각만 갱신한다 */
     fun findByToken(token: String): DeviceToken?
+}
+
+interface ClubMemberRepository : JpaRepository<ClubMember, Long> {
+
+    fun findByUserId(userId: String): ClubMember?
+
+    fun findByStatusOrderByCreatedAt(status: MemberStatus): List<ClubMember>
+
+    fun findAllByOrderByCreatedAt(): List<ClubMember>
+
+    /**
+     * 관리 작업의 대상을 **잠그고** 읽는다 (`SELECT … FOR UPDATE`).
+     * 두 관리자가 같은 사람을 동시에 승인·내보내기 하면, 뒤에 온 쪽은 앞의 결과를 보고 판단한다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from ClubMember m where m.userId = :userId")
+    fun findForUpdateByUserId(userId: String): ClubMember?
+
+    /**
+     * 승인된 관리자 **전부**를 잠그고 읽는다. "마지막 관리자" 판정용이다.
+     *
+     * 대상 한 줄만 잠그면 안 된다 — 관리자 A·B 가 동시에 서로를 내리면 각자 "관리자 둘" 을 보고 통과해서
+     * 0명이 된다. 관리자 행을 전부 잠그면 뒤에 온 쪽은 앞의 결과(하나 남음)를 보고 막힌다.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from ClubMember m where m.role = :role and m.status = :status order by m.id")
+    fun findForUpdateByRoleAndStatus(role: MemberRole, status: MemberStatus): List<ClubMember>
+}
+
+interface KakaoLinkRepository : JpaRepository<KakaoLink, Long> {
+    fun findByKakaoId(kakaoId: Long): KakaoLink?
+    fun findByUserId(userId: String): KakaoLink?
+    fun existsByUserId(userId: String): Boolean
 }

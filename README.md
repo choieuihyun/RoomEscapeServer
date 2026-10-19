@@ -204,7 +204,17 @@ curl 'http://127.0.0.1:8080/api/branches'
 | `NOTIFY_COOLDOWN_MINUTES` | `60` | 같은 자리를 다시 알리기까지의 최소 간격 |
 
 ```bash
-./gradlew test    # DB 없이 돈다 (H2 인메모리)
+./gradlew test    # 거의 다 DB 없이 돈다 (H2 인메모리)
+```
+
+**하나만 Docker 가 필요하다** — `MigrationValidationTest` 가 진짜 Postgres(17)를 띄워 마이그레이션 V1~ 을 돌리고
+엔티티와 맞춰 본다. H2 는 마이그레이션 SQL 을 안 돌리므로 **운영에서만 터지는 스키마 불일치**를 잡을 곳이 여기뿐이다.
+Docker 가 없으면 실패가 아니라 **건너뛴다**(그러니 "다 통과" 를 믿기 전에 건너뛴 수를 본다).
+
+```bash
+colima start      # 이 맥은 colima 다. Testcontainers 는 docker context 를 안 따라가서 소켓을 직접 알려 준다
+DOCKER_HOST=unix://$HOME/.colima/default/docker.sock \
+TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock ./gradlew test
 ```
 
 ---
