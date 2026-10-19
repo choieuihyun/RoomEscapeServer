@@ -60,7 +60,13 @@ class ClubEventServiceTest @Autowired constructor(
         location: String? = null,
         segments: List<SegmentInput>? = emptyList(),
         version: Long? = null,
-    ) = EventInput(title, date, startMin, endMin, location, capacity, booked, memo, segments, version)
+        candidates: List<Any?>? = null,
+    ) = EventInput(title, date, startMin, endMin, location, capacity, booked, memo, segments, version, candidates)
+
+    /** 날짜 미정 일정 (§4.8) */
+    private fun undecided(vararg dates: String, version: Long? = null) = input(date = null, candidates = dates.toList(), version = version)
+
+    private fun yes(date: String, start: Int? = null, end: Int? = null) = AvailabilityInput(date, true, start, end)
 
     private fun seg(name: String, start: Int, end: Int? = null, key: String? = null) =
         SegmentInput(themeName = name, branchName = "강남점", themeKey = key, startMin = start, endMin = end)
@@ -330,6 +336,166 @@ class ClubEventServiceTest @Autowired constructor(
         assertEquals("닉나", byAdmin.createdBy.nickname, "만든 사람 닉네임은 그대로 보인다")
         assertFalse(byAdmin.mine)
         assertTrue(byAdmin.canManage)
+    }
+
+    // --- 시간 협의 (§4.8 · D32) ---
+
+    @Test
+    fun `날짜 미정 일정은 날짜 없이 후보로 만들고, 후보는 날짜 순으로 나간다`() {
+        val e = service.create("나", undecided("2026-11-09", "2026-11-07"))
+        assertNull(e.date)
+        assertEquals(listOf(LocalDate.of(2026, 11, 7), LocalDate.of(2026, 11, 9)), e.candidates.map { it.date })
+        assertTrue(e.candidates.all { it.responses.isEmpty() })
+    }
+
+    @Test
+    fun `후보가 틀리면 BAD_EVENT`() {
+        val bad = listOf(
+            input(date = null),                                          // 미정인데 후보 안 보냄
+            undecided(),                                                 // 미정인데 후보 0개
+            undecided(*Array(15) { "2026-11-%02d".format(it + 1) }),     // 15개
+            undecided("2026-11-07", "2026-11-07"),                       // 중복
+            undecided("11월 7일"),
+            input(candidates = listOf(null)),
+            input(candidates = listOf(mapOf("responses" to emptyList<Any>()))),   // 객체인데 date 없음
+            input(candidates = listOf(20261107)),
+        )
+        bad.forEachIndexed { i, b -> assertEquals("BAD_EVENT", assertFailsWith<ClubError>("경우 $i") { service.create("나", b) }.code, "경우 $i") }
+        assertEquals(0, events.count())
+        // 날짜가 있으면 후보는 0~14개 아무거나 — 정한 뒤 남겨 두는 기록이다
+        service.create("나", input(candidates = List(14) { "2026-11-%02d".format(it + 1) }))
+    }
+
+    @Test
+    fun `참여자는 후보마다 응답하고, 같은 날짜는 덮어쓰며, version 은 그대로다`() {
+        val made = service.create("나", undecided("2026-11-07", "2026-11-08"))
+        service.join("너", made.id)
+        service.answer("나", made.id, yes("2026-11-07", 1140, 1320))
+        service.answer("너", made.id, AvailabilityInput("2026-11-07", false))
+        val after = service.answer("너", made.id, yes("2026-11-07"))   // 마음이 바뀜 — 종일 됨
+
+        val day7 = after.candidates.first { it.date == LocalDate.of(2026, 11, 7) }
+        assertEquals(
+            listOf(ResponseDto("나", true, 1140, 1320), ResponseDto("너", true, null, null)),
+            day7.responses.sortedBy { it.uid },
+        )
+        assertEquals(made.version, after.version, "응답은 편집 충돌을 일으키지 않는다 (D31 의 참여와 같다)")
+        assertEquals(made.updatedAt, after.updatedAt)
+    }
+
+    @Test
+    fun `응답 모양이 틀리면 BAD_AVAILABILITY, 후보가 아니면 NOT_A_CANDIDATE, 참여자가 아니면 403`() {
+        val id = service.create("나", undecided("2026-11-07")).id
+        val bad = listOf(
+            AvailabilityInput(null, true),
+            AvailabilityInput("내일", true),
+            AvailabilityInput("2026-11-07", null),
+            AvailabilityInput("2026-11-07", false, 600, 700),   // 안 되는데 시간대
+            AvailabilityInput("2026-11-07", true, 600, null),   // 하나만
+            AvailabilityInput("2026-11-07", true, null, 700),
+            AvailabilityInput("2026-11-07", true, 700, 700),
+            AvailabilityInput("2026-11-07", true, 700, 2880),
+            AvailabilityInput("2026-11-07", true, -1, 700),
+        )
+        bad.forEachIndexed { i, b ->
+            assertEquals("BAD_AVAILABILITY", assertFailsWith<ClubError>("경우 $i") { service.answer("나", id, b) }.code, "경우 $i")
+        }
+        assertClubError("NOT_A_CANDIDATE", HttpStatus.BAD_REQUEST) { service.answer("나", id, yes("2026-11-08")) }
+        assertClubError("NOT_PARTICIPANT_ANSWER", HttpStatus.FORBIDDEN) { service.answer("너", id, yes("2026-11-07")) }
+        assertClubError("NOT_PARTICIPANT_ANSWER", HttpStatus.FORBIDDEN) { service.clearAnswer("너", id, "2026-11-07") }
+        assertClubError("NOT_CLUB_MEMBER", HttpStatus.FORBIDDEN) { service.answer("대기", id, yes("2026-11-07")) }
+        assertClubError("NO_SUCH_EVENT", HttpStatus.NOT_FOUND) { service.answer("나", 999_999, yes("2026-11-07")) }
+        service.delete("나", id)
+        assertClubError("NO_SUCH_EVENT", HttpStatus.NOT_FOUND) { service.answer("나", id, yes("2026-11-07")) }
+    }
+
+    @Test
+    fun `응답 지우기 — 없거나 후보가 아니어도 200, 날짜 형식이 틀리면 BAD_AVAILABILITY`() {
+        val id = service.create("나", undecided("2026-11-07")).id
+        service.answer("나", id, yes("2026-11-07"))
+        assertTrue(service.clearAnswer("나", id, "2026-11-07").candidates.single().responses.isEmpty())
+        service.clearAnswer("나", id, "2026-11-07")
+        service.clearAnswer("나", id, "2026-12-25")
+        assertClubError("BAD_AVAILABILITY", HttpStatus.BAD_REQUEST) { service.clearAnswer("나", id, "크리스마스") }
+    }
+
+    @Test
+    fun `참여를 취소하거나 빠지면 그 사람 응답도 지워진다`() {
+        val id = service.create("나", undecided("2026-11-07", "2026-11-08")).id
+        listOf("너", "쟤").forEach { service.join(it, id) }
+        listOf("나", "너", "쟤").forEach { u -> listOf("2026-11-07", "2026-11-08").forEach { service.answer(u, id, yes(it)) } }
+
+        service.leave("너", id)
+        val after = service.removeParticipant("나", id, "쟤")
+        assertTrue(after.candidates.all { c -> c.responses.map { it.uid } == listOf("나") }, "${after.candidates}")
+    }
+
+    @Test
+    fun `수정에 후보를 안 보내면 그대로 — 이미 배포된 2단계 화면이 미정 일정을 고쳐도 안 날아간다`() {
+        val made = service.create("나", undecided("2026-11-07"))
+        service.answer("나", made.id, yes("2026-11-07"))
+        // 2단계 화면은 date 를 늘 채워 보내지만, 받은 date(null) 를 그대로 돌려보내는 경우도 같이 본다
+        val edited = service.update("나", made.id, input(title = "제목만", date = null, version = made.version))
+        assertEquals("제목만", edited.title)
+        assertEquals(1, edited.candidates.single().responses.size)
+    }
+
+    @Test
+    fun `후보는 차이만 바뀐다 — 남은 날짜의 응답은 살고, 뺀 날짜의 응답은 지워진다`() {
+        val made = service.create("나", undecided("2026-11-07", "2026-11-08"))
+        service.answer("나", made.id, yes("2026-11-07", 600, 700))
+        service.answer("나", made.id, yes("2026-11-08"))
+
+        val edited = service.update("나", made.id, undecided("2026-11-07", "2026-11-09", version = made.version))
+        assertEquals(listOf("2026-11-07", "2026-11-09"), edited.candidates.map { it.date.toString() })
+        assertEquals(listOf(ResponseDto("나", true, 600, 700)), edited.candidates[0].responses)
+        assertTrue(edited.candidates[1].responses.isEmpty())
+
+        // 다시 8일을 넣어도 지운 응답은 돌아오지 않는다
+        val again = service.update("나", made.id, undecided("2026-11-07", "2026-11-08", version = edited.version))
+        assertTrue(again.candidates[1].responses.isEmpty())
+    }
+
+    @Test
+    fun `정하기와 다시 미정은 수정으로 — 정한 뒤에도 후보와 응답이 남고 응답을 받는다`() {
+        val made = service.create("나", undecided("2026-11-07", "2026-11-08"))
+        service.answer("나", made.id, yes("2026-11-08"))
+
+        val decided = service.update("나", made.id, input(date = "2026-11-08", version = made.version))
+        assertEquals(LocalDate.of(2026, 11, 8), decided.date)
+        assertEquals(2, decided.candidates.size)
+        service.answer("나", made.id, yes("2026-11-07"))
+
+        val reopened = service.update("나", made.id, input(date = null, version = decided.version))
+        assertNull(reopened.date)
+        assertTrue(reopened.candidates.all { it.responses.size == 1 })
+
+        // 후보를 다 지우면서 미정으로 둘 수는 없다. 날짜를 정하면서 지우는 것은 된다
+        assertClubError("BAD_EVENT", HttpStatus.BAD_REQUEST) { service.update("나", made.id, undecided(version = reopened.version)) }
+        val cleared = service.update("나", made.id, input(date = "2026-11-08", candidates = emptyList(), version = reopened.version))
+        assertTrue(cleared.candidates.isEmpty())
+        assertClubError("BAD_EVENT", HttpStatus.BAD_REQUEST) { service.update("나", made.id, input(date = null, version = cleared.version)) }
+    }
+
+    @Test
+    fun `후보는 만든 사람과 운영진만 바꾼다`() {
+        val made = service.create("나", undecided("2026-11-07"))
+        service.join("너", made.id)
+        assertClubError("NOT_EVENT_OWNER", HttpStatus.FORBIDDEN) { service.update("너", made.id, undecided("2026-11-08", version = made.version)) }
+        service.update("운영", made.id, undecided("2026-11-08", version = made.version))
+    }
+
+    @Test
+    fun `목록에는 후보가 범위 안인 미정 일정도 나오고, 범위 안 가장 이른 후보 자리에 놓인다`() {
+        val fixed10 = service.create("나", input(date = "2026-11-10", startMin = 600)).id
+        val fixed10AllDay = service.create("나", input(date = "2026-11-10")).id
+        val open = service.create("나", undecided("2026-10-30", "2026-11-10", "2026-11-20")).id   // 범위 안 첫 후보 = 11-10
+        val early = service.create("나", undecided("2026-11-02")).id
+        service.create("나", undecided("2026-12-01"))                                                // 범위 밖
+
+        val ids = service.list("나", "2026-11-01", "2026-11-15").map { it.id }
+        // 10일: 시각 없는 둘(정한 하루 종일 · 미정)이 먼저, 그 둘은 id 순 → 그다음 10:00
+        assertEquals(listOf(early, fixed10AllDay, open, fixed10), ids)
     }
 
     // --- 목록 ---

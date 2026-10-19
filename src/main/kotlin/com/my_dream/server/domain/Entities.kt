@@ -226,7 +226,8 @@ class KakaoLink(
 @Table(name = "club_event")
 class ClubEvent(
     @Column(nullable = false, length = 60) var title: String,
-    @Column(name = "event_date", nullable = false) var date: LocalDate,
+    /** null 이면 날짜 미정 — 후보는 [ClubEventCandidate] (D32) */
+    @Column(name = "event_date") var date: LocalDate?,
     @Column(name = "start_min") var startMin: Int?,
     @Column(name = "end_min") var endMin: Int?,
     @Column(length = 60) var location: String?,
@@ -279,6 +280,38 @@ class ClubEventParticipant(
     @Column(name = "user_id", nullable = false) val userId: String,
     @Column(name = "added_by") val addedBy: String?,
     @Column(name = "joined_at", nullable = false) val joinedAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** 날짜 미정 일정의 후보 날짜 하나 (D32). 일정이 날짜를 정한 뒤에도 남는다 — 다시 미정으로 돌릴 수 있게 */
+@Entity
+@Table(name = "club_event_candidate", uniqueConstraints = [UniqueConstraint(columnNames = ["event_id", "cand_date"])])
+class ClubEventCandidate(
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id", nullable = false)
+    val event: ClubEvent,
+    @Column(name = "cand_date", nullable = false) val date: LocalDate,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** 후보 날짜에 대한 참여자 한 명의 응답. 시각이 둘 다 null 이면 종일 됨(또는 안 됨) */
+@Entity
+@Table(name = "club_event_availability", uniqueConstraints = [UniqueConstraint(columnNames = ["candidate_id", "user_id"])])
+class ClubEventAvailability(
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "candidate_id", nullable = false)
+    val candidate: ClubEventCandidate,
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(nullable = false) var available: Boolean,
+    @Column(name = "start_min") var startMin: Int?,
+    @Column(name = "end_min") var endMin: Int?,
+    @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

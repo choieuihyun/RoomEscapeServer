@@ -49,6 +49,8 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM club_event_availability")
+        jdbc.update("DELETE FROM club_event_candidate")
         jdbc.update("DELETE FROM club_event_participant")
         jdbc.update("DELETE FROM club_event_segment")
         jdbc.update("DELETE FROM club_event")
@@ -57,7 +59,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V8 까지 돌고 엔티티와 맞는다`() {
+    fun `V9 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -141,6 +143,32 @@ class MigrationValidationTest @Autowired constructor(
     fun `제목 60자는 이모지여도 들어간다`() {
         insertEvent(title = "🙂".repeat(60))
         assertFailsWith<DataIntegrityViolationException> { insertEvent(title = "🙂".repeat(61)) }
+    }
+
+    // --- V9 시간 협의 ---
+
+    @Test
+    fun `날짜 미정 일정, 후보는 일정마다 날짜 하나씩, 응답은 후보마다 한 사람 하나씩`() {
+        val id = jdbc.queryForObject(
+            """INSERT INTO club_event (title, event_date, booked, created_by, created_at, updated_at, version)
+               VALUES ('미정', NULL, false, 'u', now(), now(), 0) RETURNING id""",
+            Long::class.java,
+        )!!
+        val cand = "INSERT INTO club_event_candidate (event_id, cand_date) VALUES (?, '2026-11-07') RETURNING id"
+        val candId = jdbc.queryForObject(cand, Long::class.java, id)!!
+        assertFailsWith<DataIntegrityViolationException> { jdbc.queryForObject(cand, Long::class.java, id) }
+
+        val answer = "INSERT INTO club_event_availability (candidate_id, user_id, available, start_min, end_min, updated_at) VALUES (?, ?, ?, ?, ?, now())"
+        jdbc.update(answer, candId, "a", true, null, null)          // 종일 됨
+        jdbc.update(answer, candId, "b", false, null, null)         // 안 됨
+        jdbc.update(answer, candId, "c", true, 1140, 2879)          // 됨 + 시간대
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(answer, candId, "a", true, null, null) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(answer, candId, "d", false, 600, 700) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(answer, candId, "e", true, 600, null) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(answer, candId, "f", true, 700, 700) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(answer, candId, "g", true, 700, 2880) }
+        // CASCADE 를 일부러 안 걸었다 — 응답이 남은 후보는 못 지운다. 서비스가 응답부터 지운다 (D32)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update("DELETE FROM club_event_candidate WHERE id = ?", candId) }
     }
 
     private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING", nickname: String = "닉") {

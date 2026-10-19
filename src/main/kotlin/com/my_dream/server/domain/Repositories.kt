@@ -165,16 +165,20 @@ interface KakaoLinkRepository : JpaRepository<KakaoLink, Long> {
 interface ClubEventRepository : JpaRepository<ClubEvent, Long> {
 
     /**
-     * 날짜 범위의 지워지지 않은 일정. 순서는 날짜 → 시작(**하루 종일 먼저**) → id (§4.7).
+     * 날짜 범위의 지워지지 않은 일정 — **날짜 미정이고 후보 하나가 범위 안인 것**까지 (D32).
      *
-     * `nulls first` 를 **직접 적는다.** Postgres 는 오름차순에서 NULL 을 맨 뒤에 두고 H2 는 앞에 둔다 —
-     * 안 적으면 테스트(H2)는 통과하고 운영(Postgres)에서 순서가 뒤집힌다
+     * **순서를 정하지 않는다** — 서비스가 메모리에서 정한다(미정 일정의 기준 날짜가 후보 표에 있다).
+     * ~~여기서 `order by … nulls first`~~ 로 정하던 것을 2026-10-19 3단계에서 옮겼다. 순서를 두 군데 두면 하나는 거짓말이 된다
      */
     @Query(
         """
         select e from ClubEvent e
-        where e.deletedAt is null and e.date between :from and :to
-        order by e.date, e.startMin asc nulls first, e.id
+        where e.deletedAt is null and (
+            e.date between :from and :to
+            or (e.date is null and exists (
+                select 1 from ClubEventCandidate c where c.event = e and c.date between :from and :to
+            ))
+        )
         """,
     )
     fun findLiveBetween(from: LocalDate, to: LocalDate): List<ClubEvent>
@@ -211,4 +215,49 @@ interface ClubEventParticipantRepository : JpaRepository<ClubEventParticipant, L
     fun countByEvent(event: ClubEvent): Long
 
     fun findByEventAndUserId(event: ClubEvent, userId: String): ClubEventParticipant?
+}
+
+interface ClubEventCandidateRepository : JpaRepository<ClubEventCandidate, Long> {
+
+    @Query("select c from ClubEventCandidate c where c.event.id in :eventIds order by c.event.id, c.date")
+    fun findByEventIds(eventIds: Collection<Long>): List<ClubEventCandidate>
+
+    fun findByEvent(event: ClubEvent): List<ClubEventCandidate>
+
+    fun findByEventAndDate(event: ClubEvent, date: LocalDate): ClubEventCandidate?
+
+    fun countByEvent(event: ClubEvent): Long
+
+    /** 응답을 먼저 지운 뒤에 부른다 — 응답이 이 행을 가리킨다 (D32 "지우기는 서비스가 직접") */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ClubEventCandidate c where c in :candidates")
+    fun deleteAllIn(candidates: Collection<ClubEventCandidate>): Int
+}
+
+interface ClubEventAvailabilityRepository : JpaRepository<ClubEventAvailability, Long> {
+
+    @Query(
+        """
+        select a from ClubEventAvailability a join fetch a.candidate c
+        where c.event.id in :eventIds order by c.event.id, c.date, a.id
+        """,
+    )
+    fun findByEventIds(eventIds: Collection<Long>): List<ClubEventAvailability>
+
+    fun findByCandidateAndUserId(candidate: ClubEventCandidate, userId: String): ClubEventAvailability?
+
+    /** 후보를 빼기 전에. `clearAutomatically` 는 끈다 — 잠가 둔 일정 엔티티가 떨어져 나간다 (구간 지우기와 같은 이유) */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from ClubEventAvailability a where a.candidate in :candidates")
+    fun deleteByCandidates(candidates: Collection<ClubEventCandidate>): Int
+
+    /** 참여를 취소하거나 빠질 때 — 안 갈 사람의 "됨" 이 남으면 "다 같이 되는 날" 이 틀린다 */
+    @Modifying(flushAutomatically = true)
+    @Query(
+        """
+        delete from ClubEventAvailability a
+        where a.userId = :userId and a.candidate in (select c from ClubEventCandidate c where c.event = :event)
+        """,
+    )
+    fun deleteByEventAndUserId(event: ClubEvent, userId: String): Int
 }

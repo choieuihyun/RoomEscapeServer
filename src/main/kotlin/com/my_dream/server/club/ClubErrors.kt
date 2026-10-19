@@ -48,5 +48,10 @@ class ClubError(
         fun capacityTooSmall() = ClubError(HttpStatus.CONFLICT, "CAPACITY_TOO_SMALL", "지금 참여한 사람보다 적게 줄일 수 없어요.")
         fun badEvent() = ClubError(HttpStatus.BAD_REQUEST, "BAD_EVENT", "일정 내용을 다시 확인해 주세요.")
         fun badRange() = ClubError(HttpStatus.BAD_REQUEST, "BAD_RANGE", "불러올 날짜 범위를 다시 확인해 주세요. 한 번에 62일까지예요.")
+
+        // --- 3단계 시간 협의 (§4.8) ---
+        fun badAvailability() = ClubError(HttpStatus.BAD_REQUEST, "BAD_AVAILABILITY", "되는 시간을 다시 확인해 주세요.")
+        fun notACandidate() = ClubError(HttpStatus.BAD_REQUEST, "NOT_A_CANDIDATE", "후보 날짜가 아니에요. 새로 불러와 주세요.")
+        fun notParticipantAnswer() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT_ANSWER", "참여한 사람만 되는 날짜를 고를 수 있어요.")
     }
 }

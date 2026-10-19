@@ -1,11 +1,13 @@
 package com.my_dream.server.api
 
+import com.my_dream.server.club.AvailabilityInput
 import com.my_dream.server.club.ClubError
 import com.my_dream.server.club.ClubEventService
 import com.my_dream.server.club.ClubMemberDto
 import com.my_dream.server.club.DeletedDto
 import com.my_dream.server.club.EventDto
 import com.my_dream.server.club.EventInput
+import jakarta.servlet.http.HttpServletRequest
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -27,7 +29,7 @@ data class UidRequest(val uid: String = "")
 data class BookingRequest(val booked: Boolean? = null)
 
 /**
- * 동호회 일정 (아키텍처 D30 · D31). 계약은 Floduler `작업명세서.md` §4.7.
+ * 동호회 일정 (아키텍처 D30 · D31 · D32). 계약은 Floduler `작업명세서.md` §4.7 · §4.8.
  *
  * 컨트롤러는 얇다 — 승인 멤버인지, 관리할 수 있는지는 전부 [ClubEventService] 가 DB 로 본다.
  * 수정도 POST 다. CORS 허용 메서드가 GET·POST·DELETE 뿐이라 PUT·PATCH 를 쓰려면 CORS 를 넓혀야 한다.
@@ -76,6 +78,15 @@ class ClubEventController(private val service: ClubEventService) {
     fun booking(@AuthenticationPrincipal jwt: Jwt, @PathVariable id: Long, @RequestBody req: BookingRequest): EventDto =
         service.setBooking(jwt.uid(), id, req.booked ?: throw ClubError.badEvent())
 
+    @PostMapping("/events/{id}/availability")
+    fun answer(@AuthenticationPrincipal jwt: Jwt, @PathVariable id: Long, @RequestBody input: AvailabilityInput): EventDto =
+        service.answer(jwt.uid(), id, input)
+
+    /** 날짜도 문자열로 받는다 — 형식이 틀리면 계약의 `BAD_AVAILABILITY` 여야 한다 */
+    @DeleteMapping("/events/{id}/availability/{date}")
+    fun clearAnswer(@AuthenticationPrincipal jwt: Jwt, @PathVariable id: Long, @PathVariable date: String): EventDto =
+        service.clearAnswer(jwt.uid(), id, date)
+
     @GetMapping("/members")
     fun members(@AuthenticationPrincipal jwt: Jwt): List<ClubMemberDto> = service.members(jwt.uid())
 }
@@ -89,9 +100,13 @@ class ClubEventController(private val service: ClubEventService) {
 @RestControllerAdvice(assignableTypes = [ClubEventController::class])
 class ClubEventInputAdvice(private val errors: ClubErrorAdvice) {
 
-    /** JSON 이 깨졌거나 타입이 틀렸다 (`"booked": "아마도"`) */
+    /**
+     * JSON 이 깨졌거나 타입이 틀렸다 (`"booked": "아마도"`). 응답 경로는 `BAD_AVAILABILITY` 다 —
+     * 화면이 "일정 내용을 확인해 주세요" 를 보여 주면 사람이 엉뚱한 칸을 고친다
+     */
     @ExceptionHandler(HttpMessageNotReadableException::class)
-    fun onUnreadable(e: HttpMessageNotReadableException): ResponseEntity<Map<String, Any?>> = errors.onClubError(ClubError.badEvent())
+    fun onUnreadable(e: HttpMessageNotReadableException, req: HttpServletRequest): ResponseEntity<Map<String, Any?>> =
+        errors.onClubError(if (req.requestURI.endsWith("/availability")) ClubError.badAvailability() else ClubError.badEvent())
 
     /** `/events/abc` — 그런 일정은 없다 */
     @ExceptionHandler(MethodArgumentTypeMismatchException::class)

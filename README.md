@@ -192,6 +192,9 @@ POST   /api/club/events/{id}/join | leave
 POST   /api/club/events/{id}/participants  { uid }      DELETE …/participants/{uid}     대신 넣기·빼기
 POST   /api/club/events/{id}/booking       { booked }   예약 상태
 GET    /api/club/members                 대신 넣을 사람 고르기용
+POST   /api/club/events/{id}/availability  { date, available, startMin, endMin }   후보 날짜에 되는지 (3단계)
+DELETE /api/club/events/{id}/availability/{date}                                  응답 지우기
+       날짜 미정 일정 = date 가 null · candidates(후보 날짜 1~14개)
 ```
 카카오는 서버가 확인한 뒤 Firebase 커스텀 토큰을 **직접 서명**해 돌려준다 — Admin SDK 없이 ([아키텍처.md](아키텍처.md) D29).
 관리자인지는 토큰이 아니라 **DB(`club_member`)** 로 본다 (D28).

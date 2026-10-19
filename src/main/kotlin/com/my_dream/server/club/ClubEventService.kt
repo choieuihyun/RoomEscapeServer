@@ -1,6 +1,10 @@
 package com.my_dream.server.club
 
 import com.my_dream.server.domain.ClubEvent
+import com.my_dream.server.domain.ClubEventAvailability
+import com.my_dream.server.domain.ClubEventAvailabilityRepository
+import com.my_dream.server.domain.ClubEventCandidate
+import com.my_dream.server.domain.ClubEventCandidateRepository
 import com.my_dream.server.domain.ClubEventParticipant
 import com.my_dream.server.domain.ClubEventParticipantRepository
 import com.my_dream.server.domain.ClubEventRepository
@@ -20,7 +24,7 @@ import java.time.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
-// --- 계약 (Floduler `작업명세서.md` §4.7). 모양을 바꾸려면 그 문서부터 ---
+// --- 계약 (Floduler `작업명세서.md` §4.7 · §4.8). 모양을 바꾸려면 그 문서부터 ---
 
 /**
  * 만들기·수정 본문. **전부 null 을 받는다** — 빠진 값을 Jackson 이 아니라 여기서 걸러야
@@ -37,6 +41,22 @@ data class EventInput(
     val memo: String? = null,
     val segments: List<SegmentInput>? = null,
     val version: Long? = null,
+    /**
+     * 후보 날짜 (D32). **null 이면 수정 때 그대로 둔다** — 이미 배포된 2단계 화면은 이 필드를 모른다. `[]` 를 보내야 지운다.
+     *
+     * 항목은 `"YYYY-MM-DD"` 또는 **응답의 모양 그대로** `{date, responses}` 둘 다 받는다(`date` 만 본다). 화면은 받은
+     * EventDto 를 고쳐 통째로 돌려보낸다(§4.7) — 문자열만 받으면 그 화면이 미정 일정을 고칠 때마다 `BAD_EVENT` 다
+     * (2026-10-19 `ClubEventApiTest` 가 잡았다)
+     */
+    val candidates: List<Any?>? = null,
+)
+
+/** 후보 날짜 하나에 대한 내 응답 (§4.8). 시각이 둘 다 null 이면 종일 됨(또는 안 됨) */
+data class AvailabilityInput(
+    val date: String? = null,
+    val available: Boolean? = null,
+    val startMin: Int? = null,
+    val endMin: Int? = null,
 )
 
 data class SegmentInput(
@@ -51,13 +71,19 @@ data class SegmentDto(val themeName: String, val branchName: String?, val themeK
 
 data class PersonDto(val uid: String, val nickname: String)
 
+data class ResponseDto(val uid: String, val available: Boolean, val startMin: Int?, val endMin: Int?)
+
+/** 후보 날짜 하나와 그 날짜의 응답들. 날짜를 정한 뒤에도 그대로 나간다 (다시 미정으로 돌릴 수 있게) */
+data class CandidateDto(val date: LocalDate, val responses: List<ResponseDto>)
+
 data class ParticipantDto(val uid: String, val nickname: String, val addedBy: String?, val joinedAt: Instant)
 
 /** [joined]·[mine]·[canManage] 는 **요청한 사람 기준**이다 — 같은 일정도 보는 사람마다 다르다 */
 data class EventDto(
     val id: Long,
     val title: String,
-    val date: LocalDate,
+    /** null 이면 날짜 미정 — [candidates] 가 1개 이상 있다 (D32) */
+    val date: LocalDate?,
     val startMin: Int?,
     val endMin: Int?,
     val location: String?,
@@ -65,6 +91,8 @@ data class EventDto(
     val booked: Boolean,
     val memo: String?,
     val segments: List<SegmentDto>,
+    /** 날짜 순 */
+    val candidates: List<CandidateDto>,
     val version: Long,
     val createdBy: PersonDto,
     val createdAt: Instant,
@@ -94,6 +122,8 @@ class ClubEventService(
     private val events: ClubEventRepository,
     private val segments: ClubEventSegmentRepository,
     private val participants: ClubEventParticipantRepository,
+    private val candidates: ClubEventCandidateRepository,
+    private val answers: ClubEventAvailabilityRepository,
     private val members: ClubMemberRepository,
 ) {
 
@@ -108,7 +138,14 @@ class ClubEventService(
         val start = parseDate(from) ?: throw ClubError.badRange()
         val end = parseDate(to) ?: throw ClubError.badRange()
         if (end < start || ChronoUnit.DAYS.between(start, end) > MAX_RANGE_DAYS) throw ClubError.badRange()
-        return toDtos(events.findLiveBetween(start, end), viewer)
+        // 순서: (날짜, 미정이면 범위 안 가장 이른 후보) → 하루 종일 먼저 → 시작 → id (§4.8).
+        // DB 가 아니라 여기서 정한다 — 미정 일정의 기준 날짜가 후보 표에 있다. 그리고 NULL 순서가 Postgres·H2 에서 반대라
+        // (Postgres 는 오름차순에서 NULL 이 뒤) DB 에 맡기면 테스트와 운영이 다르게 나온다 (D31 아래 · D32)
+        val dtos = toDtos(events.findLiveBetween(start, end), viewer)
+        fun day(e: EventDto) = e.date ?: e.candidates.map { it.date }.filter { it in start..end }.minOrNull()
+        return dtos.sortedWith(
+            compareBy<EventDto> { day(it) }.thenBy(nullsFirst<Int>()) { it.startMin }.thenBy { it.id },
+        )
     }
 
     @Transactional(readOnly = true)
@@ -134,11 +171,13 @@ class ClubEventService(
     fun create(uid: String, input: EventInput): EventDto {
         val viewer = requireMember(uid)
         val v = validate(input)
+        if (v.date == null && v.candidates.isNullOrEmpty()) throw ClubError.badEvent()
         val now = Instant.now()
         val event = events.save(
             ClubEvent(v.title, v.date, v.startMin, v.endMin, v.location, v.capacity, v.booked, v.memo, uid, now, now),
         )
         saveSegments(event, v.segments)
+        v.candidates?.forEach { candidates.save(ClubEventCandidate(event, it)) }
         // 만든 사람은 자동 참여다 (기획 "2단계"). 정원은 2 이상이라 늘 자리가 있다
         participants.save(ClubEventParticipant(event, uid, null, now))
         events.flush()
@@ -159,6 +198,8 @@ class ClubEventService(
         // @Version 만으로는 못 잡는다 — 요청마다 엔티티를 새로 읽으니, 화면이 10분 들고 있던 옛 내용도 JPA 눈엔 최신이다
         if (event.version != expected) throw ClubError.eventConflict(toDto(event, viewer))
         if (v.capacity != null && participants.countByEvent(event) > v.capacity) throw ClubError.capacityTooSmall()
+        // 후보를 안 보냈으면 지금 있는 후보로 센다 — 2단계 화면이 미정 일정을 고쳐도 BAD_EVENT 가 안 나게 (★ §4.8)
+        if (v.date == null && (v.candidates?.size?.toLong() ?: candidates.countByEvent(event)) == 0L) throw ClubError.badEvent()
 
         event.title = v.title
         event.date = v.date
@@ -172,6 +213,7 @@ class ClubEventService(
         event.updatedAt = Instant.now()
         segments.deleteByEvent(event)
         saveSegments(event, v.segments)
+        v.candidates?.let { replaceCandidates(event, it) }
         // **응답 전에 내보낸다.** @Version 은 flush 때 오른다 — 안 하면 옛 번호가 나가서 화면의 다음 수정이 자기 자신과 충돌한다
         events.flush()
         return toDto(event, viewer)
@@ -203,8 +245,7 @@ class ClubEventService(
         val viewer = requireMember(uid)
         val event = lockLive(id)
         // 만든 사람도 취소할 수 있다(사용자 결정). 취소해도 mine·관리 권한은 그대로다
-        participants.findByEventAndUserId(event, uid)?.let { participants.delete(it) }
-        participants.flush()
+        unseat(event, uid)
         return toDto(event, viewer)
     }
 
@@ -224,8 +265,7 @@ class ClubEventService(
         val viewer = requireMember(uid)
         val event = lockLive(id)
         if (!canManage(event, viewer)) throw ClubError.notEventOwner()
-        participants.findByEventAndUserId(event, target)?.let { participants.delete(it) }
-        participants.flush()
+        unseat(event, target)
         return toDto(event, viewer)
     }
 
@@ -241,6 +281,53 @@ class ClubEventService(
             event.updatedAt = Instant.now()
             events.flush()
         }
+        return toDto(event, viewer)
+    }
+
+    // --- 시간 협의 응답 (§4.8 · D32) — 참여와 같이 일정 행을 잠그지만 바꾸지는 않는다 → version 그대로 ---
+
+    /**
+     * 같은 날짜면 덮어쓴다. 날짜를 정한 뒤에도 받는다(다시 미정으로 돌릴 수 있게).
+     * 잠그는 이유: 후보 바꾸기([update])도 같은 행을 잠그므로, 방금 지운 후보에 응답이 붙지 않는다
+     */
+    @Transactional
+    fun answer(uid: String, id: Long, input: AvailabilityInput): EventDto {
+        val viewer = requireMember(uid)
+        val date = parseDate(input.date) ?: throw ClubError.badAvailability()
+        val available = input.available ?: throw ClubError.badAvailability()
+        val (start, end) = input.startMin to input.endMin
+        val timed = start != null || end != null
+        if (timed && !(available && start != null && end != null && start in 0..MAX_MIN && end in (start + 1)..MAX_MIN)) {
+            throw ClubError.badAvailability()
+        }
+        val event = lockLive(id)
+        if (participants.findByEventAndUserId(event, uid) == null) throw ClubError.notParticipantAnswer()
+        val candidate = candidates.findByEventAndDate(event, date) ?: throw ClubError.notACandidate()
+
+        val now = Instant.now()
+        val row = answers.findByCandidateAndUserId(candidate, uid)
+        if (row == null) {
+            answers.saveAndFlush(ClubEventAvailability(candidate, uid, available, start, end, now))
+        } else {
+            row.available = available
+            row.startMin = start
+            row.endMin = end
+            row.updatedAt = now
+            answers.flush()
+        }
+        return toDto(event, viewer)
+    }
+
+    /** "응답 안 함". 후보가 아니거나 응답이 없으면 지울 게 없으니 그대로 200 */
+    @Transactional
+    fun clearAnswer(uid: String, id: Long, rawDate: String): EventDto {
+        val viewer = requireMember(uid)
+        val date = parseDate(rawDate) ?: throw ClubError.badAvailability()
+        val event = lockLive(id)
+        if (participants.findByEventAndUserId(event, uid) == null) throw ClubError.notParticipantAnswer()
+        candidates.findByEventAndDate(event, date)
+            ?.let { answers.findByCandidateAndUserId(it, uid) }
+            ?.let { answers.delete(it); answers.flush() }
         return toDto(event, viewer)
     }
 
@@ -268,11 +355,33 @@ class ClubEventService(
         participants.saveAndFlush(ClubEventParticipant(event, uid, addedBy, Instant.now()))
     }
 
+    /** 참여 취소·빼기. **응답도 같이 지운다** — 안 갈 사람의 "됨" 이 남으면 "다 같이 되는 날" 이 틀린다 (D32) */
+    private fun unseat(event: ClubEvent, uid: String) {
+        participants.findByEventAndUserId(event, uid)?.let { participants.delete(it) }
+        participants.flush()
+        answers.deleteByEventAndUserId(event, uid)
+    }
+
+    /**
+     * 후보를 **차이만** 바꾼다 (D32). 통째로 지웠다 넣으면 남은 날짜의 응답까지 사라진다.
+     * 빠진 날짜는 응답부터 지우고(후보를 가리키므로) 후보를 지운다. 새 날짜는 넣는다
+     */
+    private fun replaceCandidates(event: ClubEvent, dates: List<LocalDate>) {
+        val existing = candidates.findByEvent(event)
+        val gone = existing.filter { it.date !in dates }
+        if (gone.isNotEmpty()) {
+            answers.deleteByCandidates(gone)
+            candidates.deleteAllIn(gone)
+        }
+        val kept = existing.map { it.date }.toSet()
+        dates.filter { it !in kept }.forEach { candidates.save(ClubEventCandidate(event, it)) }
+    }
+
     private fun saveSegments(event: ClubEvent, list: List<SegmentDto>) {
         segments.saveAll(list.mapIndexed { i, s -> ClubEventSegment(event, i, s.themeName, s.branchName, s.themeKey, s.startMin, s.endMin) })
     }
 
-    // --- 응답 만들기 — 일정 n 개에 쿼리 3개 (구간 · 참여자 · 닉네임), N+1 을 만들지 않는다 ---
+    // --- 응답 만들기 — 일정 n 개에 쿼리 5개 (구간 · 참여자 · 후보 · 응답 · 닉네임), N+1 을 만들지 않는다 ---
 
     private fun toDto(event: ClubEvent, viewer: ClubMember) = toDtos(listOf(event), viewer).single()
 
@@ -281,6 +390,8 @@ class ClubEventService(
         val ids = list.map { requireNotNull(it.id) }
         val segsByEvent = segments.findByEventIds(ids).groupBy { requireNotNull(it.event.id) }
         val peopleByEvent = participants.findByEventIds(ids).groupBy { requireNotNull(it.event.id) }
+        val candsByEvent = candidates.findByEventIds(ids).groupBy { requireNotNull(it.event.id) }
+        val answersByCand = answers.findByEventIds(ids).groupBy { requireNotNull(it.candidate.id) }
         val uids = list.map { it.createdBy } + peopleByEvent.values.flatten().map { it.userId }
         // 내보낸 멤버도 행이 남아 있으니 닉네임이 나온다. 행이 아예 없는 경우는 없지만, 있어도 화면이 깨지지 않게 빈 문자열
         val nick = members.findByUserIdIn(uids.toSet()).associate { it.userId to it.nickname }
@@ -299,6 +410,9 @@ class ClubEventService(
                 booked = e.booked,
                 memo = e.memo,
                 segments = segsByEvent[id].orEmpty().map { SegmentDto(it.themeName, it.branchName, it.themeKey, it.startMin, it.endMin) },
+                candidates = candsByEvent[id].orEmpty().map { c ->
+                    CandidateDto(c.date, answersByCand[c.id].orEmpty().map { ResponseDto(it.userId, it.available, it.startMin, it.endMin) })
+                },
                 version = e.version,
                 createdBy = PersonDto(e.createdBy, nick[e.createdBy].orEmpty()),
                 createdAt = e.createdAt,
@@ -315,13 +429,27 @@ class ClubEventService(
     // --- 입력 검사 (§4.7) — 틀리면 전부 BAD_EVENT 하나다. 화면이 먼저 검사하므로 어느 칸인지까지는 안 알린다 ---
 
     private data class Valid(
-        val title: String, val date: LocalDate, val startMin: Int?, val endMin: Int?, val location: String?,
+        val title: String, val date: LocalDate?, val startMin: Int?, val endMin: Int?, val location: String?,
         val capacity: Int?, val booked: Boolean, val memo: String?, val segments: List<SegmentDto>,
+        /** null = 안 보냄(수정 때 그대로) */
+        val candidates: List<LocalDate>?,
     )
 
     private fun validate(i: EventInput): Valid {
         val title = text(i.title ?: "", max = 60, allowEmpty = true)
-        val date = parseDate(i.date) ?: throw ClubError.badEvent()
+        // null 은 날짜 미정(D32). 형식이 틀린 것과는 다르다 — 그건 BAD_EVENT
+        val date = i.date?.let { parseDate(it) ?: throw ClubError.badEvent() }
+        val cands = i.candidates?.map { c ->
+            val raw = when (c) {
+                is String -> c
+                is Map<*, *> -> c["date"] as? String
+                else -> null
+            }
+            parseDate(raw) ?: throw ClubError.badEvent()
+        }
+        if (cands != null && (cands.size > MAX_CANDIDATES || cands.toSet().size != cands.size)) throw ClubError.badEvent()
+        // 만들 때는 "안 보냄" 이 곧 0개다. 수정 때의 "그대로" 는 지금 후보 수를 알아야 해서 update 가 본다
+        if (date == null && cands != null && cands.isEmpty()) throw ClubError.badEvent()
         // 시작만 있어도 된다("19:00 모임"). 끝만 있는 것은 안 된다 — 시작을 모르면 목록에 놓을 자리가 없다 (V8)
         if (i.startMin == null && i.endMin != null) throw ClubError.badEvent()
         if (i.startMin != null && i.startMin !in 0..MAX_MIN) throw ClubError.badEvent()
@@ -344,7 +472,7 @@ class ClubEventService(
         }
         // 제목도 구간도 없으면 무엇을 하는 일정인지 아무도 모른다
         if (title.isEmpty() && cleanSegs.isEmpty()) throw ClubError.badEvent()
-        return Valid(title, date, i.startMin, i.endMin, optional(i.location, 60), i.capacity, booked, optional(i.memo, 500), cleanSegs)
+        return Valid(title, date, i.startMin, i.endMin, optional(i.location, 60), i.capacity, booked, optional(i.memo, 500), cleanSegs, cands?.sorted())
     }
 
     /**
@@ -374,5 +502,8 @@ class ClubEventService(
 
         /** `to - from` 의 최대. 양끝 포함이라 62일치다 */
         const val MAX_RANGE_DAYS = 61L
+
+        /** 후보 날짜 최대 개수 (§4.8) — 2주치 */
+        const val MAX_CANDIDATES = 14
     }
 }

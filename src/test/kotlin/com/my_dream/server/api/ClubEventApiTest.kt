@@ -1,5 +1,7 @@
 package com.my_dream.server.api
 
+import com.my_dream.server.domain.ClubEventAvailabilityRepository
+import com.my_dream.server.domain.ClubEventCandidateRepository
 import com.my_dream.server.domain.ClubEventParticipantRepository
 import com.my_dream.server.domain.ClubEventRepository
 import com.my_dream.server.domain.ClubEventSegmentRepository
@@ -43,12 +45,16 @@ class ClubEventApiTest @Autowired constructor(
     private val events: ClubEventRepository,
     private val segments: ClubEventSegmentRepository,
     private val participants: ClubEventParticipantRepository,
+    private val candidates: ClubEventCandidateRepository,
+    private val answers: ClubEventAvailabilityRepository,
 ) {
 
     private val json = ObjectMapper()
 
     @BeforeEach
     fun setUp() {
+        answers.deleteAll()
+        candidates.deleteAll()
         participants.deleteAll()
         segments.deleteAll()
         events.deleteAll()
@@ -81,6 +87,8 @@ class ClubEventApiTest @Autowired constructor(
         delete("/api/club/events/$id/participants/kakao:42"),
         post("/api/club/events/$id/booking").contentType(MediaType.APPLICATION_JSON).content("""{"booked":true}"""),
         get("/api/club/members"),
+        post("/api/club/events/$id/availability").contentType(MediaType.APPLICATION_JSON).content("""{"date":"2026-11-07","available":true}"""),
+        delete("/api/club/events/$id/availability/2026-11-07"),
     )
 
     @Test
@@ -188,6 +196,46 @@ class ClubEventApiTest @Autowired constructor(
         mvc.perform(post("/api/club/events/${made["id"]}").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(sent)))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.title").value("통째로 고침"))
+    }
+
+    @Test
+    fun `날짜 미정 일정의 EventDto 를 통째로 돌려보내도 수정되고 후보·응답이 남는다`() {
+        // 응답의 candidates 는 객체 목록({date, responses}), 입력은 날짜 문자열 목록이다. 받은 것을 그대로 돌려보내는 화면이
+        // 모양이 달라 BAD_EVENT 를 받으면 안 된다 — 2단계 화면이 이렇게 보낸다 (§4.7 "통째로 돌려보내도")
+        val undecided = body.replace("\"date\":\"2026-11-07\"", "\"date\":null,\"candidates\":[\"2026-11-07\",\"2026-11-08\"]")
+        val res = mvc.perform(post("/api/club/events").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(undecided))
+            .andExpect(status().isOk).andReturn().response.contentAsString
+        val made = json.readValue(res, Map::class.java)
+        mvc.perform(
+            post("/api/club/events/${made["id"]}/availability").with(as_("나")).contentType(MediaType.APPLICATION_JSON)
+                .content("""{"date":"2026-11-08","available":true,"startMin":1140,"endMin":1320}"""),
+        ).andExpect(status().isOk).andExpect(jsonPath("$.version").value(made["version"]))
+
+        val latest = json.readValue(mvc.perform(get("/api/club/events/${made["id"]}").with(as_("나"))).andReturn().response.contentAsString, Map::class.java)
+        val sent = (latest + mapOf("title" to "통째로 고침")).toMutableMap()
+        mvc.perform(post("/api/club/events/${made["id"]}").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(sent)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.title").value("통째로 고침"))
+            .andExpect(jsonPath("$.date").isEmpty)
+            .andExpect(jsonPath("$.candidates[1].date").value("2026-11-08"))
+            .andExpect(jsonPath("$.candidates[1].responses[0].startMin").value(1140))
+    }
+
+    @Test
+    fun `응답 경로의 틀린 입력은 BAD_AVAILABILITY 본문으로`() {
+        val id = create()["id"]
+        for (bad in listOf("{", """{"date":"2026-11-07","available":"아마"}""")) {
+            mvc.perform(post("/api/club/events/$id/availability").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(bad))
+                .andExpect(status().isBadRequest)
+                .andExpect(jsonPath("$.error").value("BAD_AVAILABILITY"))
+        }
+        mvc.perform(delete("/api/club/events/$id/availability/어제").with(as_("나")))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error").value("BAD_AVAILABILITY"))
+        mvc.perform(post("/api/club/events/$id/availability").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content("""{"date":"2026-11-07","available":true}"""))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error").value("NOT_A_CANDIDATE"))
+            .andExpect(jsonPath("$.message").value("후보 날짜가 아니에요. 새로 불러와 주세요."))
     }
 
     @Test
