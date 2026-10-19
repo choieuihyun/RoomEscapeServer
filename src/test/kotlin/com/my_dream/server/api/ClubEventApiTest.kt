@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.ObjectMapper
 import java.time.Instant
+import kotlin.test.assertTrue
 
 /**
  * 일정 API 의 **문** — 경로마다 로그인 · 승인 멤버 확인이 걸려 있는지, 틀린 입력도 계약 모양으로 답하는지.
@@ -156,6 +157,26 @@ class ClubEventApiTest @Autowired constructor(
             .andExpect(jsonPath("$.message").value("다른 사람이 먼저 고쳤어요. 새로 불러온 내용을 확인해 주세요."))
             .andExpect(jsonPath("$.event.title").value("앞 사람"))
             .andExpect(jsonPath("$.event.version").value(v + 1))
+    }
+
+    @Test
+    fun `시작만 있는 일정은 200, 끝만 있는 일정은 400 BAD_EVENT`() {
+        val startOnly = body.replace("\"startMin\":null,\"endMin\":null", "\"startMin\":1140,\"endMin\":null")
+        val res = mvc.perform(post("/api/club/events").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(startOnly))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.startMin").value(1140))
+            .andReturn().response.contentAsString
+        val made = json.readValue(res, Map::class.java)
+        assertTrue(made.containsKey("endMin") && made["endMin"] == null, "endMin 은 빠지지 않고 null 로 온다")
+        val edit = startOnly.replace("1140", "1170").replace("}]}", "}],\"version\":${made["version"]}}")
+        mvc.perform(post("/api/club/events/${made["id"]}").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(edit))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.startMin").value(1170))
+
+        val endOnly = body.replace("\"startMin\":null,\"endMin\":null", "\"startMin\":null,\"endMin\":1260")
+        mvc.perform(post("/api/club/events").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(endOnly))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error").value("BAD_EVENT"))
     }
 
     @Test
