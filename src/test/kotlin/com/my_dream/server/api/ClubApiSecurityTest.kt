@@ -122,6 +122,14 @@ class ClubApiSecurityTest @Autowired constructor(
     }
 
     @Test
+    fun `승인 안 된 사람의 빈자리 알림은 403 NOT_MEMBER 본문으로`() {
+        mvc.perform(post("/api/watches").with(as_("u1")).contentType(MediaType.APPLICATION_JSON).content("""{"slotId":1}"""))
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error").value("NOT_MEMBER"))
+            .andExpect(jsonPath("$.message").value("동호회 승인을 받은 계정만 빈자리 알림을 걸 수 있어요."))
+    }
+
+    @Test
     fun `프리플라이트가 POST 와 Authorization 을 허락한다`() {
         // 브라우저는 Authorization 을 실은 POST 앞에 OPTIONS 를 먼저 보낸다. 여기서 막히면 본 요청은 아예 안 나간다
         mvc.perform(

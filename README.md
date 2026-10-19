@@ -202,6 +202,10 @@ curl 'http://127.0.0.1:8080/api/branches'
 | `FIREBASE_PROJECT_ID` | `roomescapescheduler` | 감시 API 토큰을 검증할 대상. 비밀값 아님 |
 | `NOTIFY_CHANNEL` | `log` | `fcm` 으로 바꾸면 실제 푸시. **서비스 계정 키 파일이 있어야 뜬다** |
 | `NOTIFY_COOLDOWN_MINUTES` | `60` | 같은 자리를 다시 알리기까지의 최소 간격 |
+| `KAKAO_REST_API_KEY` | (없음) | 카카오 로그인(동호회). 비어 있으면 카카오 로그인만 `503`. 비밀값 아님 |
+| `KAKAO_CLIENT_SECRET` | (없음) | 카카오 콘솔에서 시크릿을 켰을 때만. **비밀값** |
+| `KAKAO_ALLOWED_REDIRECT_URIS` | Pages + localhost | 카카오가 돌려보낼 수 있는 화면 주소. 콘솔 값과 글자 그대로 같게 |
+| `CLUB_BOOTSTRAP_ADMIN_UID` | (없음) | 첫 동호회 관리자 uid. **관리자가 0명일 때만** 쓰인다. 빈자리 알림이 승인 멤버로 묶여 있어 배포 전에 넣는다 (배포.md "⑬") |
 
 ```bash
 ./gradlew test    # 거의 다 DB 없이 돈다 (H2 인메모리)

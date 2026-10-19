@@ -1,5 +1,8 @@
 package com.my_dream.server.api
 
+import com.my_dream.server.club.ClubError
+import com.my_dream.server.domain.ClubMemberRepository
+import com.my_dream.server.domain.MemberStatus
 import com.my_dream.server.domain.TimeSlotRepository
 import com.my_dream.server.domain.isPast
 import com.my_dream.server.domain.Watch
@@ -108,6 +111,7 @@ class WatchLimitExceeded(val limit: Int) : RuntimeException()
 class WatchService(
     private val watches: WatchRepository,
     private val slots: TimeSlotRepository,
+    private val members: ClubMemberRepository,
     /**
      * 한 사람이 걸 수 있는 감시 수.
      *
@@ -137,6 +141,13 @@ class WatchService(
 
     @Transactional
     fun register(userId: String, slotId: Long): WatchDto {
+        // **승인된 동호회 멤버만 건다** (기획 "동호회" · 아키텍처 D28). 1인 1계정 장치다 —
+        // 감시는 사람당 3개인데 계정을 여러 개 만들면 그 한도가 무의미해지고, 감시는 매장 사이트 요청을 늘린다(D27).
+        //
+        // **회차 확인(404·400)보다 먼저** 본다. 반대면 승인 안 된 사람이 회차 문제를 고치다가 결국 이 문구를 만난다.
+        // 목록·삭제는 막지 않는다 — 배포 전에 걸어 둔 감시나 내보내진 사람의 감시를 못 지우면 보이지 않는 감시가 남는다
+        if (members.findByUserId(userId)?.status != MemberStatus.APPROVED) throw ClubError.notMember()
+
         val slot = slots.findById(slotId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "그런 회차가 없습니다")
         }
