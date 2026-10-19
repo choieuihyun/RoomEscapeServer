@@ -99,13 +99,6 @@ class WatchController(private val service: WatchService) {
         service.cancel(jwt.uid(), id)
         return ResponseEntity.noContent().build()
     }
-
-    /**
-     * Firebase uid. 서명 검증을 통과한 토큰에는 항상 `sub` 가 있지만,
-     * 타입상 null 이 가능하니 여기서 한 번만 확인하고 아래로는 `String` 으로 넘긴다.
-     */
-    private fun Jwt.uid(): String =
-        subject ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "토큰에 sub 가 없습니다")
 }
 
 /** 한도 초과. [WatchController.onLimit] 이 409 로 바꾼다 */

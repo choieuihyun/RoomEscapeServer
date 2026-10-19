@@ -60,7 +60,4 @@ class DeviceController(private val devices: DeviceTokens) {
         if (request.token in devices.of(jwt.uid())) devices.forget(request.token)
         return ResponseEntity.noContent().build()
     }
-
-    private fun Jwt.uid(): String =
-        subject ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "토큰에 sub 가 없습니다")
 }

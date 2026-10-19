@@ -42,6 +42,8 @@ dependencies {
     // Spring Boot 4 는 테스트 슬라이스가 모듈별로 쪼개져 있다. @DataJpaTest 는 여기 들어 있다
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    // 경로마다 "로그인이 필요한가" 를 진짜 필터 체인으로 잰다. `jwt()` 로 가짜 토큰을 실어 보낸다 (ClubApiSecurityTest)
+    testImplementation("org.springframework.security:spring-security-test")
     // 컨텍스트 로딩 스모크 테스트 전용. 실제 저장 동작은 Postgres 로 확인한다
     testRuntimeOnly("com.h2database:h2")
     // 마이그레이션 SQL 은 Postgres 문법이라 H2 로는 한 줄도 안 돈다. 운영과 같은 Postgres 를 띄워

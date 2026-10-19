@@ -52,11 +52,17 @@ class ApiSecurityConfig(
             .authorizeHttpRequests {
                 // 프리플라이트에는 토큰이 실리지 않는다. 막으면 본 요청까지 못 간다
                 it.requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
-                // 감시 등록·해제와 기기 등록만 로그인이 필요하다.
+                // 감시 등록·해제, 기기 등록, 동호회(내 정보·관리·카카오 연결)가 로그인이 필요하다.
                 // **`anyRequest().permitAll()` 이 아래 있으므로 여기 적지 않으면 그냥 열린다** —
                 // 새 인증 경로를 만들면 반드시 이 줄에 같이 적는다
                 it.requestMatchers("/api/watches", "/api/watches/**").authenticated()
                 it.requestMatchers("/api/devices", "/api/devices/**").authenticated()
+                // 동호회 (아키텍처 D28). 관리자인지는 여기가 아니라 서비스가 DB 로 본다 — 토큰에는 그 정보가 없다
+                it.requestMatchers("/api/me", "/api/me/**").authenticated()
+                it.requestMatchers("/api/admin/**").authenticated()
+                // 카카오 "연결" 은 이미 로그인한 계정에 붙이는 것이라 로그인이 필요하다.
+                // **`/api/auth/kakao`(로그인) 는 일부러 안 적는다** — 로그인하려고 부르는 경로다
+                it.requestMatchers("/api/auth/kakao/link").authenticated()
                 // 나머지는 지금까지와 같다. 조회 API 는 Floduler 계약상 공개고,
                 // 디버그는 이미 두 겹으로 막혀 있다 (기본 꺼짐 + Caddy 가 라우팅 안 함)
                 it.anyRequest().permitAll()
