@@ -89,6 +89,7 @@ class FcmNotifierTest {
             .andExpect(jsonPath("$.message.notification.body").value("대전점 · 8/29(토) 16:00"))
             // 누르면 Floduler 로 가야 한다. 없으면 눌러도 아무 일이 없다
             .andExpect(jsonPath("$.message.webpush.fcm_options.link").value("https://example.test/"))
+            .andExpect(jsonPath("$.message.data.link").value("https://example.test/"))
             .andRespond(withSuccess(fixture("fcm-ok.json"), MediaType.APPLICATION_JSON))
 
         notifier.send(notification)
@@ -106,6 +107,7 @@ class FcmNotifierTest {
             .andExpect(jsonPath("$.message.notification.title").value("내일 동호회 일정이 있어요"))
             .andExpect(jsonPath("$.message.notification.body").value("모임 · 19:00"))
             .andExpect(jsonPath("$.message.webpush.fcm_options.link").value("https://example.test/#e=12"))
+            .andExpect(jsonPath("$.message.data.link").value("https://example.test/#e=12"))
             .andRespond(withSuccess(fixture("fcm-ok.json"), MediaType.APPLICATION_JSON))
 
         val r = notifier.push(Push("나", "내일 동호회 일정이 있어요", "모임 · 19:00", "#e=12"))

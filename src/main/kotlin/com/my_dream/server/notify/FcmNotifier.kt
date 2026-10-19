@@ -222,6 +222,9 @@ class FcmNotifier(
                     "notification" to mapOf("title" to text.title, "body" to text.body),
                     // 알림을 누르면 Floduler 로 간다. 없으면 눌러도 아무 일도 안 일어난다
                     "webpush" to mapOf("fcm_options" to mapOf("link" to link)),
+                    // 같은 주소를 data 에도 싣는다 — 앱의 서비스 워커가 알림을 직접 다룰 때 읽는 자리다
+                    // (`fcmOptions` 는 SDK 버전마다 꺼내는 이름이 달라 믿기 어렵다는 Floduler 쪽 요청, 2026-10-19)
+                    "data" to mapOf("link" to link),
                 ),
             ),
         )
