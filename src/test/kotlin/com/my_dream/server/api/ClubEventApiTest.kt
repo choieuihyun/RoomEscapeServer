@@ -159,6 +159,17 @@ class ClubEventApiTest @Autowired constructor(
     }
 
     @Test
+    fun `받은 EventDto 를 고쳐 그대로 돌려보내도 수정이 된다`() {
+        // 화면은 흔히 받은 응답(id·participants·canManage·count…)을 고쳐서 통째로 보낸다.
+        // 모르는 필드를 거절하면 그 요청이 전부 BAD_EVENT 가 된다 — 서버 테스트가 입력 필드만 보내면 이걸 못 잡는다
+        val made = create()
+        val sent = (made + mapOf("title" to "통째로 고침")).toMutableMap()
+        mvc.perform(post("/api/club/events/${made["id"]}").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(sent)))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.title").value("통째로 고침"))
+    }
+
+    @Test
     fun `카카오 uid 를 경로로 대신 빼고, 지운 일정은 두 번째에 404`() {
         val id = create()["id"]
         mvc.perform(post("/api/club/events/$id/participants").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content("""{"uid":"kakao:42"}"""))
