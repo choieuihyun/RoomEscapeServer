@@ -39,7 +39,11 @@ class KakaoClient(
     @param:Value("\${kakao.api-base-url:https://kapi.kakao.com}") private val apiBase: String,
     /** 카카오 앱의 **REST API 키**. OAuth 의 `client_id` 다 — 비밀이 아니다(화면 주소에도 실린다) */
     @param:Value("\${kakao.rest-api-key:}") private val restKey: String,
-    /** 콘솔에서 "클라이언트 시크릿" 을 켰을 때만. **이건 비밀이다** — 서버 `.env` 에만 둔다 */
+    /**
+     * REST API 키의 클라이언트 시크릿(카카오 로그인용). **이건 비밀이다** — 서버 `.env` 에만 둔다.
+     * 2025-12 콘솔 개편 후 기본으로 켜져 있어 사실상 필수다. 그래도 비어 있으면 **안 보낸다** —
+     * 콘솔에서 끈 앱에 빈 값을 보내면 그것대로 거절될 수 있다 (배포.md "⑫")
+     */
     @param:Value("\${kakao.client-secret:}") private val secret: String,
     /**
      * 카카오가 대답을 안 할 때 얼마나 기다리나. 0 이면 요청 팩토리를 안 바꾼다(테스트용 —
