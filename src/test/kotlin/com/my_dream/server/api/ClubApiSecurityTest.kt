@@ -86,6 +86,8 @@ class ClubApiSecurityTest @Autowired constructor(
         mvc.perform(get("/api/admin/members").param("status", "PENDING").with(as_("u2")))
             .andExpect(status().isForbidden)
             .andExpect(jsonPath("$.error").value("NOT_ADMIN"))
+            // 화면이 그대로 띄우는 문구. 원본은 Floduler 작업명세서 §4.6 — 화면 용어는 "운영진"
+            .andExpect(jsonPath("$.message").value("운영진만 할 수 있어요."))
     }
 
     @Test
@@ -110,6 +112,7 @@ class ClubApiSecurityTest @Autowired constructor(
         mvc.perform(post("/api/admin/members/방장/role").with(as_("방장")).contentType(MediaType.APPLICATION_JSON).content("""{"role":"MEMBER"}"""))
             .andExpect(status().isConflict)
             .andExpect(jsonPath("$.error").value("LAST_ADMIN"))
+            .andExpect(jsonPath("$.message").value("마지막 운영진은 내보내거나 내릴 수 없어요. 다른 운영진을 먼저 지정해 주세요."))
     }
 
     @Test

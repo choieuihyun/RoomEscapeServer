@@ -108,6 +108,7 @@ class MembershipServiceTest @Autowired constructor(
     fun `내보낸 사람은 다시 못 들어온다`() {
         member("u1", MemberStatus.REMOVED)
         assertClubError("JOIN_BLOCKED", HttpStatus.FORBIDDEN) { service.join("u1", "철수") }
+        assertEquals("이 계정으로는 가입할 수 없어요. 운영진에게 물어봐 주세요.", assertFailsWith<ClubError> { service.join("u1", "철수") }.message)
     }
 
     @Test
