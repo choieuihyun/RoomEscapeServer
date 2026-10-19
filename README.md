@@ -154,14 +154,33 @@ GET    /api/watches                    내 감시 목록 (지난 날짜는 빠�
 DELETE /api/watches/{id}               해제
 ```
 
-**이 세 개만 로그인이 필요하다.** 조회 API 는 공개다.
+**로그인이 필요한 것은 감시 · 기기 등록 · 동호회 API 다.** 조회 API 는 공개다.
+감시를 걸려면 **승인된 동호회 멤버**여야 한다 — 아니면 `403 NOT_MEMBER` (아래 "동호회 API").
 `Authorization: Bearer <Firebase ID 토큰>` 을 보내면 구글 공개키로 서명을 검증한다 —
 **비밀번호가 이 서버를 지나가지 않는다.**
 
 같은 자리에 대한 알림은 **1시간에 한 번**까지다. 평생 1회로 두면 첫 알림을 놓친 사람이
 그 자리를 영영 못 받는다 — 취소표는 났다 사라졌다를 반복한다.
 
-발송 경로는 아직 **로그**다. `notify.channel=fcm` 으로 갈아 끼우면 실제 푸시가 된다.
+발송 경로 기본값은 **로그**다. `notify.channel=fcm` 으로 갈아 끼우면 실제 푸시가 된다 —
+~~아직 로그다~~ 운영은 **FCM 이 켜져 있다** (2026-10-07 휴대폰까지 확인 · 2026-10-19 정정).
+
+---
+
+## 동호회 API — 로그인 · 승인 멤버십 (2026-10-19)
+
+```
+POST /api/auth/kakao            { code, redirectUri }   카카오 로그인 → { customToken }   (로그인 불필요)
+POST /api/auth/kakao/link       { code, redirectUri }   지금 계정에 카카오 연결
+GET  /api/me                                            내 상태 (NONE · PENDING · APPROVED · REJECTED · REMOVED)
+POST /api/me/join               { nickname }            가입 신청 → 승인 대기
+GET  /api/admin/members?status=                         관리자: 멤버 목록
+POST /api/admin/members/{uid}/approve | reject | remove | role
+```
+
+**계약 전문(요청·응답·에러 코드·문구)은 Floduler `작업명세서.md` §4.6** 이다. 여기에 두 벌 적지 않는다.
+카카오는 서버가 확인한 뒤 Firebase 커스텀 토큰을 **직접 서명**해 돌려준다 — Admin SDK 없이 ([아키텍처.md](아키텍처.md) D29).
+관리자인지는 토큰이 아니라 **DB(`club_member`)** 로 본다 (D28).
 
 ---
 
