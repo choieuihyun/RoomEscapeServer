@@ -322,8 +322,10 @@ class ClubEventService(
     private fun validate(i: EventInput): Valid {
         val title = text(i.title ?: "", max = 60, allowEmpty = true)
         val date = parseDate(i.date) ?: throw ClubError.badEvent()
-        if ((i.startMin == null) != (i.endMin == null)) throw ClubError.badEvent()
-        if (i.startMin != null && !(i.startMin in 0..MAX_MIN && i.endMin!! in (i.startMin + 1)..MAX_MIN)) throw ClubError.badEvent()
+        // 시작만 있어도 된다("19:00 모임"). 끝만 있는 것은 안 된다 — 시작을 모르면 목록에 놓을 자리가 없다 (V8)
+        if (i.startMin == null && i.endMin != null) throw ClubError.badEvent()
+        if (i.startMin != null && i.startMin !in 0..MAX_MIN) throw ClubError.badEvent()
+        if (i.startMin != null && i.endMin != null && i.endMin !in (i.startMin + 1)..MAX_MIN) throw ClubError.badEvent()
         if (i.capacity != null && i.capacity !in 2..8) throw ClubError.badEvent()
         val booked = i.booked ?: throw ClubError.badEvent()
         val segs = i.segments.orEmpty()

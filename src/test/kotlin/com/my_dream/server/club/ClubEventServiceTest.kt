@@ -114,7 +114,8 @@ class ClubEventServiceTest @Autowired constructor(
             input(date = "2026-13-01"),
             input(date = null),
             input(booked = null),
-            input(startMin = 600),                         // 하나만 있음
+            input(endMin = 600),                           // 끝만 있음 (시작만 있는 것은 된다)
+            input(startMin = 2880),                        // 시작이 다음날 23:59 넘음
             input(startMin = 700, endMin = 600),           // 끝이 먼저
             input(startMin = 0, endMin = 2880),            // 다음날 23:59 넘음
             input(capacity = 1),
@@ -133,6 +134,20 @@ class ClubEventServiceTest @Autowired constructor(
             assertEquals("BAD_EVENT", e.code, "경우 $i")
         }
         assertEquals(0, events.count())
+    }
+
+    @Test
+    fun `시작 시각만 있는 일정도 만들고 고칠 수 있다`() {
+        val made = service.create("나", input(startMin = 1140))   // "19:00 모임"
+        assertEquals(1140, made.startMin)
+        assertNull(made.endMin)
+
+        val moved = service.update("나", made.id, input(startMin = 1470, version = made.version))   // 다음날 00:30
+        assertEquals(1470, moved.startMin)
+        assertNull(moved.endMin)
+
+        val ranged = service.update("나", made.id, input(startMin = 1140, endMin = 1260, version = moved.version))
+        assertEquals(1260, ranged.endMin, "시작만 → 시작·끝으로도 바뀐다")
     }
 
     @Test

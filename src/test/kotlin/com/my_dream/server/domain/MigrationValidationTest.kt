@@ -57,7 +57,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V6 까지 돌고 엔티티와 맞는다`() {
+    fun `V8 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -107,10 +107,13 @@ class MigrationValidationTest @Autowired constructor(
     )!!
 
     @Test
-    fun `일정 시각은 둘 다 있거나 둘 다 없고, 0 이상 2879 이하`() {
+    fun `일정 시각은 없거나, 시작만 있거나, 시작·끝 다 있고, 0 이상 2879 이하`() {
         insertEvent()
         insertEvent(start = 600, end = 2879)
-        assertFailsWith<DataIntegrityViolationException> { insertEvent(start = 600) }
+        insertEvent(start = 600)        // V8 — 시작만
+        insertEvent(start = 2879)
+        assertFailsWith<DataIntegrityViolationException> { insertEvent(end = 600) }
+        assertFailsWith<DataIntegrityViolationException> { insertEvent(start = 2880) }
         assertFailsWith<DataIntegrityViolationException> { insertEvent(start = 700, end = 600) }
         assertFailsWith<DataIntegrityViolationException> { insertEvent(start = 0, end = 2880) }
     }
