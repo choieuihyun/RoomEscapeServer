@@ -82,6 +82,7 @@ class ClubError(
         /** 코드는 [notParticipant] 와 같다. 문구만 정산용 — 그쪽 문구는 "예약 상태" 다 */
         fun notSettlementViewer() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "참여한 사람, 만든 사람, 운영진만 정산을 볼 수 있어요.")
         fun notTransferParty() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "보내는 사람, 받는 사람, 만든 사람, 운영진만 체크할 수 있어요.")
-        fun badPayInfo() = ClubError(HttpStatus.BAD_REQUEST, "BAD_PAYINFO", "송금 정보를 다시 확인해 주세요. 카카오페이 링크는 https://qr.kakaopay.com/ 으로 시작해요.")
+        /** 코드는 하나, 문구는 칸마다 ([badProfile] 과 같다) — 계좌 글이 길어서 막혔는데 링크를 고치라고 하면 엉뚱한 칸을 고친다 */
+        fun badPayInfo(message: String = "송금 정보를 다시 확인해 주세요.") = ClubError(HttpStatus.BAD_REQUEST, "BAD_PAYINFO", message)
     }
 }

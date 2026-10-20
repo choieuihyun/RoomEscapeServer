@@ -30,11 +30,11 @@ class PayInfoService(
     fun save(uid: String, input: PayInfoInput): PayInfoDto {
         members.requireApproved(uid)
         val bank = input.bankText?.trim()?.ifEmpty { null }
-        if (bank != null && bank.codePointCount(0, bank.length) > BANK_MAX) throw ClubError.badPayInfo()
+        if (bank != null && bank.codePointCount(0, bank.length) > BANK_MAX) throw ClubError.badPayInfo(BANK_TOO_LONG)
         val url = input.kakaopayUrl?.trim()?.ifEmpty { null }
         // 아무 주소나 받으면 다른 멤버 화면의 "카카오페이로 보내기" 가 엉뚱한 곳(javascript: 포함)으로 간다.
         // 공백도 막는다 — 링크 중간의 공백은 복사 실수다
-        if (url != null && (!url.startsWith(KAKAOPAY_PREFIX) || url.length > URL_MAX || url.any(Char::isWhitespace))) throw ClubError.badPayInfo()
+        if (url != null && (!url.startsWith(KAKAOPAY_PREFIX) || url.length > URL_MAX || url.any(Char::isWhitespace))) throw ClubError.badPayInfo(BAD_KAKAOPAY)
 
         val row = infos.findById(uid).orElse(null)
         if (row == null) {
@@ -51,5 +51,7 @@ class PayInfoService(
         const val BANK_MAX = 60
         const val URL_MAX = 200
         const val KAKAOPAY_PREFIX = "https://qr.kakaopay.com/"
+        const val BANK_TOO_LONG = "계좌 글은 60자까지 적을 수 있어요."
+        const val BAD_KAKAOPAY = "카카오페이 링크는 https://qr.kakaopay.com/ 으로 시작하는 주소만 넣을 수 있어요."
     }
 }

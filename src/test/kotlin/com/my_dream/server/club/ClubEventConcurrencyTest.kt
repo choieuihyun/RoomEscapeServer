@@ -117,6 +117,34 @@ class ClubEventConcurrencyTest @Autowired constructor(
     }
 
     @Test
+    fun `정산 한 바퀴를 진짜 Postgres 에서 — 빈 보기 · 저장 · 금액 바꿔 다시 저장 · 체크 · 비우기`() {
+        // 동시성이 아니라 순서대로다. 지우고 다시 넣기(진짜 FK · CASCADE)와 빈 IN 목록은 H2 에서만 돌아 봤다 — countByDay 와 같은 교훈
+        val id = service.create("나", input()).id
+        service.join("너", id)
+        val empty = settlements.get("너", id)
+        assertEquals(0, empty.version)
+        assertTrue(empty.payInfo.isEmpty())
+        assertEquals(null, service.get("나", id).settlementTotal)
+
+        fun items(cafe: Long) = listOf(
+            SettlementItemInput("방탈출", 40000, "나", listOf(ShareInput("나", 20000), ShareInput("너", 20000))),
+            SettlementItemInput("카페", cafe, "너", listOf(ShareInput("나", cafe / 2), ShareInput("너", cafe - cafe / 2))),
+        )
+        settlements.save("나", id, SettlementInput(0, items(8000)))
+        val again = settlements.save("너", id, SettlementInput(1, items(6000)))
+        assertEquals(2, again.version)
+        assertEquals(listOf(Transfer("너", "나", 17000)), again.transfers.map { Transfer(it.from.uid, it.to.uid, it.amount) })
+        assertTrue(settlements.mark("너", id, TransferInput("너", "나", true)).transfers.single().paid)
+        assertEquals(46000L, service.get("나", id).settlementTotal)
+
+        val cleared = settlements.save("나", id, SettlementInput(2, emptyList()))
+        assertEquals(3, cleared.version)
+        assertTrue(cleared.items.isEmpty() && cleared.transfers.isEmpty())
+        assertEquals(0, settlementShares.count())
+        assertEquals(0, settlementPaid.count(), "쌍이 사라진 체크는 지운다")
+    }
+
+    @Test
     fun `마지막 한 자리에 둘이 동시에 눌러도 한 명만 들어간다`() {
         repeat(ROUNDS) { round ->
             val id = service.create("나", input(capacity = 2)).id   // 만든 사람 + 한 자리

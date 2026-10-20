@@ -29,6 +29,8 @@ class PayInfoServiceTest @Autowired constructor(
 
     private fun code(block: () -> Unit) = assertFailsWith<ClubError> { block() }.code
 
+    private fun message(block: () -> Unit) = assertFailsWith<ClubError> { block() }.message
+
     @Test
     fun `없으면 둘 다 null, 저장하면 통째로 바뀌고 빈 글자는 없음`() {
         assertEquals(PayInfoDto(null, null), service.mine("나"))
@@ -44,6 +46,9 @@ class PayInfoServiceTest @Autowired constructor(
             assertEquals("BAD_PAYINFO", code { service.save("나", PayInfoInput(null, bad)) }, bad)
         }
         assertEquals("BAD_PAYINFO", code { service.save("나", PayInfoInput("가".repeat(61), null)) })
+        // 문구는 칸마다 — 화면이 그대로 띄우니 어느 칸을 고칠지 보여야 한다
+        assertEquals("계좌 글은 60자까지 적을 수 있어요.", message { service.save("나", PayInfoInput("가".repeat(61), "https://qr.kakaopay.com/x")) })
+        assertEquals("카카오페이 링크는 https://qr.kakaopay.com/ 으로 시작하는 주소만 넣을 수 있어요.", message { service.save("나", PayInfoInput("계좌", "http://x")) })
         service.save("나", PayInfoInput("🙂".repeat(60), "https://qr.kakaopay.com/" + "a".repeat(176)))
         assertEquals("NOT_CLUB_MEMBER", code { service.mine("대기") })
     }
