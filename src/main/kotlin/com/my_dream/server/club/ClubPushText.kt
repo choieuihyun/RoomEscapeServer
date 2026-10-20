@@ -34,7 +34,7 @@ object ClubPushText {
         }
         val body = listOfNotNull(event.title.ifEmpty { null }, schedule).joinToString(" · ") +
             if (event.booked) "" else " (아직 예약 전이에요)"
-        return "내일 동호회 일정이 있어요" to body
+        return "내일 일정이 있어요" to body
     }
 
     /** 마감: `{제목 또는 구간} · {날짜} · {정원}/{정원}명` — 알림이 늦게 나가도 "찬 순간" 의 수를 쓴다 */

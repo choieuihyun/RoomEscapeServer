@@ -29,7 +29,7 @@ class PushTestService(private val notifier: Notifier) {
             }
         }
         if (!ok) throw ClubError.tooSoon()
-        val r = notifier.push(Push(uid, "테스트 알림이에요", "이 기기로 동호회 알림을 받을 수 있어요."))
+        val r = notifier.push(Push(uid, "테스트 알림이에요", "이 기기로 알림을 받을 수 있어요."))
         return PushTestDto(r.devices, r.delivered, r.failed)
     }
 

@@ -57,7 +57,7 @@ class ClubReminderJobTest @Autowired constructor(
 
         assertEquals(ReminderSummary(2, 0, 0), job.remind(today))
         assertEquals(setOf("나", "너"), notifier.pushes.map { it.userId }.toSet())
-        assertEquals("내일 동호회 일정이 있어요", notifier.pushes.first().title)
+        assertEquals("내일 일정이 있어요", notifier.pushes.first().title)
         assertEquals("모임 · 19:00", notifier.pushes.first().body)
 
         assertEquals(ReminderSummary(0, 0, 0), job.remind(today), "5분 뒤 — 이미 보냈다")

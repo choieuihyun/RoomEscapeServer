@@ -59,7 +59,7 @@ class WatchServiceTest @Autowired constructor(
             val e = assertFailsWith<ClubError>(uid) { service.register(uid, requireNotNull(future.id)) }
             assertEquals("NOT_MEMBER", e.code)
             assertEquals(HttpStatus.FORBIDDEN, e.status)
-            assertEquals("동호회 승인을 받은 계정만 빈자리 알림을 걸 수 있어요.", e.message)
+            assertEquals("가입 승인을 받은 계정만 빈자리 알림을 걸 수 있어요.", e.message)
         }
         assertEquals(0, watches.count().toInt())
     }

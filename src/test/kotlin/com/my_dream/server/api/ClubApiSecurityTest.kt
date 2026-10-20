@@ -129,7 +129,7 @@ class ClubApiSecurityTest @Autowired constructor(
         mvc.perform(post("/api/watches").with(as_("u1")).contentType(MediaType.APPLICATION_JSON).content("""{"slotId":1}"""))
             .andExpect(status().isForbidden)
             .andExpect(jsonPath("$.error").value("NOT_MEMBER"))
-            .andExpect(jsonPath("$.message").value("동호회 승인을 받은 계정만 빈자리 알림을 걸 수 있어요."))
+            .andExpect(jsonPath("$.message").value("가입 승인을 받은 계정만 빈자리 알림을 걸 수 있어요."))
     }
 
     @Test

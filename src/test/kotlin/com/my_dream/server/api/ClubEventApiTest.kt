@@ -121,7 +121,7 @@ class ClubEventApiTest @Autowired constructor(
             mvc.perform(it.with(as_("대기")))
                 .andExpect(status().isForbidden)
                 .andExpect(jsonPath("$.error").value("NOT_CLUB_MEMBER"))
-                .andExpect(jsonPath("$.message").value("동호회 승인을 받은 계정만 일정을 볼 수 있어요."))
+                .andExpect(jsonPath("$.message").value("가입 승인을 받은 계정만 일정을 볼 수 있어요."))
         }
     }
 

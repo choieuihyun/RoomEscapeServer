@@ -27,7 +27,7 @@ class ClubPushTextTest {
     fun `전날 알림 — 제목 · 구간, 예약 전이면 꼬리`() {
         val e = event()
         assertEquals(
-            "내일 동호회 일정이 있어요" to "보드게임처럼 · 13:40 비밀의 화원 → 15:20 셜록의 서재",
+            "내일 일정이 있어요" to "보드게임처럼 · 13:40 비밀의 화원 → 15:20 셜록의 서재",
             ClubPushText.reminder(e, segs(e, 820 to "비밀의 화원", 920 to "셜록의 서재")),
         )
         val open = event(title = "", booked = false)

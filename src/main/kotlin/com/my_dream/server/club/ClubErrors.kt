@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus
  * **문구는 여기 한 곳에만 둔다.** 원본은 Floduler `작업명세서.md` §4.6 "에러 본문" 표이고,
  * 화면은 `message` 를 **그대로** 띄운다 — 여기를 고치면 그 표도 같이 고친다.
  *
+ * 화면에 보이는 문구에는 **"동호회" 라는 말을 쓰지 않는다**(2026-10-20 사용자 결정 — "동호회 승인" → "가입 승인").
+ * 코드 이름(`NOT_CLUB_MEMBER`)은 계약이라 그대로다.
+ *
  * 화면에 보이는 말은 **"운영진"** 이다(2026-10-19 사용자 결정). 코드 이름(`NOT_ADMIN`·`LAST_ADMIN`)과
  * 역할 값(`ADMIN`)은 계약이라 그대로 두고 **사람이 읽는 문구만** 바꿨다.
  *
@@ -35,10 +38,10 @@ class ClubError(
         fun noSuchMember() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_MEMBER", "그런 멤버를 찾을 수 없어요.")
         fun lastAdmin() = ClubError(HttpStatus.CONFLICT, "LAST_ADMIN", "마지막 운영진은 내보내거나 내릴 수 없어요. 다른 운영진을 먼저 지정해 주세요.")
         fun badState() = ClubError(HttpStatus.CONFLICT, "BAD_STATE", "지금 상태에서는 할 수 없어요. 목록을 새로 불러와 주세요.")
-        fun notMember() = ClubError(HttpStatus.FORBIDDEN, "NOT_MEMBER", "동호회 승인을 받은 계정만 빈자리 알림을 걸 수 있어요.")
+        fun notMember() = ClubError(HttpStatus.FORBIDDEN, "NOT_MEMBER", "가입 승인을 받은 계정만 빈자리 알림을 걸 수 있어요.")
 
         // --- 2단계 일정 (Floduler §4.7) ---
-        fun notClubMember() = ClubError(HttpStatus.FORBIDDEN, "NOT_CLUB_MEMBER", "동호회 승인을 받은 계정만 일정을 볼 수 있어요.")
+        fun notClubMember() = ClubError(HttpStatus.FORBIDDEN, "NOT_CLUB_MEMBER", "가입 승인을 받은 계정만 일정을 볼 수 있어요.")
         fun noSuchEvent() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_EVENT", "일정을 찾을 수 없어요. 지워졌을 수 있어요.")
         fun notEventOwner() = ClubError(HttpStatus.FORBIDDEN, "NOT_EVENT_OWNER", "일정을 만든 사람이나 운영진만 할 수 있어요.")
         fun notParticipant() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "참여한 사람, 만든 사람, 운영진만 예약 상태를 바꿀 수 있어요.")
