@@ -1,6 +1,12 @@
 package com.my_dream.server.api
 
 import com.my_dream.server.domain.ClubEventAvailabilityRepository
+import com.my_dream.server.domain.ClubWishRepository
+import com.my_dream.server.domain.PayInfoRepository
+import com.my_dream.server.domain.SettlementItemRepository
+import com.my_dream.server.domain.SettlementRepository
+import com.my_dream.server.domain.SettlementShareRepository
+import com.my_dream.server.domain.SettlementTransferRepository
 import com.my_dream.server.domain.ClubEventCandidateRepository
 import com.my_dream.server.domain.ClubEventParticipantRepository
 import com.my_dream.server.domain.ClubEventRepository
@@ -52,12 +58,24 @@ class ClubEventApiTest @Autowired constructor(
     private val played: PlayedThemeRepository,
     private val answers: ClubEventAvailabilityRepository,
     private val profiles: MemberProfileRepository,
+    private val wishes: ClubWishRepository,
+    private val settlementHeads: SettlementRepository,
+    private val settlementItems: SettlementItemRepository,
+    private val settlementShares: SettlementShareRepository,
+    private val settlementPaid: SettlementTransferRepository,
+    private val payInfos: PayInfoRepository,
 ) {
 
     private val json = ObjectMapper()
 
     @BeforeEach
     fun setUp() {
+        settlementPaid.deleteAll()
+        settlementShares.deleteAll()
+        settlementItems.deleteAll()
+        settlementHeads.deleteAll()
+        wishes.deleteAll()
+        payInfos.deleteAll()
         played.deleteAll()
         profiles.deleteAll()
         answers.deleteAll()
@@ -82,7 +100,7 @@ class ClubEventApiTest @Autowired constructor(
     }
 
     /**
-     * 동호회 API 전부 (일정 · 시간 협의 · 해 본 테마 · 지난 일정 · 랭킹). 하나 늘리면 여기에도 적는다.
+     * 동호회 API 전부 (일정 · 시간 협의 · 해 본 테마 · 지난 일정 · 랭킹 · 하고 싶은 테마 · 정산 · 송금 정보). 하나 늘리면 여기에도 적는다.
      * `PUT /api/me/profile` 은 여기 없다 — 대기 중인 사람도 쓰는 경로라 NOT_CLUB_MEMBER 가 아니다(아래 따로)
      */
     private fun routes(id: Any): List<MockHttpServletRequestBuilder> = listOf(
@@ -106,6 +124,15 @@ class ClubEventApiTest @Autowired constructor(
         get("/api/club/members/kakao:42/played"),
         get("/api/me/events"),
         get("/api/club/rankings").param("from", "2026-10").param("to", "2026-10"),
+        get("/api/me/wishes"),
+        post("/api/me/wishes").contentType(MediaType.APPLICATION_JSON).content("""{"themeName":"목격자"}"""),
+        delete("/api/me/wishes/1"),
+        get("/api/club/wishes"),
+        get("/api/club/events/$id/settlement"),
+        put("/api/club/events/$id/settlement").contentType(MediaType.APPLICATION_JSON).content("""{"version":0,"items":[]}"""),
+        post("/api/club/events/$id/settlement/transfers").contentType(MediaType.APPLICATION_JSON).content("""{"fromUid":"a","toUid":"b","paid":true}"""),
+        get("/api/me/payinfo"),
+        put("/api/me/payinfo").contentType(MediaType.APPLICATION_JSON).content("""{"bankText":null,"kakaopayUrl":null}"""),
     )
 
     @Test
@@ -394,5 +421,77 @@ class ClubEventApiTest @Autowired constructor(
         mvc.perform(request(HttpMethod.DELETE, "/api/club/events/$id").with(as_("나")))
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.error").value("NO_SUCH_EVENT"))
+    }
+
+    // --- 7단계 하고 싶은 테마 · 정산 · 송금 정보 (§4.12 · §4.13) ---
+
+    @Test
+    fun `깨진 본문과 틀린 경로 id 도 경로마다 계약 코드로`() {
+        val id = create()["id"]
+        fun bad(req: MockHttpServletRequestBuilder, status: Int, code: String) =
+            mvc.perform(req.with(as_("나"))).andExpect(status().`is`(status)).andExpect(jsonPath("$.error").value(code))
+        bad(post("/api/me/wishes").contentType(MediaType.APPLICATION_JSON).content("{"), 400, "BAD_WISH")
+        bad(put("/api/me/payinfo").contentType(MediaType.APPLICATION_JSON).content("""{"bankText":{}}"""), 400, "BAD_PAYINFO")
+        bad(put("/api/club/events/$id/settlement").contentType(MediaType.APPLICATION_JSON).content("{"), 400, "BAD_SETTLEMENT")
+        bad(post("/api/club/events/$id/settlement/transfers").contentType(MediaType.APPLICATION_JSON).content("""{"paid":"아마도"}"""), 400, "BAD_SETTLEMENT")
+        // 잭슨이 숫자로 바꿔 줄 수 있는 문자열 금액도 HTTP 를 거쳐 거절된다 (금액 칸이 Any? 인 이유)
+        bad(
+            put("/api/club/events/$id/settlement").contentType(MediaType.APPLICATION_JSON)
+                .content("""{"version":0,"items":[{"label":"밥","amount":"1000","payerUid":"나","shares":[{"uid":"나","amount":1000}]}]}"""),
+            400, "BAD_SETTLEMENT",
+        )
+        bad(delete("/api/me/wishes/abc"), 404, "NO_SUCH_WISH")
+        bad(get("/api/club/events/abc/settlement"), 404, "NO_SUCH_EVENT")
+    }
+
+    @Test
+    fun `정산 모양 — 저장 · 충돌 본문의 settlement · 일정 목록의 settlementTotal`() {
+        val id = create()["id"]
+        mvc.perform(put("/api/me/payinfo").with(as_("나")).contentType(MediaType.APPLICATION_JSON)
+            .content("""{"bankText":"카카오뱅크 3333-01","kakaopayUrl":"https://qr.kakaopay.com/x"}"""))
+            .andExpect(status().isOk).andExpect(jsonPath("$.bankText").value("카카오뱅크 3333-01"))
+        mvc.perform(post("/api/club/events/$id/participants").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content("""{"uid":"kakao:42"}"""))
+        val save = """{"version":0,"items":[{"label":"방탈출","amount":50000,"payerUid":"나","shares":[{"uid":"나","amount":25000},{"uid":"kakao:42","amount":25000}]}]}"""
+        mvc.perform(put("/api/club/events/$id/settlement").with(as_("kakao:42")).contentType(MediaType.APPLICATION_JSON).content(save))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.eventId").value(id!!))
+            .andExpect(jsonPath("$.version").value(1))
+            .andExpect(jsonPath("$.updatedBy.nickname").value("닉kakao:42"))
+            .andExpect(jsonPath("$.items[0].payer.uid").value("나"))
+            .andExpect(jsonPath("$.items[0].shares[1].nickname").value("닉kakao:42"))
+            .andExpect(jsonPath("$.total").value(50000))
+            .andExpect(jsonPath("$.transfers[0].from.uid").value("kakao:42"))
+            .andExpect(jsonPath("$.transfers[0].amount").value(25000))
+            .andExpect(jsonPath("$.transfers[0].paid").value(false))
+            .andExpect(jsonPath("$.transfers[0].paidAt").isEmpty)
+            .andExpect(jsonPath("$.payInfo['나'].kakaopayUrl").value("https://qr.kakaopay.com/x"))
+        mvc.perform(put("/api/club/events/$id/settlement").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content(save))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.error").value("SETTLEMENT_CONFLICT"))
+            .andExpect(jsonPath("$.settlement.version").value(1))
+        mvc.perform(post("/api/club/events/$id/settlement/transfers").with(as_("kakao:42")).contentType(MediaType.APPLICATION_JSON)
+            .content("""{"fromUid":"kakao:42","toUid":"나","paid":true}"""))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.transfers[0].paid").value(true))
+            .andExpect(jsonPath("$.version").value(1))
+        mvc.perform(get("/api/club/events").param("from", "2026-11-01").param("to", "2026-11-30").with(as_("나")))
+            .andExpect(jsonPath("$[0].settlementTotal").value(50000))
+    }
+
+    @Test
+    fun `하고 싶은 테마 모양 — 내 목록 · 묶음`() {
+        mvc.perform(post("/api/me/wishes").with(as_("나")).contentType(MediaType.APPLICATION_JSON).content("""{"themeName":"목격자","themeKey":null}"""))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").isNumber)
+            .andExpect(jsonPath("$.themeName").value("목격자"))
+            .andExpect(jsonPath("$.storeName").isEmpty)
+            .andExpect(jsonPath("$.createdAt").isString)
+        mvc.perform(post("/api/me/wishes").with(as_("kakao:42")).contentType(MediaType.APPLICATION_JSON).content("""{"themeName":"목격자 "}"""))
+        mvc.perform(get("/api/club/wishes").with(as_("나")))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].themeName").value("목격자"))
+            .andExpect(jsonPath("$[0].wanters[1].uid").value("kakao:42"))
+            .andExpect(jsonPath("$[0].wanters[0].since").isString)
+            .andExpect(jsonPath("$[0].playedBy").isArray)
     }
 }

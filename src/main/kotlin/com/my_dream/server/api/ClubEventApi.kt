@@ -34,7 +34,9 @@ data class BookingRequest(val booked: Boolean? = null)
  * 동호회 일정 (아키텍처 D30 · D31 · D32). 계약은 Floduler `작업명세서.md` §4.7 · §4.8.
  *
  * 컨트롤러는 얇다 — 승인 멤버인지, 관리할 수 있는지는 전부 [ClubEventService] 가 DB 로 본다.
- * 수정도 POST 다. CORS 허용 메서드가 GET·POST·DELETE 뿐이라 PUT·PATCH 를 쓰려면 CORS 를 넓혀야 한다.
+ * 수정도 POST 다. ~~CORS 허용 메서드가 GET·POST·DELETE 뿐이라 PUT·PATCH 를 쓰려면 CORS 를 넓혀야 한다~~ —
+ * **정정 (2026-10-20):** 6단계에서 CORS 에 PUT 을 넣었다(D35). 일정 수정이 POST 인 것은 이미 배포된 계약이라 그대로다.
+ * 정산은 PUT 이다([SettlementController]).
  */
 @RestController
 @RequestMapping("/api/club")

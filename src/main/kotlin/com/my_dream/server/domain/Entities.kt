@@ -389,3 +389,92 @@ class ClubEventReminder(
         const val FAILED = "FAILED"
     }
 }
+
+/**
+ * 하고 싶은 테마 한 줄 (D36). "같은 테마인가" 는 해 본 테마와 같이 [com.my_dream.server.club.PlayedMatch] 가 본다 —
+ * 그래서 UNIQUE 가 없다
+ */
+@Entity
+@Table(name = "club_wish")
+class ClubWish(
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(name = "theme_key", length = 80) val themeKey: String?,
+    @Column(name = "theme_name", nullable = false, length = 40) val themeName: String,
+    @Column(name = "branch_name", length = 40) val branchName: String?,
+    @Column(name = "name_key", nullable = false, length = 200) val nameKey: String,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/**
+ * 정산 머리 (D37). **[version] 은 손으로 올린다** — `@Version` 이 아니다. 계약은 "없으면 0, 첫 저장이 1" 인데
+ * `@Version` 은 새 행이 0 에서 시작하고 flush 때 올라 응답에 옛 번호가 나간다(D31 의 함정).
+ * 항목을 다 비워도 이 행은 남는다 — 지우면 version 이 0 으로 돌아가 낡은 화면이 덮어쓸 수 있다
+ */
+@Entity
+@Table(name = "settlement")
+class Settlement(
+    @Id @Column(name = "event_id") val eventId: Long,
+    @Column(nullable = false) var version: Long,
+    @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+    @Column(name = "updated_by", nullable = false) var updatedBy: String,
+)
+
+/** 정산 항목 하나. 일정과 [eventId] 로만 잇는다 — 일정 엔티티를 건드리면 일정 version 이 오를 수 있다 (D31) */
+@Entity
+@Table(name = "settlement_item", uniqueConstraints = [UniqueConstraint(columnNames = ["event_id", "position"])])
+class SettlementItem(
+    @Column(name = "event_id", nullable = false) val eventId: Long,
+    @Column(nullable = false) val position: Int,
+    @Column(nullable = false, length = 20) val label: String,
+    @Column(nullable = false) val amount: Int,
+    @Column(name = "payer_uid", nullable = false) val payerUid: String,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** 같이 낸 사람의 몫 */
+@Entity
+@Table(name = "settlement_share", uniqueConstraints = [UniqueConstraint(columnNames = ["item_id", "user_id"])])
+class SettlementShare(
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id", nullable = false)
+    val item: SettlementItem,
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(nullable = false) val amount: Int,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** "보냈어요" — 행이 있으면 보낸 것. [amount] 는 체크한 때의 금액이다 — 저장으로 바뀌면 그 체크를 푼다 (D37) */
+@Entity
+@Table(name = "settlement_transfer", uniqueConstraints = [UniqueConstraint(columnNames = ["event_id", "from_uid", "to_uid"])])
+class SettlementTransfer(
+    @Column(name = "event_id", nullable = false) val eventId: Long,
+    @Column(name = "from_uid", nullable = false) val fromUid: String,
+    @Column(name = "to_uid", nullable = false) val toUid: String,
+    @Column(nullable = false) var amount: Long,
+    @Column(name = "paid_at", nullable = false) var paidAt: Instant,
+    @Column(name = "paid_by", nullable = false) var paidBy: String,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** 사람마다 송금 정보 하나 (D37). 🔒 계좌 글 — 로그에 남기지 않는다 */
+@Entity
+@Table(name = "pay_info")
+class PayInfo(
+    @Id @Column(name = "user_id") val userId: String,
+    @Column(name = "bank_text", length = 60) var bankText: String?,
+    @Column(name = "kakaopay_url", length = 200) var kakaopayUrl: String?,
+    @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+)

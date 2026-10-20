@@ -5,6 +5,7 @@ import com.my_dream.server.club.ClubEventService
 import com.my_dream.server.club.EventInput
 import com.my_dream.server.club.PlayedInput
 import com.my_dream.server.club.PlayedService
+import com.my_dream.server.club.WishService
 import com.my_dream.server.crawler.DaySchedule
 import com.my_dream.server.crawler.HostRateLimiter
 import com.my_dream.server.crawler.Slot
@@ -42,7 +43,7 @@ import kotlin.test.assertTrue
 @Import(
     FreshThemeService::class, ScheduleQueryService::class, ScheduleSyncService::class,
     Play33Adapter::class, Play33Crawler::class, Play33Client::class, Play33Parser::class, HostRateLimiter::class,
-    ClubEventService::class, PlayedService::class,
+    ClubEventService::class, PlayedService::class, WishService::class,
 )
 class FreshThemeServiceTest @Autowired constructor(
     private val fresh: FreshThemeService,

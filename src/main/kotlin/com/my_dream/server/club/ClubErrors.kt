@@ -70,5 +70,18 @@ class ClubError(
         fun notJoined() = ClubError(HttpStatus.FORBIDDEN, "NOT_JOINED", "가입 신청한 계정만 프로필을 고칠 수 있어요.")
         /** 코드는 [badRange] 와 같다. 문구만 랭킹용 — 일정 목록의 "62일까지" 가 여기 뜨면 틀린 안내다 */
         fun badRankRange() = ClubError(HttpStatus.BAD_REQUEST, "BAD_RANGE", "랭킹은 한 번에 12달까지 볼 수 있어요.")
+
+        // --- 7단계 하고 싶은 테마 · 정산 (§4.12 · §4.13) ---
+        fun badWish() = ClubError(HttpStatus.BAD_REQUEST, "BAD_WISH", "테마 이름을 확인해 주세요.")
+        fun tooManyWishes() = ClubError(HttpStatus.CONFLICT, "TOO_MANY_WISHES", "하고 싶은 테마는 200개까지 담을 수 있어요.")
+        fun noSuchWish() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_WISH", "그 테마를 찾을 수 없어요.")
+        fun badSettlement() = ClubError(HttpStatus.BAD_REQUEST, "BAD_SETTLEMENT", "정산 내용을 다시 확인해 주세요.")
+        fun settlementConflict(latest: Any) =
+            ClubError(HttpStatus.CONFLICT, "SETTLEMENT_CONFLICT", "다른 사람이 먼저 고쳤어요. 새로 불러온 정산을 확인해 주세요.", mapOf("settlement" to latest))
+        fun noSuchTransfer() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_TRANSFER", "그 송금이 없어요. 정산을 새로 불러와 주세요.")
+        /** 코드는 [notParticipant] 와 같다. 문구만 정산용 — 그쪽 문구는 "예약 상태" 다 */
+        fun notSettlementViewer() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "참여한 사람, 만든 사람, 운영진만 정산을 볼 수 있어요.")
+        fun notTransferParty() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "보내는 사람, 받는 사람, 만든 사람, 운영진만 체크할 수 있어요.")
+        fun badPayInfo() = ClubError(HttpStatus.BAD_REQUEST, "BAD_PAYINFO", "송금 정보를 다시 확인해 주세요. 카카오페이 링크는 https://qr.kakaopay.com/ 으로 시작해요.")
     }
 }

@@ -112,13 +112,8 @@ object ProfileRules {
 
         val mbti = p.mbti?.takeIf { it in MBTI } ?: throw ClubError.badProfile("MBTI 를 다시 골라 주세요.")
 
-        // Int · Long · BigInteger 만 정수다. 1.5 는 Double, "12" 는 String 으로 온다 — 둘 다 거절한다
-        val rooms = when (val r = p.roomCount) {
-            is Int -> r.toLong()
-            is Long -> r
-            is java.math.BigInteger -> if (r.bitLength() < 63) r.toLong() else -1
-            else -> -1
-        }
+        // 1.5 는 Double, "12" 는 String 으로 온다 — 둘 다 거절한다 ([wholeNumber])
+        val rooms = wholeNumber(p.roomCount) ?: -1
         if (rooms !in 0..ROOM_MAX) throw ClubError.badProfile("방 수는 0에서 9999 사이 숫자로 적어 주세요.")
 
         val genres = p.genres.orEmpty()

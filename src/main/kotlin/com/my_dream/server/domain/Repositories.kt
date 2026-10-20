@@ -365,3 +365,49 @@ interface ClubEventReminderRepository : JpaRepository<ClubEventReminder, Long> {
     @Query("select r from ClubEventReminder r where r.remindFor = :date and r.outcome = 'SENT'")
     fun findSentFor(date: LocalDate): List<ClubEventReminder>
 }
+
+interface ClubWishRepository : JpaRepository<ClubWish, Long> {
+
+    fun findByUserId(userId: String): List<ClubWish>
+
+    fun findByUserIdIn(userIds: Collection<String>): List<ClubWish>
+
+    fun findByIdAndUserId(id: Long, userId: String): ClubWish?
+
+    fun countByUserId(userId: String): Long
+}
+
+interface SettlementRepository : JpaRepository<Settlement, Long>
+
+/** 일정 목록의 `settlementTotal` 한 줄 */
+data class EventTotal(val eventId: Long, val total: Long)
+
+interface SettlementItemRepository : JpaRepository<SettlementItem, Long> {
+
+    fun findByEventIdOrderByPosition(eventId: Long): List<SettlementItem>
+
+    /**
+     * 일정 여러 개의 정산 합계를 한 번에 — 일정마다 물으면 목록 하나에 쿼리가 일정 수만큼 는다.
+     * 항목이 없는 일정은 줄이 안 나온다(= 정산 없음, `settlementTotal: null`)
+     */
+    @Query(
+        """
+        select new com.my_dream.server.domain.EventTotal(i.eventId, sum(i.amount))
+        from SettlementItem i where i.eventId in :eventIds group by i.eventId
+        """,
+    )
+    fun totalsByEvent(eventIds: Collection<Long>): List<EventTotal>
+}
+
+interface SettlementShareRepository : JpaRepository<SettlementShare, Long> {
+
+    @Query("select s from SettlementShare s join fetch s.item i where i.eventId = :eventId")
+    fun findByEventId(eventId: Long): List<SettlementShare>
+}
+
+interface SettlementTransferRepository : JpaRepository<SettlementTransfer, Long> {
+
+    fun findByEventId(eventId: Long): List<SettlementTransfer>
+}
+
+interface PayInfoRepository : JpaRepository<PayInfo, String>

@@ -43,6 +43,7 @@ class PlayedService(
     private val played: PlayedThemeRepository,
     private val members: ClubMemberRepository,
     private val stores: StoreRepository,
+    private val wishes: WishService,
 ) {
 
     @Transactional(readOnly = true)
@@ -87,6 +88,8 @@ class PlayedService(
 
         val row = played.findByUserId(uid).firstOrNull { PlayedMatch.same(it.themeKey, it.nameKey, key, nameKey) }
             ?: played.save(PlayedTheme(uid, key, name, branch, nameKey, playedOn, source, null, Instant.now()))
+                // 새로 생겼을 때만 — 이미 있던 기록을 다시 적은 것으로는 하고 싶은 테마를 안 지운다 (D36)
+                .also { wishes.forgetPlayed(listOf(it)) }
         return withStores(listOf(row)).single()
     }
 
@@ -109,12 +112,10 @@ class PlayedService(
             ),
         )
 
-    /** 매장 이름은 키(`play33-konkuk:18`)의 앞부분으로 찾는다 — 한 번에, 기록마다 쿼리를 날리지 않게 */
     private fun withStores(rows: List<PlayedTheme>): List<PlayedDto> {
-        val keyOf = { r: PlayedTheme -> r.themeKey?.substringBefore(':', missingDelimiterValue = "") }
-        val brand = stores.findByStoreKeyIn(rows.mapNotNull(keyOf).filter { it.isNotEmpty() }.toSet()).associate { it.storeKey to it.brand }
+        val storeOf = stores.brandsOf(rows.map { it.themeKey })
         return rows.map {
-            PlayedDto(requireNotNull(it.id), it.themeKey, it.themeName, it.branchName, it.playedOn, keyOf(it)?.let(brand::get), it.source, it.eventId, it.createdAt)
+            PlayedDto(requireNotNull(it.id), it.themeKey, it.themeName, it.branchName, it.playedOn, storeOf(it.themeKey), it.source, it.eventId, it.createdAt)
         }
     }
 
@@ -124,4 +125,14 @@ class PlayedService(
         if (s.codePointCount(0, s.length) > max) throw ClubError.badPlayed()
         return s
     }
+}
+
+/**
+ * 테마 키(`play33-konkuk:18`)의 앞부분으로 매장 이름을 찾는 함수를 돌려준다. 키가 없거나 모르는 매장이면 null.
+ * **한 번에** 찾는다 — 줄마다 물으면 목록 하나에 쿼리가 줄 수만큼 는다. 해 본 테마 · 하고 싶은 테마(D36)가 같이 쓴다
+ */
+fun StoreRepository.brandsOf(themeKeys: Collection<String?>): (String?) -> String? {
+    fun storeKey(themeKey: String?) = themeKey?.substringBefore(':', missingDelimiterValue = "")?.ifEmpty { null }
+    val brand = findByStoreKeyIn(themeKeys.mapNotNull(::storeKey).toSet()).associate { it.storeKey to it.brand }
+    return { key -> storeKey(key)?.let(brand::get) }
 }

@@ -9,6 +9,10 @@ import com.my_dream.server.domain.ClubMember
 import com.my_dream.server.domain.ClubMemberRepository
 import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
+import com.my_dream.server.domain.SettlementItemRepository
+import com.my_dream.server.domain.SettlementRepository
+import com.my_dream.server.domain.SettlementShareRepository
+import com.my_dream.server.domain.SettlementTransferRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -46,6 +50,11 @@ class ClubEventConcurrencyTest @Autowired constructor(
     private val participants: ClubEventParticipantRepository,
     private val candidates: ClubEventCandidateRepository,
     private val answers: ClubEventAvailabilityRepository,
+    private val settlements: SettlementService,
+    private val settlementHeads: SettlementRepository,
+    private val settlementItems: SettlementItemRepository,
+    private val settlementShares: SettlementShareRepository,
+    private val settlementPaid: SettlementTransferRepository,
 ) {
 
     companion object {
@@ -61,6 +70,10 @@ class ClubEventConcurrencyTest @Autowired constructor(
 
     @BeforeEach
     fun setUp() {
+        settlementPaid.deleteAll()
+        settlementShares.deleteAll()
+        settlementItems.deleteAll()
+        settlementHeads.deleteAll()
         answers.deleteAll()
         candidates.deleteAll()
         participants.deleteAll()
@@ -84,6 +97,23 @@ class ClubEventConcurrencyTest @Autowired constructor(
             }
         }
         return listOf(pool.submit(wrap(a)), pool.submit(wrap(b))).map { it.get(10, TimeUnit.SECONDS) }
+    }
+
+    @Test
+    fun `정산 첫 저장(version 0)을 둘이 동시에 해도 500 없이 하나는 충돌을 받는다`() {
+        // 일정 행을 안 잠그면 둘 다 "머리 없음" 을 보고 넣어 하나가 PK 에 걸린다 — ClubError 가 아니라 500 이다 (D37)
+        fun save(uid: String, id: Long) = settlements.save(
+            uid, id,
+            SettlementInput(0, listOf(SettlementItemInput("밥", 2000, uid, listOf(ShareInput("나", 1000), ShareInput("너", 1000))))),
+        )
+        repeat(ROUNDS) { round ->
+            val id = service.create("나", input()).id
+            service.join("너", id)
+            val results = race({ save("나", id) }, { save("너", id) })
+            assertEquals(listOf("OK", "SETTLEMENT_CONFLICT"), results.sorted(), "라운드 $round")
+            assertEquals(1, settlementHeads.findById(id).get().version)
+            assertEquals(1, settlementItems.findByEventIdOrderByPosition(id).size)
+        }
     }
 
     @Test

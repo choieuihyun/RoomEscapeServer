@@ -12,10 +12,10 @@ import com.my_dream.server.domain.ClubEventSegment
 import com.my_dream.server.domain.ClubEventSegmentRepository
 import com.my_dream.server.domain.ClubMember
 import com.my_dream.server.domain.ClubMemberRepository
-import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberProfileRepository
 import com.my_dream.server.domain.MemberStatus
 import com.my_dream.server.domain.PlayedThemeRepository
+import com.my_dream.server.domain.SettlementItemRepository
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Limit
@@ -114,6 +114,11 @@ data class EventDto(
     val joined: Boolean,
     val mine: Boolean,
     val canManage: Boolean,
+    /**
+     * 정산 합계 (§4.13 · D37). 항목이 없으면 null. 일정 목록을 보는 승인 멤버 모두에게 나간다(합계만 — 사용자 결정).
+     * 맨 뒤에 기본값과 함께 둔다 — 옛 화면은 이 칸을 모르고, 테스트의 다른 생성 자리도 안 건드린다
+     */
+    val settlementTotal: Long? = null,
 )
 
 data class DeletedDto(val id: Long, val deleted: Boolean)
@@ -152,6 +157,7 @@ class ClubEventService(
     private val played: PlayedThemeRepository,
     private val members: ClubMemberRepository,
     private val profiles: MemberProfileRepository,
+    private val settlementItems: SettlementItemRepository,
     private val publisher: ApplicationEventPublisher,
 ) {
 
@@ -393,9 +399,8 @@ class ClubEventService(
     /** 승인된 멤버인가. 모든 일정 API 의 첫 줄 */
     private fun requireMember(uid: String): ClubMember = members.requireApproved(uid)
 
-    /** 만든 사람이거나 운영진(D28 의 ADMIN·APPROVED). 응답의 `canManage` 도 이 판정이다 */
-    private fun canManage(event: ClubEvent, viewer: ClubMember) =
-        event.createdBy == viewer.userId || (viewer.role == MemberRole.ADMIN && viewer.status == MemberStatus.APPROVED)
+    /** 판정은 [manageableBy] 한 곳이다 — 정산(D37)도 같은 것을 쓴다 */
+    private fun canManage(event: ClubEvent, viewer: ClubMember) = event.manageableBy(viewer)
 
     private fun lockLive(id: Long): ClubEvent =
         events.findForUpdate(id)?.takeIf { it.deletedAt == null } ?: throw ClubError.noSuchEvent()
@@ -447,7 +452,7 @@ class ClubEventService(
         segments.saveAll(list.mapIndexed { i, s -> ClubEventSegment(event, i, s.themeName, s.branchName, s.themeKey, s.startMin, s.endMin) })
     }
 
-    // --- 응답 만들기 — 일정 n 개에 쿼리 6개 (구간 · 참여자 · 후보 · 응답 · 해 본 테마 · 닉네임), N+1 을 만들지 않는다 ---
+    // --- 응답 만들기 — 일정 n 개에 쿼리 7개 (구간 · 참여자 · 후보 · 응답 · 해 본 테마 · 닉네임 · 정산 합계), N+1 을 만들지 않는다 ---
 
     private fun toDto(event: ClubEvent, viewer: ClubMember) = toDtos(listOf(event), viewer).single()
 
@@ -462,6 +467,7 @@ class ClubEventService(
         val uids = list.map { it.createdBy } + peopleByEvent.values.flatten().map { it.userId }
         // 내보낸 멤버도 행이 남아 있으니 닉네임이 나온다. 행이 아예 없는 경우는 없지만, 있어도 화면이 깨지지 않게 빈 문자열
         val nick = members.findByUserIdIn(uids.toSet()).associate { it.userId to it.nickname }
+        val settled = settlementItems.totalsByEvent(ids).associate { it.eventId to it.total }
 
         return list.map { e ->
             val id = requireNotNull(e.id)
@@ -495,6 +501,7 @@ class ClubEventService(
                 joined = people.any { it.userId == viewer.userId },
                 mine = e.createdBy == viewer.userId,
                 canManage = canManage(e, viewer),
+                settlementTotal = settled[id],
             )
         }
     }

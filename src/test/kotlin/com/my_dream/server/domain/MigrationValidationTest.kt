@@ -47,6 +47,7 @@ class MigrationValidationTest @Autowired constructor(
     private val slots: TimeSlotRepository,
     private val watches: WatchRepository,
     private val logs: NotificationLogRepository,
+    private val settlementItems: SettlementItemRepository,
     private val jdbc: JdbcTemplate,
     private val tx: TransactionTemplate,
 ) {
@@ -61,6 +62,12 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM settlement_transfer")
+        jdbc.update("DELETE FROM settlement_share")
+        jdbc.update("DELETE FROM settlement_item")
+        jdbc.update("DELETE FROM settlement")
+        jdbc.update("DELETE FROM pay_info")
+        jdbc.update("DELETE FROM club_wish")
         jdbc.update("DELETE FROM notification_log")
         jdbc.update("DELETE FROM watch")
         jdbc.update("DELETE FROM member_profile")
@@ -76,7 +83,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V13 까지 돌고 엔티티와 맞는다`() {
+    fun `V14 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -275,6 +282,66 @@ class MigrationValidationTest @Autowired constructor(
         assertEquals(0, watches.count())
         assertEquals(0, logs.count())
     }
+
+    @Test
+    fun `정산 — 금액 1~1000만, 자리 0~29 와 겹침, 몫 겹침·음수, 몫은 항목과 같이 지워진다, 머리 version 1 이상`() {
+        val event = insertEvent()
+        val item = "INSERT INTO settlement_item (event_id, position, label, amount, payer_uid) VALUES (?, ?, '밥', ?, 'u')"
+        jdbc.update(item, event, 0, 10_000_000)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(item, event, 1, 0) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(item, event, 1, 10_000_001) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(item, event, 0, 1000) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(item, event, 30, 1000) }
+        // 라벨 20자는 이모지여도 들어간다 (서비스가 코드 포인트로 센다)
+        jdbc.update("INSERT INTO settlement_item (event_id, position, label, amount, payer_uid) VALUES (?, 1, ?, 1, 'u')", event, "🙂".repeat(20))
+        val itemId = jdbc.queryForObject("SELECT id FROM settlement_item WHERE position = 0", Long::class.java)!!
+        val share = "INSERT INTO settlement_share (item_id, user_id, amount) VALUES (?, ?, ?)"
+        jdbc.update(share, itemId, "u", 0)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(share, itemId, "u", 5) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(share, itemId, "v", -1) }
+        jdbc.update("DELETE FROM settlement_item WHERE id = ?", itemId)
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM settlement_share", Int::class.java))
+        assertFailsWith<DataIntegrityViolationException> {
+            jdbc.update("INSERT INTO settlement (event_id, version, updated_at, updated_by) VALUES (?, 0, now(), 'u')", event)
+        }
+        val paid = "INSERT INTO settlement_transfer (event_id, from_uid, to_uid, amount, paid_at, paid_by) VALUES (?, 'a', 'b', 1000, now(), 'a')"
+        jdbc.update(paid, event)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(paid, event) }
+    }
+
+    @Test
+    fun `송금 정보 — 카카오페이 링크는 qr 주소만, 계좌 글 60자는 이모지여도`() {
+        val ins = "INSERT INTO pay_info (user_id, bank_text, kakaopay_url, updated_at) VALUES (?, ?, ?, now())"
+        jdbc.update(ins, "a", "🙂".repeat(60), "https://qr.kakaopay.com/x")
+        jdbc.update(ins, "b", null, null)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(ins, "c", null, "javascript:alert(1)") }
+    }
+
+    @Test
+    fun `정산 합계 쿼리가 Postgres 에서 돈다 — 일정마다 합, 항목 없는 일정은 줄이 없다`() {
+        // 생성자 식 + sum + group by. countByDay 처럼 H2 에서만 돌아 본 쿼리는 운영에서 500 으로 처음 보인다
+        val a = insertEvent()
+        val b = insertEvent()
+        val c = insertEvent()
+        val item = "INSERT INTO settlement_item (event_id, position, label, amount, payer_uid) VALUES (?, ?, '밥', ?, 'u')"
+        jdbc.update(item, a, 0, 10_000_000)
+        jdbc.update(item, a, 1, 10_000_000)
+        jdbc.update(item, b, 0, 3000)
+        assertEquals(setOf(EventTotal(a, 20_000_000), EventTotal(b, 3000)), settlementItems.totalsByEvent(listOf(a, b, c)).toSet())
+    }
+
+    @Test
+    fun `하고 싶은 테마 — 이모지 40자 이름, 같은 테마도 UNIQUE 없이 들어간다`() {
+        val ins = "INSERT INTO club_wish (user_id, theme_name, name_key, created_at) VALUES ('u', ?, 'k', now())"
+        jdbc.update(ins, "🙂".repeat(40))
+        jdbc.update(ins, "🙂".repeat(40))
+        assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM club_wish", Int::class.java))
+    }
+
+    private fun insertEvent(): Long = jdbc.queryForObject(
+        "INSERT INTO club_event (title, booked, created_by, created_at, updated_at, version) VALUES ('일정', false, 'u', now(), now(), 0) RETURNING id",
+        Long::class.java,
+    )!!
 
     private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING", nickname: String = "닉") {
         jdbc.update(

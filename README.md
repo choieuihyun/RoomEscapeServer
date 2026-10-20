@@ -198,6 +198,11 @@ POST   /api/club/events/{id}/availability  { date, available, startMin, endMin }
 DELETE /api/club/events/{id}/availability/{date}                                  응답 지우기
        날짜 미정 일정 = date 가 null · candidates(후보 날짜 1~14개)
 GET    /api/club/events/{id}/fresh-themes?date=  그날 열린 테마 중 참여자가 안 해 본 것 (4단계)
+GET    /api/me/wishes  · POST { themeKey?, themeName, branchName? } · DELETE /api/me/wishes/{id}   하고 싶은 테마 (7단계)
+GET    /api/club/wishes                  같은 테마를 원하는 사람끼리 묶은 목록 (7단계)
+GET    /api/club/events/{id}/settlement  · PUT { version, items }    정산 — 송금 계산은 서버 (7단계 · §4.13)
+POST   /api/club/events/{id}/settlement/transfers  { fromUid, toUid, paid }   보냈어요 체크
+GET    /api/me/payinfo · PUT { bankText, kakaopayUrl }              내 송금 정보
 GET    /api/me/played                     내 해 본 테마      POST { themeName, themeKey?, … }   DELETE /api/me/played/{id}
 GET    /api/club/members/{uid}/played     멤버의 해 본 테마
 GET    /api/me/events?before=&beforeId=&limit=  내가 참여한 지난 일정 { events, total } — (date, id) 커서

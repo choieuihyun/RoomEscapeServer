@@ -25,6 +25,7 @@ class PlayedRecorder(
     private val segments: ClubEventSegmentRepository,
     private val participants: ClubEventParticipantRepository,
     private val played: PlayedThemeRepository,
+    private val wishes: WishService,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -48,7 +49,7 @@ class PlayedRecorder(
         val have = played.findByUserIdIn(uids).groupByTo(mutableMapOf()) { it.userId }
 
         val now = Instant.now()
-        var added = 0
+        val created = mutableListOf<PlayedTheme>()
         for (event in targets) {
             val id = requireNotNull(event.id)
             for (person in peopleByEvent[id].orEmpty()) {
@@ -56,15 +57,16 @@ class PlayedRecorder(
                 for (seg in segsByEvent[id].orEmpty()) {
                     val nameKey = PlayedMatch.nameKey(seg.themeName)
                     if (mine.any { PlayedMatch.same(it.themeKey, it.nameKey, seg.themeKey, nameKey) }) continue
-                    mine += played.save(
+                    created += played.save(
                         PlayedTheme(person.userId, seg.themeKey, seg.themeName, seg.branchName, nameKey, event.date, PlayedSource.EVENT, id, now),
-                    )
-                    added++
+                    ).also { mine += it }
                 }
             }
         }
         // 벌크로 단다 — 엔티티로 고치면 version 이 올라 그 일정을 열어 둔 사람이 충돌을 받는다 (D33)
         events.markPlayedRecorded(ids, now)
-        return targets.size to added
+        // 해 본 테마가 된 하고 싶은 테마를 지운다 (D36) — 사람마다가 아니라 한 번에 읽는다
+        wishes.forgetPlayed(created)
+        return targets.size to created.size
     }
 }

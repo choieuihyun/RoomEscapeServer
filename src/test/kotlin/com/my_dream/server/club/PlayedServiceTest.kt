@@ -25,7 +25,7 @@ import kotlin.test.assertTrue
  * 해 본 테마 — 직접 기록 · 자동 기록 · 일정의 `playedBy` · 지난 일정 (§4.9 · D33).
  */
 @DataJpaTest
-@Import(PlayedService::class, PlayedRecorder::class, ClubEventService::class)
+@Import(PlayedService::class, PlayedRecorder::class, ClubEventService::class, WishService::class)
 class PlayedServiceTest @Autowired constructor(
     private val service: PlayedService,
     private val recorder: PlayedRecorder,
