@@ -145,8 +145,11 @@ class WatchService(
         // 감시는 사람당 3개인데 계정을 여러 개 만들면 그 한도가 무의미해지고, 감시는 매장 사이트 요청을 늘린다(D27).
         //
         // **회차 확인(404·400)보다 먼저** 본다. 반대면 승인 안 된 사람이 회차 문제를 고치다가 결국 이 문구를 만난다.
-        // 목록·삭제는 막지 않는다 — 배포 전에 걸어 둔 감시나 내보내진 사람의 감시를 못 지우면 보이지 않는 감시가 남는다
-        if (members.findByUserId(userId)?.status != MemberStatus.APPROVED) throw ClubError.notMember()
+        // 목록·삭제는 막지 않는다 — 배포 전에 걸어 둔 감시를 못 지우면 보이지 않는 감시가 남는다
+        //
+        // **멤버 행을 잠그고 본다.** 안 잠그면 "승인 확인 → (그 사이 내보내기가 감시를 지우고 커밋) → 저장" 으로
+        // 내보낸 사람의 감시가 살아남는다. 내보내기도 이 행을 잠근다 (D28 정정)
+        if (members.findForUpdateByUserId(userId)?.status != MemberStatus.APPROVED) throw ClubError.notMember()
 
         val slot = slots.findById(slotId).orElseThrow {
             ResponseStatusException(HttpStatus.NOT_FOUND, "그런 회차가 없습니다")

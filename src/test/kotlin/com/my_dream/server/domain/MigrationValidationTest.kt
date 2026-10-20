@@ -5,13 +5,18 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.core.io.ClassPathResource
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.transaction.support.TransactionTemplate
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.postgresql.PostgreSQLContainer
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
 
 /**
  * **진짜 Postgres 에 V1~V6 을 돌리고, 엔티티가 그 스키마와 맞는지** 본다.
@@ -37,7 +42,13 @@ class MigrationValidationTest @Autowired constructor(
     private val members: ClubMemberRepository,
     private val kakaoLinks: KakaoLinkRepository,
     private val played: PlayedThemeRepository,
+    private val stores: StoreRepository,
+    private val themes: ThemeRepository,
+    private val slots: TimeSlotRepository,
+    private val watches: WatchRepository,
+    private val logs: NotificationLogRepository,
     private val jdbc: JdbcTemplate,
+    private val tx: TransactionTemplate,
 ) {
 
     companion object {
@@ -50,6 +61,8 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM notification_log")
+        jdbc.update("DELETE FROM watch")
         jdbc.update("DELETE FROM member_profile")
         jdbc.update("DELETE FROM club_event_reminder")
         jdbc.update("DELETE FROM played_theme")
@@ -63,7 +76,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V12 까지 돌고 엔티티와 맞는다`() {
+    fun `V13 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -236,6 +249,31 @@ class MigrationValidationTest @Autowired constructor(
     fun `승인일 열이 있다`() {
         insertMember("u", status = "APPROVED")
         assertEquals(1, jdbc.update("UPDATE club_member SET approved_at = now() WHERE user_id = 'u'"))
+    }
+
+    @Test
+    fun `V13 은 내보낸 사람의 감시만 지우고 알림 기록은 CASCADE 로 같이 — 내보내기의 벌크 쿼리도 Postgres 에서 돈다`() {
+        insertMember("out", status = "REMOVED")
+        insertMember("in", status = "APPROVED")
+        val store = stores.findAll().firstOrNull() ?: stores.save(Store("v13-test", "테스트", "테스트점"))
+        val theme = themes.save(Theme(store, "v13-${System.nanoTime()}", "테마"))
+        val slot = slots.save(TimeSlot(theme, LocalDate.now().plusDays(1), LocalTime.of(19, 0), available = false, lastCheckedAt = Instant.now()))
+        val out = watches.save(Watch("out", slot, Instant.now()))
+        val stay = watches.save(Watch("in", slot, Instant.now()))
+        logs.save(NotificationLog(out, Instant.now(), "SENT"))
+        logs.save(NotificationLog(stay, Instant.now(), "SENT"))
+
+        // 이미 적용된 이행을 한 번 더 돌린다 — 지우기만 하는 SQL 이라 몇 번 돌아도 결과가 같다
+        jdbc.execute(ClassPathResource("db/migration/V13__removed_member_watches.sql").getContentAsString(Charsets.UTF_8))
+        assertEquals(listOf("in"), watches.findAll().map { it.userId })
+        assertEquals(1, logs.count(), "내보낸 사람 감시의 알림 기록은 CASCADE 로 같이 지워졌다")
+
+        tx.execute {
+            logs.deleteByWatchUserId("in")
+            watches.deleteByUserIdInBulk("in")
+        }
+        assertEquals(0, watches.count())
+        assertEquals(0, logs.count())
     }
 
     private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING", nickname: String = "닉") {

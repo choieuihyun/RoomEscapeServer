@@ -1,10 +1,13 @@
 package com.my_dream.server.api
 
 import com.my_dream.server.club.ClubError
+import com.my_dream.server.club.MembershipService
 import com.my_dream.server.domain.ClubMember
 import com.my_dream.server.domain.ClubMemberRepository
 import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
+import com.my_dream.server.domain.NotificationLog
+import com.my_dream.server.domain.NotificationLogRepository
 import com.my_dream.server.domain.Store
 import com.my_dream.server.domain.StoreRepository
 import com.my_dream.server.domain.Theme
@@ -28,7 +31,7 @@ import kotlin.test.assertTrue
 
 /** 감시 등록 — 특히 **남의 것을 못 건드리는지**. */
 @DataJpaTest
-@Import(WatchService::class)
+@Import(WatchService::class, MembershipService::class)
 class WatchServiceTest @Autowired constructor(
     private val service: WatchService,
     private val stores: StoreRepository,
@@ -36,6 +39,8 @@ class WatchServiceTest @Autowired constructor(
     private val slots: TimeSlotRepository,
     private val watches: WatchRepository,
     private val members: ClubMemberRepository,
+    private val membership: MembershipService,
+    private val logs: NotificationLogRepository,
 ) {
 
     private lateinit var theme: Theme
@@ -73,13 +78,34 @@ class WatchServiceTest @Autowired constructor(
 
     @Test
     fun `승인 안 된 사람도 이미 건 알림은 보고 지울 수 있다`() {
-        // 배포 전에 걸어 둔 감시, 또는 내보내진 사람의 감시. 못 지우면 보이지도 않는 감시가 남는다
+        // 배포 전에 걸어 둔 감시(대기·거절 상태). 못 지우면 보이지도 않는 감시가 남는다.
+        // 내보내기로는 이 상황이 안 생긴다 — 내보내기가 감시를 지운다(아래 테스트)
         val mine = service.register("나", requireNotNull(future.id))
-        members.findByUserId("나")!!.status = MemberStatus.REMOVED
+        members.findByUserId("나")!!.status = MemberStatus.PENDING
 
         assertEquals(1, service.list("나").watches.size)
         service.cancel("나", mine.id)
         assertTrue(service.list("나").watches.isEmpty())
+    }
+
+    @Test
+    fun `내보내면 그 사람의 감시와 알림 기록이 같이 지워지고, 다시 승인돼도 안 살아난다`() {
+        // 2026-10-20 사용자 결정 (D28 정정) — 전에는 지워질 때까지 울렸다
+        members.save(ClubMember("운영", "운영", MemberRole.ADMIN, MemberStatus.APPROVED, Instant.now()))
+        val other = slot(LocalDate.now().plusDays(2))
+        val mine = service.register("나", requireNotNull(future.id))
+        service.register("나", requireNotNull(other.id))
+        val theirs = service.register("너", requireNotNull(future.id))
+        logs.save(NotificationLog(watches.findById(mine.id).get(), Instant.now(), "SENT"))
+
+        membership.remove("운영", "나")
+        assertEquals(listOf(theirs.id), watches.findAll().map { it.id }, "남의 감시는 그대로")
+        assertEquals(0, logs.count())
+
+        membership.join("나", "나")
+        membership.approve("운영", "나")
+        assertTrue(service.list("나").watches.isEmpty(), "되살리지 않는다 — 새로 건다")
+        service.register("나", requireNotNull(future.id))
     }
 
     private fun slot(date: LocalDate, time: LocalTime = LocalTime.of(19, 35)) =

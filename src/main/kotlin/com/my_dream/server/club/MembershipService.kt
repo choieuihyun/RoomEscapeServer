@@ -7,6 +7,8 @@ import com.my_dream.server.domain.KakaoLinkRepository
 import com.my_dream.server.domain.MemberProfileRepository
 import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
+import com.my_dream.server.domain.NotificationLogRepository
+import com.my_dream.server.domain.WatchRepository
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.http.HttpStatus
@@ -61,6 +63,8 @@ class MembershipService(
     private val kakaoLinks: KakaoLinkRepository,
     private val devices: DeviceTokenRepository,
     private val profiles: MemberProfileRepository,
+    private val watches: WatchRepository,
+    private val notificationLogs: NotificationLogRepository,
     transactionManager: PlatformTransactionManager,
 ) {
 
@@ -206,6 +210,11 @@ class MembershipService(
         m.status = MemberStatus.REMOVED
         // ADMIN 으로 남기면, 다시 가입 신청해서 승인될 때 관리자로 돌아온다
         m.role = MemberRole.MEMBER
+        // 빈자리 알림도 같이 지운다 — 다시 승인돼도 되살리지 않는다 (2026-10-20 사용자 결정 · D28 정정).
+        // 프로필·일정·참여·해 본 테마·기기는 그대로 둔다. 감시 걸기도 이 멤버 행을 잠그므로 엇갈려 살아남는 감시가 없다
+        notificationLogs.deleteByWatchUserId(m.userId)
+        val gone = watches.deleteByUserIdInBulk(m.userId)
+        if (gone > 0) log.info("내보낸 {} 의 빈자리 알림 {}개를 지웠다", m.userId, gone)
         true
     }
 

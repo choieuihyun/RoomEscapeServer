@@ -57,6 +57,11 @@ interface WatchRepository : JpaRepository<Watch, Long> {
 
     fun findByUserIdAndTimeSlot(userId: String, timeSlot: TimeSlot): Watch?
 
+    /** 내보내기가 부른다 — 알림 기록을 먼저 지운 뒤에 ([NotificationLogRepository.deleteByWatchUserId]) */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from Watch w where w.userId = :userId")
+    fun deleteByUserIdInBulk(userId: String): Int
+
     /**
      * 내 감시 목록. 지난 자리는 빼고 준다 — 지나간 회차를 지켜보고 있다고 말하면 거짓말이다.
      *
@@ -123,6 +128,14 @@ interface NotificationLogRepository : JpaRepository<NotificationLog, Long> {
 
     /** 이 감시에 **성공적으로** 보낸 가장 최근 알림. 쿨다운 판정에 쓴다. */
     fun findTopByWatchAndOutcomeOrderBySentAtDesc(watch: Watch, outcome: String): NotificationLog?
+
+    /**
+     * 내보낸 사람의 감시를 지우기 **전에** 부른다 (D28 정정). 운영 Postgres 는 CASCADE 로 같이 지워지지만
+     * 테스트 H2 는 엔티티로 만든 표라 CASCADE 가 없다 — 이걸 빼면 알림 기록이 있는 감시에서 테스트만 FK 에 걸린다
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from NotificationLog n where n.watch.id in (select w.id from Watch w where w.userId = :userId)")
+    fun deleteByWatchUserId(userId: String): Int
 }
 
 interface DeviceTokenRepository : JpaRepository<DeviceToken, Long> {
