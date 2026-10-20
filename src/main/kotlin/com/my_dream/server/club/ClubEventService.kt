@@ -13,6 +13,7 @@ import com.my_dream.server.domain.ClubEventSegmentRepository
 import com.my_dream.server.domain.ClubMember
 import com.my_dream.server.domain.ClubMemberRepository
 import com.my_dream.server.domain.MemberRole
+import com.my_dream.server.domain.MemberProfileRepository
 import com.my_dream.server.domain.MemberStatus
 import com.my_dream.server.domain.PlayedThemeRepository
 import org.slf4j.LoggerFactory
@@ -120,7 +121,17 @@ data class DeletedDto(val id: Long, val deleted: Boolean)
 /** `GET /api/me/events` (§4.9). [total] 은 커서와 상관없이 내가 참여한 지난 일정 전체 수 */
 data class MyEventsDto(val events: List<EventDto>, val total: Long)
 
-data class ClubMemberDto(val uid: String, val nickname: String)
+/**
+ * 멤버 목록의 한 사람. 처음엔 "대신 넣을 사람 고르기" 용으로 uid·닉네임만 있었고, 6단계(§4.11)에서 멤버 목록 화면이 생기며 늘었다 —
+ * 기존 화면은 uid·nickname 만 읽어 그대로 돈다
+ */
+data class ClubMemberDto(
+    val uid: String,
+    val nickname: String,
+    val role: String,
+    val approvedAt: Instant?,
+    val profile: ProfileDto?,
+)
 
 /**
  * 동호회 일정 (아키텍처 D30 · D31).
@@ -140,6 +151,7 @@ class ClubEventService(
     private val answers: ClubEventAvailabilityRepository,
     private val played: PlayedThemeRepository,
     private val members: ClubMemberRepository,
+    private val profiles: MemberProfileRepository,
     private val publisher: ApplicationEventPublisher,
 ) {
 
@@ -192,13 +204,18 @@ class ClubEventService(
         )
     }
 
-    /** 대신 넣을 사람 고르기용. 승인 멤버만, **한국어 가나다순** — DB 정렬 규칙(collation)에 맡기면 서버마다 다르다 */
+    /**
+     * 멤버 목록 · 대신 넣을 사람 고르기. 승인 멤버만, **한국어 가나다순** — DB 정렬 규칙(collation)에 맡기면 서버마다 다르다.
+     * 프로필은 한 번에 읽는다 — 사람마다 물으면 30명에 쿼리 30번이다
+     */
     @Transactional(readOnly = true)
     fun members(uid: String): List<ClubMemberDto> {
         requireMember(uid)
         val korean = Collator.getInstance(Locale.KOREAN)
-        return members.findByStatusOrderByCreatedAt(MemberStatus.APPROVED)
-            .map { ClubMemberDto(it.userId, it.nickname) }
+        val rows = members.findByStatusOrderByCreatedAt(MemberStatus.APPROVED)
+        val profileOf = profiles.findByUserIdIn(rows.map { it.userId }).associateBy { it.userId }
+        return rows
+            .map { ClubMemberDto(it.userId, it.nickname, it.role.name, it.approvedAt, profileOf[it.userId]?.toDto()) }
             .sortedWith { a, b -> korean.compare(a.nickname, b.nickname) }
     }
 

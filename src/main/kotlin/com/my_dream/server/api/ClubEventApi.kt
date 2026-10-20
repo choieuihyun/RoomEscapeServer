@@ -4,6 +4,8 @@ import com.my_dream.server.club.AvailabilityInput
 import com.my_dream.server.club.ClubError
 import com.my_dream.server.club.ClubEventService
 import com.my_dream.server.club.ClubMemberDto
+import com.my_dream.server.club.RankMonthDto
+import com.my_dream.server.club.RankingService
 import com.my_dream.server.club.DeletedDto
 import com.my_dream.server.club.EventDto
 import com.my_dream.server.club.EventInput
@@ -36,7 +38,11 @@ data class BookingRequest(val booked: Boolean? = null)
  */
 @RestController
 @RequestMapping("/api/club")
-class ClubEventController(private val service: ClubEventService, private val fresh: FreshThemeService) {
+class ClubEventController(
+    private val service: ClubEventService,
+    private val fresh: FreshThemeService,
+    private val ranking: RankingService,
+) {
 
     /** 날짜를 문자열로 받는다 — `LocalDate` 로 받으면 형식이 틀렸을 때 스프링 기본 400 이 나가서 계약의 `BAD_RANGE` 가 안 된다 */
     @GetMapping("/events")
@@ -94,6 +100,14 @@ class ClubEventController(private val service: ClubEventService, private val fre
 
     @GetMapping("/members")
     fun members(@AuthenticationPrincipal jwt: Jwt): List<ClubMemberDto> = service.members(jwt.uid())
+
+    /** 달별 랭킹 (§4.11). 달도 문자열로 받는다 — 틀린 형식이 계약의 `BAD_RANGE` 여야 한다 */
+    @GetMapping("/rankings")
+    fun rankings(
+        @AuthenticationPrincipal jwt: Jwt,
+        @RequestParam(required = false) from: String?,
+        @RequestParam(required = false) to: String?,
+    ): List<RankMonthDto> = ranking.rankings(jwt.uid(), from, to)
 }
 
 /**

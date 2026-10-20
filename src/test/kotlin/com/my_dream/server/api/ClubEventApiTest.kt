@@ -7,6 +7,7 @@ import com.my_dream.server.domain.ClubEventRepository
 import com.my_dream.server.domain.ClubEventSegmentRepository
 import com.my_dream.server.domain.ClubMember
 import com.my_dream.server.domain.ClubMemberRepository
+import com.my_dream.server.domain.MemberProfileRepository
 import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
 import com.my_dream.server.domain.PlayedThemeRepository
@@ -24,6 +25,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -49,6 +51,7 @@ class ClubEventApiTest @Autowired constructor(
     private val candidates: ClubEventCandidateRepository,
     private val played: PlayedThemeRepository,
     private val answers: ClubEventAvailabilityRepository,
+    private val profiles: MemberProfileRepository,
 ) {
 
     private val json = ObjectMapper()
@@ -56,6 +59,7 @@ class ClubEventApiTest @Autowired constructor(
     @BeforeEach
     fun setUp() {
         played.deleteAll()
+        profiles.deleteAll()
         answers.deleteAll()
         candidates.deleteAll()
         participants.deleteAll()
@@ -77,7 +81,10 @@ class ClubEventApiTest @Autowired constructor(
         return json.readValue(res, Map::class.java)
     }
 
-    /** 동호회 API 전부 (일정 · 시간 협의 · 해 본 테마 · 지난 일정). 하나 늘리면 여기에도 적는다 */
+    /**
+     * 동호회 API 전부 (일정 · 시간 협의 · 해 본 테마 · 지난 일정 · 랭킹). 하나 늘리면 여기에도 적는다.
+     * `PUT /api/me/profile` 은 여기 없다 — 대기 중인 사람도 쓰는 경로라 NOT_CLUB_MEMBER 가 아니다(아래 따로)
+     */
     private fun routes(id: Any): List<MockHttpServletRequestBuilder> = listOf(
         get("/api/club/events").param("from", "2026-11-01").param("to", "2026-11-30"),
         get("/api/club/events/$id"),
@@ -98,6 +105,7 @@ class ClubEventApiTest @Autowired constructor(
         delete("/api/me/played/1"),
         get("/api/club/members/kakao:42/played"),
         get("/api/me/events"),
+        get("/api/club/rankings").param("from", "2026-10").param("to", "2026-10"),
     )
 
     @Test
@@ -302,6 +310,69 @@ class ClubEventApiTest @Autowired constructor(
         status("나", """{"token":"tok-나-1"}""").andExpect(jsonPath("$.registered").value(true))
         status("너", """{"token":"tok-나-1"}""").andExpect(jsonPath("$.registered").value(false))
         status("나", "{}").andExpect(jsonPath("$.registered").value(false))
+    }
+
+    // --- 6단계 프로필 · 랭킹 (§4.11) ---
+
+    private val profileJson = """{"realName":"김철수","birthDate":"1997-06-28","mbti":"INTJ","roomCount":120,
+        "genres":["공포","추리"],"lifeTheme":{"themeName":"비밀의 화원","branchName":null,"themeKey":null}}"""
+
+    private fun putProfile(uid: String?, content: String) =
+        mvc.perform(put("/api/me/profile").apply { if (uid != null) with(as_(uid)) }.contentType(MediaType.APPLICATION_JSON).content(content))
+
+    @Test
+    fun `프로필 고치기 — 401, 신청 전이면 NOT_JOINED, 대기 중이면 된다`() {
+        putProfile(null, """{"nickname":"철수","profile":$profileJson}""").andExpect(status().isUnauthorized)
+        putProfile("모름", """{"nickname":"철수","profile":$profileJson}""")
+            .andExpect(status().isForbidden)
+            .andExpect(jsonPath("$.error").value("NOT_JOINED"))
+            .andExpect(jsonPath("$.message").value("가입 신청한 계정만 프로필을 고칠 수 있어요."))
+        putProfile("대기", """{"nickname":"철수","profile":$profileJson}""")
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.nickname").value("철수"))
+            .andExpect(jsonPath("$.profile.birthDate").value("1997-06-28"))
+            .andExpect(jsonPath("$.profile.genres[1]").value("추리"))
+            .andExpect(jsonPath("$.profile.lifeTheme.themeName").value("비밀의 화원"))
+    }
+
+    @Test
+    fun `프로필의 틀린 타입 · 깨진 본문도 BAD_PROFILE 본문으로`() {
+        // 잭슨이 정수 칸의 1.5 를 1 로, "12" 를 12 로 바꾸면 검사를 지나친다 — 느슨하게 받아 서버가 본다 (D35)
+        for (bad in listOf("1.5", "\"12\"")) {
+            putProfile("나", """{"nickname":"철수","profile":${profileJson.replace("120", bad)}}""")
+                .andExpect(status().isBadRequest).andExpect(jsonPath("$.error").value("BAD_PROFILE"))
+        }
+        putProfile("나", """{"nickname":"철수","profile":{"lifeTheme":"비밀의 화원"}}""")
+            .andExpect(status().isBadRequest).andExpect(jsonPath("$.error").value("BAD_PROFILE"))
+        putProfile("나", "{").andExpect(status().isBadRequest).andExpect(jsonPath("$.error").value("BAD_PROFILE"))
+        mvc.perform(post("/api/me/join").with(as_("새사람")).contentType(MediaType.APPLICATION_JSON).content("""{"nickname":"철수","profile":{"genres":"공포"}}"""))
+            .andExpect(status().isBadRequest).andExpect(jsonPath("$.error").value("BAD_PROFILE"))
+    }
+
+    @Test
+    fun `옛 앱의 가입 신청(닉네임만)은 그대로 되고 profile 은 null 로 실린다`() {
+        mvc.perform(post("/api/me/join").with(as_("새사람")).contentType(MediaType.APPLICATION_JSON).content("""{"nickname":"철수"}"""))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.status").value("PENDING"))
+            .andExpect(jsonPath("$.profile").value(org.hamcrest.Matchers.nullValue()))
+    }
+
+    @Test
+    fun `멤버 목록에 역할 · 승인일 · 프로필이 실리고 랭킹은 계약 모양으로`() {
+        putProfile("나", """{"nickname":"닉나","profile":$profileJson}""").andExpect(status().isOk)
+        mvc.perform(get("/api/club/members").with(as_("나")))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[?(@.uid=='나')].role").value("MEMBER"))
+            .andExpect(jsonPath("$[?(@.uid=='나')].profile.realName").value("김철수"))
+            .andExpect(jsonPath("$[?(@.uid=='kakao:42')].profile").value(org.hamcrest.Matchers.contains(org.hamcrest.Matchers.nullValue())))
+        mvc.perform(get("/api/club/rankings").param("from", "2026-09").param("to", "2026-10").with(as_("나")))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].month").value("2026-10"))
+            .andExpect(jsonPath("$[1].ranks").isArray)
+        mvc.perform(get("/api/club/rankings").param("from", "2026-1").param("to", "2026-10").with(as_("나")))
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error").value("BAD_RANGE"))
+            .andExpect(jsonPath("$.message").value("랭킹은 한 번에 12달까지 볼 수 있어요."))
     }
 
     @Test

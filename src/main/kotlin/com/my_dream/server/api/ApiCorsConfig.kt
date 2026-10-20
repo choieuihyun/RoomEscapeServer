@@ -27,8 +27,9 @@ class ApiCorsConfig(
         val config = CorsConfiguration().apply {
             allowedOrigins = this@ApiCorsConfig.allowedOrigins
                 .split(",").map { it.trim() }.filter { it.isNotEmpty() }
-            // 감시 등록/해제는 POST · DELETE 다. 조회만 있던 시절엔 GET 하나로 충분했다
-            allowedMethods = listOf("GET", "POST", "DELETE")
+            // 감시 등록/해제는 POST · DELETE 다. 조회만 있던 시절엔 GET 하나로 충분했다.
+            // PUT 은 프로필 고치기(§4.11)가 처음 쓴다. 빠지면 MockMvc 테스트는 통과하고 브라우저에서만 막힌다 (D35)
+            allowedMethods = listOf("GET", "POST", "PUT", "DELETE")
             // `Authorization` 은 브라우저 기본 허용 헤더가 아니라서 여기 없으면 프리플라이트가 막힌다.
             // Floduler 가 Firebase ID 토큰을 이 헤더로 보낸다
             allowedHeaders = listOf("Authorization", "Content-Type", "Accept")

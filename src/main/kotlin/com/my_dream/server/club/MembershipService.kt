@@ -4,6 +4,7 @@ import com.my_dream.server.domain.ClubMember
 import com.my_dream.server.domain.ClubMemberRepository
 import com.my_dream.server.domain.DeviceTokenRepository
 import com.my_dream.server.domain.KakaoLinkRepository
+import com.my_dream.server.domain.MemberProfileRepository
 import com.my_dream.server.domain.MemberRole
 import com.my_dream.server.domain.MemberStatus
 import org.slf4j.LoggerFactory
@@ -26,6 +27,8 @@ data class MeDto(
     val role: String?,
     val status: String,
     val kakaoLinked: Boolean,
+    /** 아직 안 채운 기존 멤버 · NONE 은 null (§4.11) */
+    val profile: ProfileDto? = null,
 )
 
 /** 관리 화면의 한 줄. [hasDevice] 는 "알림을 받을 기기가 하나라도 있나" — 없으면 전날 알림이 안 간다 */
@@ -37,6 +40,7 @@ data class MemberDto(
     val createdAt: Instant,
     val decidedAt: Instant?,
     val hasDevice: Boolean,
+    val profile: ProfileDto? = null,
 )
 
 /**
@@ -56,6 +60,7 @@ class MembershipService(
     private val members: ClubMemberRepository,
     private val kakaoLinks: KakaoLinkRepository,
     private val devices: DeviceTokenRepository,
+    private val profiles: MemberProfileRepository,
     transactionManager: PlatformTransactionManager,
 ) {
 
@@ -71,6 +76,7 @@ class MembershipService(
             role = m?.role?.name,
             status = m?.status?.name ?: NONE,
             kakaoLinked = kakaoLinks.existsByUserId(uid),
+            profile = m?.let { profiles.findByUserId(uid)?.toDto() },
         )
     }
 
@@ -81,17 +87,22 @@ class MembershipService(
      * 걸린 쪽을 500 으로 내보내지 않고 **새 트랜잭션에서 한 번 더** 돈다 — 그때는 행이 있어서 갱신 경로로 간다.
      * 같은 트랜잭션에서 다시 읽을 수는 없다: Postgres 는 제약 위반이 난 트랜잭션을 통째로 못 쓰게 만든다.
      */
-    fun join(uid: String, nickname: String): MeDto {
+    /**
+     * [profile] 은 **선택이다** (§4.11) — 서버가 앱보다 먼저 올라가는 동안 옛 앱(프로필을 모름)의 가입 신청이
+     * 막히면 안 된다. 필수는 화면이 강제한다. 보냈으면 다 검사한다
+     */
+    fun join(uid: String, nickname: String, profile: ProfileInput? = null): MeDto {
         val name = cleanNickname(nickname)
+        val clean = profile?.let { ProfileRules.clean(it, todayKst()) }
         return try {
-            tx.execute { joinOnce(uid, name) }!!
+            tx.execute { joinOnce(uid, name, clean) }!!
         } catch (e: DataIntegrityViolationException) {
             log.info("가입 신청이 동시에 두 번 왔다 — 다시 읽어서 처리한다 ({})", uid)
-            tx.execute { joinOnce(uid, name) }!!
+            tx.execute { joinOnce(uid, name, clean) }!!
         }
     }
 
-    private fun joinOnce(uid: String, name: String): MeDto {
+    private fun joinOnce(uid: String, name: String, profile: CleanProfile?): MeDto {
         val existing = members.findForUpdateByUserId(uid)
         when (existing?.status) {
             null -> members.saveAndFlush(ClubMember(uid, name, MemberRole.MEMBER, MemberStatus.PENDING, Instant.now()))
@@ -106,10 +117,41 @@ class MembershipService(
             }
             // 대기 중엔 닉네임 오타를 고칠 수 있게 한다. 관리자가 아직 안 봤으니 바꿔도 속는 사람이 없다
             MemberStatus.PENDING -> existing.nickname = name
-            // 승인된 뒤에는 닉네임을 안 바꾼다 — 관리자는 그 닉네임을 보고 승인했다
-            MemberStatus.APPROVED -> Unit
+            // 가입 신청으로는 승인된 사람의 아무것도 안 바꾼다 — 닉네임·프로필을 고치는 길은 PUT /api/me/profile 이다
+            MemberStatus.APPROVED -> return me(uid)
         }
+        if (profile != null) saveProfile(uid, profile)
         return me(uid)
+    }
+
+    /**
+     * 닉네임과 프로필을 **통째로** 바꾼다 (§4.11). 대기 중·승인된 멤버만.
+     *
+     * 1단계의 "승인된 뒤에는 닉네임을 안 바꾼다" 를 **뒤집은 자리다**(사용자 결정 · 기획 6단계).
+     * 그때 이유는 "운영진이 그 닉네임을 보고 승인했다" 였는데, 승인 뒤의 개명은 멤버 목록에 그대로 보인다.
+     *
+     * 멤버 행을 잠그고 쓴다 — 처음 저장을 두 탭에서 동시에 하면 둘 다 "없음" 을 보고 INSERT 해서 하나가 500 이 된다
+     */
+    fun updateProfile(uid: String, nickname: String, profile: ProfileInput?): MeDto {
+        val name = cleanNickname(nickname)
+        val clean = ProfileRules.clean(profile ?: throw ClubError.badProfile(), todayKst())
+        return tx.execute {
+            val m = members.findForUpdateByUserId(uid)
+            when (m?.status) {
+                null, MemberStatus.REJECTED -> throw ClubError.notJoined()
+                MemberStatus.REMOVED -> throw ClubError.joinBlocked()
+                MemberStatus.PENDING, MemberStatus.APPROVED -> m.nickname = name
+            }
+            saveProfile(uid, clean)
+            me(uid)
+        }!!
+    }
+
+    /** 멤버 행을 잠근 안에서만 부른다 — 그래야 "없으면 INSERT" 가 두 번 돌지 않는다 */
+    private fun saveProfile(uid: String, clean: CleanProfile) {
+        val now = Instant.now()
+        val row = profiles.findByUserId(uid)
+        if (row == null) profiles.saveAndFlush(clean.newRow(uid, now)) else clean.applyTo(row, now)
     }
 
     /** [status] 는 `PENDING` · `APPROVED` · `ALL` (그 밖의 상태 이름도 받는다). 가입 순 */
@@ -126,14 +168,19 @@ class MembershipService(
         }
         // 기기 유무를 사람마다 물으면 30명에 쿼리 30번이다. 한 번에 묻는다
         val withDevice = if (rows.isEmpty()) emptySet() else devices.findUserIdsWithDevice(rows.map { it.userId }).toSet()
-        return rows.map { it.toDto(it.userId in withDevice) }
+        val profileOf = if (rows.isEmpty()) emptyMap() else profiles.findByUserIdIn(rows.map { it.userId }).associateBy { it.userId }
+        return rows.map { it.toDto(it.userId in withDevice, profileOf[it.userId]?.toDto()) }
     }
 
     @Transactional
     fun approve(adminUid: String, uid: String): MemberDto = decide(adminUid, uid) { m, _ ->
         when (m.status) {
             // 거절했다가 마음을 바꾼 경우도 받는다
-            MemberStatus.PENDING, MemberStatus.REJECTED -> m.status = MemberStatus.APPROVED
+            MemberStatus.PENDING, MemberStatus.REJECTED -> {
+                m.status = MemberStatus.APPROVED
+                // decidedAt 은 역할 바꾸기·내보내기에도 새로 찍힌다. 승인일은 여기서만 (D35)
+                m.approvedAt = Instant.now()
+            }
             MemberStatus.APPROVED -> return@decide false
             MemberStatus.REMOVED -> throw ClubError.badState()
         }
@@ -185,7 +232,7 @@ class MembershipService(
             target.decidedBy = adminUid
             log.info("동호회 멤버 {} → {}/{} (관리자 {})", uid, target.status, target.role, adminUid)
         }
-        return target.toDto(devices.findUserIdsWithDevice(listOf(uid)).isNotEmpty())
+        return target.toDto(devices.findUserIdsWithDevice(listOf(uid)).isNotEmpty(), profiles.findByUserId(uid)?.toDto())
     }
 
     private fun requireAdmin(adminUid: String, lock: Boolean): List<ClubMember> {
@@ -200,7 +247,7 @@ class MembershipService(
 
     private fun ClubMember.isActiveAdmin() = role == MemberRole.ADMIN && status == MemberStatus.APPROVED
 
-    private fun ClubMember.toDto(hasDevice: Boolean) = MemberDto(
+    private fun ClubMember.toDto(hasDevice: Boolean, profile: ProfileDto?) = MemberDto(
         uid = userId,
         nickname = nickname,
         role = role.name,
@@ -208,6 +255,7 @@ class MembershipService(
         createdAt = createdAt,
         decidedAt = decidedAt,
         hasDevice = hasDevice,
+        profile = profile,
     )
 
     companion object {

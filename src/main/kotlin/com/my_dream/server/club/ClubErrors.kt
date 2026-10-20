@@ -60,5 +60,12 @@ class ClubError(
 
         // --- 5단계 알림 (§4.10) ---
         fun tooSoon() = ClubError(HttpStatus.TOO_MANY_REQUESTS, "TOO_SOON", "1분 뒤에 다시 보내 주세요.")
+
+        // --- 6단계 프로필 · 랭킹 (§4.11) ---
+        /** 코드는 하나, 문구는 칸마다 — 화면이 문구를 그대로 띄우므로 어느 칸을 고칠지 바로 보이게 */
+        fun badProfile(message: String = "프로필 내용을 다시 확인해 주세요.") = ClubError(HttpStatus.BAD_REQUEST, "BAD_PROFILE", message)
+        fun notJoined() = ClubError(HttpStatus.FORBIDDEN, "NOT_JOINED", "가입 신청한 계정만 프로필을 고칠 수 있어요.")
+        /** 코드는 [badRange] 와 같다. 문구만 랭킹용 — 일정 목록의 "62일까지" 가 여기 뜨면 틀린 안내다 */
+        fun badRankRange() = ClubError(HttpStatus.BAD_REQUEST, "BAD_RANGE", "랭킹은 한 번에 12달까지 볼 수 있어요.")
     }
 }

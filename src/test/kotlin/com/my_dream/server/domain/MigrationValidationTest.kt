@@ -49,6 +49,7 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM member_profile")
         jdbc.update("DELETE FROM club_event_reminder")
         jdbc.update("DELETE FROM played_theme")
         jdbc.update("DELETE FROM club_event_availability")
@@ -61,7 +62,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V11 까지 돌고 엔티티와 맞는다`() {
+    fun `V12 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -200,6 +201,27 @@ class MigrationValidationTest @Autowired constructor(
         jdbc.update(insert, id, "SENT")
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, id, "SENT") }
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, id, "MAYBE") }
+    }
+
+    // --- V12 멤버 프로필 ---
+
+    @Test
+    fun `프로필 — 이모지 20자 이름, 정해진 MBTI 만, 방 수 0~9999, 한 사람 한 행`() {
+        val insert = """INSERT INTO member_profile (user_id, real_name, birth_date, mbti, room_count, genres, life_theme_name, updated_at)
+                        VALUES (?, ?, '1997-06-28', ?, ?, '공포,추리', '비밀의 화원', now())"""
+        jdbc.update(insert, "a", "🙂".repeat(20), "INTJ", 0)
+        jdbc.update(insert, "b", "철수", "UNKNOWN", 9999)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "c", "🙂".repeat(21), "INTJ", 1) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "d", "철수", "XXXX", 1) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "e", "철수", "INTJ", 10000) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "f", "철수", "INTJ", -1) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "a", "철수", "INTJ", 1) }
+    }
+
+    @Test
+    fun `승인일 열이 있다`() {
+        insertMember("u", status = "APPROVED")
+        assertEquals(1, jdbc.update("UPDATE club_member SET approved_at = now() WHERE user_id = 'u'"))
     }
 
     private fun insertMember(uid: String, role: String = "MEMBER", status: String = "PENDING", nickname: String = "닉") {

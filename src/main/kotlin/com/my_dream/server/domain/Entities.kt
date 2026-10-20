@@ -187,11 +187,32 @@ class ClubMember(
     @Column(name = "created_at", nullable = false) val createdAt: Instant,
     @Column(name = "decided_at") var decidedAt: Instant? = null,
     @Column(name = "decided_by") var decidedBy: String? = null,
+    /** 승인된 때. [decidedAt] 은 역할 바꾸기·내보내기에도 새로 찍혀서 따로 둔다 (D35) */
+    @Column(name = "approved_at") var approvedAt: Instant? = null,
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null
 }
+
+/**
+ * 멤버 프로필 한 사람 한 행 (D35). **행이 없으면 아직 안 채운 것** — 화면에는 `profile: null` 로 간다.
+ * 칸의 범위 검사는 [com.my_dream.server.club.ProfileRules] 가 한다. [genres] 는 고른 순서대로 쉼표로 이었다
+ */
+@Entity
+@Table(name = "member_profile")
+class MemberProfile(
+    @Id @Column(name = "user_id") val userId: String,
+    @Column(name = "real_name", nullable = false, length = 20) var realName: String,
+    @Column(name = "birth_date", nullable = false) var birthDate: LocalDate,
+    @Column(nullable = false, length = 7) var mbti: String,
+    @Column(name = "room_count", nullable = false) var roomCount: Int,
+    @Column(nullable = false, length = 60) var genres: String,
+    @Column(name = "life_theme_name", nullable = false, length = 40) var lifeThemeName: String,
+    @Column(name = "life_theme_branch", length = 40) var lifeThemeBranch: String?,
+    @Column(name = "life_theme_key", length = 80) var lifeThemeKey: String?,
+    @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+)
 
 /**
  * "이 카카오 계정으로 들어오면 이 uid 다".

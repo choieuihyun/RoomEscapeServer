@@ -144,4 +144,18 @@ class ClubApiSecurityTest @Autowired constructor(
             .andExpect(status().isOk)
             .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
     }
+
+    @Test
+    fun `프리플라이트가 PUT 도 허락한다 — 프로필 고치기`() {
+        // 처음 쓰는 PUT 이다. CORS 에서 빠지면 다른 MockMvc 테스트는 Origin 을 안 보내서 전부 통과한다 (D35)
+        mvc.perform(
+            options("/api/me/profile")
+                .header("Origin", "http://localhost:5173")
+                .header("Access-Control-Request-Method", "PUT")
+                .header("Access-Control-Request-Headers", "authorization,content-type"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+            .andExpect(header().string("Access-Control-Allow-Methods", containsString("PUT")))
+    }
 }

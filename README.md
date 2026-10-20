@@ -173,7 +173,8 @@ DELETE /api/watches/{id}               해제
 POST /api/auth/kakao            { code, redirectUri }   카카오 로그인 → { customToken }   (로그인 불필요)
 POST /api/auth/kakao/link       { code, redirectUri }   지금 계정에 카카오 연결
 GET  /api/me                                            내 상태 (NONE · PENDING · APPROVED · REJECTED · REMOVED)
-POST /api/me/join               { nickname }            가입 신청 → 승인 대기
+POST /api/me/join               { nickname, profile? }  가입 신청 → 승인 대기 (profile 은 6단계 · 서버는 선택)
+PUT  /api/me/profile            { nickname, profile }   닉네임·프로필 통째로 고치기 (대기 중·승인 멤버)
 GET  /api/admin/members?status=                         관리자: 멤버 목록
 POST /api/admin/members/{uid}/approve | reject | remove | role
 ```
@@ -191,7 +192,8 @@ DELETE /api/club/events/{id}             삭제 (표시만)
 POST   /api/club/events/{id}/join | leave
 POST   /api/club/events/{id}/participants  { uid }      DELETE …/participants/{uid}     대신 넣기·빼기
 POST   /api/club/events/{id}/booking       { booked }   예약 상태
-GET    /api/club/members                 대신 넣을 사람 고르기용
+GET    /api/club/members                 멤버 목록 — 역할 · 승인일 · 프로필 (6단계) · 대신 넣을 사람 고르기에도
+GET    /api/club/rankings?from=&to=      달별 랭킹 YYYY-MM · 최대 12달 · 달마다 5등까지 (6단계)
 POST   /api/club/events/{id}/availability  { date, available, startMin, endMin }   후보 날짜에 되는지 (3단계)
 DELETE /api/club/events/{id}/availability/{date}                                  응답 지우기
        날짜 미정 일정 = date 가 null · candidates(후보 날짜 1~14개)

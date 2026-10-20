@@ -39,10 +39,13 @@ class BootstrapAdmin(
 
         val existing = members.findForUpdateByUserId(target)
         if (existing == null) {
-            members.save(ClubMember(target, DEFAULT_NICKNAME, MemberRole.ADMIN, MemberStatus.APPROVED, Instant.now(), Instant.now(), BY))
+            val now = Instant.now()
+            members.save(ClubMember(target, DEFAULT_NICKNAME, MemberRole.ADMIN, MemberStatus.APPROVED, now, now, BY, approvedAt = now))
         } else {
             // 먼저 가입 신청을 눌러 둔 경우가 흔하다. 적어 둔 닉네임은 살린다
             existing.role = MemberRole.ADMIN
+            // 이미 승인된 멤버를 운영진으로 올리는 것이면 승인일은 그대로다 (D35)
+            if (existing.status != MemberStatus.APPROVED) existing.approvedAt = Instant.now()
             existing.status = MemberStatus.APPROVED
             existing.decidedAt = Instant.now()
             existing.decidedBy = BY

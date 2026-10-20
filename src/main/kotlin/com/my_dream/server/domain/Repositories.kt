@@ -317,8 +317,31 @@ interface ClubEventAvailabilityRepository : JpaRepository<ClubEventAvailability,
     fun deleteByEventAndUserId(event: ClubEvent, userId: String): Int
 }
 
+interface MemberProfileRepository : JpaRepository<MemberProfile, String> {
+    fun findByUserId(userId: String): MemberProfile?
+
+    /** 멤버 목록에 프로필을 붙일 때 한 번에 — 사람마다 물으면 30명에 쿼리 30번이다 */
+    fun findByUserIdIn(userIds: Collection<String>): List<MemberProfile>
+}
+
+/** 랭킹 한 칸 — 그 사람이 그날 기록한 테마 수 */
+data class PlayedDayCount(val userId: String, val nickname: String, val playedOn: LocalDate, val count: Long)
+
 interface PlayedThemeRepository : JpaRepository<PlayedTheme, Long> {
     fun findByUserId(userId: String): List<PlayedTheme>
+
+    /**
+     * 랭킹용 — **지금 승인된** 멤버의 (사람, 날짜) 별 기록 수. 달로 묶는 것은 Kotlin 이 한다:
+     * 달을 자르는 SQL 함수가 Postgres 와 H2 에서 달라 테스트와 운영이 다른 SQL 을 돌게 된다 (D35)
+     */
+    @Query(
+        """select new com.my_dream.server.domain.PlayedDayCount(p.userId, m.nickname, p.playedOn, count(p))
+           from PlayedTheme p, ClubMember m
+           where m.userId = p.userId and m.status = com.my_dream.server.domain.MemberStatus.APPROVED
+             and p.playedOn between :from and :to
+           group by p.userId, m.nickname, p.playedOn""",
+    )
+    fun countByDay(from: LocalDate, to: LocalDate): List<PlayedDayCount>
     fun findByUserIdIn(userIds: Collection<String>): List<PlayedTheme>
     fun findByIdAndUserId(id: Long, userId: String): PlayedTheme?
 }
