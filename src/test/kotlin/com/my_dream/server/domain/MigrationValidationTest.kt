@@ -36,6 +36,7 @@ import kotlin.test.assertFailsWith
 class MigrationValidationTest @Autowired constructor(
     private val members: ClubMemberRepository,
     private val kakaoLinks: KakaoLinkRepository,
+    private val played: PlayedThemeRepository,
     private val jdbc: JdbcTemplate,
 ) {
 
@@ -216,6 +217,19 @@ class MigrationValidationTest @Autowired constructor(
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "e", "철수", "INTJ", 10000) }
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "f", "철수", "INTJ", -1) }
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "a", "철수", "INTJ", 1) }
+    }
+
+    @Test
+    fun `랭킹 쿼리가 Postgres 에서 돈다 — 승인 멤버만, 사람·날짜별 개수`() {
+        // 생성자 식 + 교차 조인 + group by 는 H2 에서만 돌아 봤다. 방언 차이는 운영에서 500 으로 처음 보인다
+        insertMember("u", status = "APPROVED")
+        insertMember("p", status = "PENDING")
+        val insert = "INSERT INTO played_theme (user_id, theme_name, name_key, played_on, source, created_at) VALUES (?, ?, ?, '2026-10-05', 'MANUAL', now())"
+        jdbc.update(insert, "u", "A", "a")
+        jdbc.update(insert, "u", "B", "b")
+        jdbc.update(insert, "p", "A", "a")
+        val rows = played.countByDay(java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2026, 10, 31))
+        assertEquals(listOf(PlayedDayCount("u", "닉", java.time.LocalDate.of(2026, 10, 5), 2)), rows)
     }
 
     @Test

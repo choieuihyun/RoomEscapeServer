@@ -28,8 +28,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 /**
  * "내 정보" 화면 — 해 본 테마 · 지난 동호회 일정 (아키텍처 D33). 계약은 Floduler `작업명세서.md` §4.9.
  *
- * `/api/me` 를 맡은 [MeController] 와 **컨트롤러를 나눈다.** 아래 입력 오류 처리를 거기에 걸면
- * 이미 배포된 `/api/me` 의 오류 모양까지 바뀐다.
+ * `/api/me` 를 맡은 [MeController] 와 **컨트롤러를 나눈다.** 처음 이유는 "아래 입력 오류 처리를 거기에 걸면
+ * 이미 배포된 `/api/me` 의 오류 모양까지 바뀐다" 였다. **정정 (2026-10-20 · D35):** 6단계에서 `MeController` 에도
+ * 깨진 본문 → `BAD_PROFILE` 을 걸었다 — 프로필이 들어오며 타입이 틀릴 칸이 생겼고, 스프링 기본 400 은 화면이 못 읽는다.
+ * 나눈 것은 그대로 둔다: 여기 오류는 `BAD_PLAYED`, 저기는 `BAD_PROFILE` 로 서로 다르다.
  */
 @RestController
 @RequestMapping("/api")
