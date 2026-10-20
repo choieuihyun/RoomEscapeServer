@@ -88,6 +88,19 @@ class MemberProfileTest @Autowired constructor(
     }
 
     @Test
+    fun `내보낸 사람이 다시 신청할 때 — 프로필을 보내면 새 값, 안 보내면 있던 것`() {
+        membership.join("u1", "철수", profile(name = "옛이름"))
+        members.findByUserId("u1")!!.status = MemberStatus.REMOVED
+        assertEquals("옛이름", membership.join("u1", "철수").profile?.realName)
+
+        members.findByUserId("u1")!!.status = MemberStatus.REMOVED
+        val me = membership.join("u1", "철수", profile(name = "새이름"))
+        assertEquals("PENDING", me.status)
+        assertEquals("새이름", me.profile?.realName)
+        assertEquals(1, profiles.count())
+    }
+
+    @Test
     fun `승인된 사람의 가입 신청은 아무것도 안 바꾼다 — 고치는 길은 PUT 이다`() {
         member("u1")
         val me = membership.join("u1", "딴이름", profile())
@@ -98,12 +111,13 @@ class MemberProfileTest @Autowired constructor(
     // --- 프로필 고치기 ---
 
     @Test
-    fun `신청 전 · 거절된 사람은 NOT_JOINED, 내보낸 사람은 JOIN_BLOCKED`() {
+    fun `신청 전 · 거절된 사람 · 내보낸 사람은 NOT_JOINED`() {
         assertClubError("NOT_JOINED", HttpStatus.FORBIDDEN) { membership.updateProfile("없음", "철수", profile()) }
         member("거절", status = MemberStatus.REJECTED)
         assertClubError("NOT_JOINED", HttpStatus.FORBIDDEN) { membership.updateProfile("거절", "철수", profile()) }
+        // 전에는 JOIN_BLOCKED 였다. 이제 다시 가입 신청하면 대기가 되어 고칠 수 있다 (D28 정정)
         member("내보냄", status = MemberStatus.REMOVED)
-        assertClubError("JOIN_BLOCKED", HttpStatus.FORBIDDEN) { membership.updateProfile("내보냄", "철수", profile()) }
+        assertClubError("NOT_JOINED", HttpStatus.FORBIDDEN) { membership.updateProfile("내보냄", "철수", profile()) }
         assertEquals(0, profiles.count())
     }
 

@@ -106,11 +106,12 @@ class MembershipService(
         val existing = members.findForUpdateByUserId(uid)
         when (existing?.status) {
             null -> members.saveAndFlush(ClubMember(uid, name, MemberRole.MEMBER, MemberStatus.PENDING, Instant.now()))
-            // 내보낸 사람을 받으면 "내보내기" 가 의미가 없다. 되돌리는 길은 이번 단계에 없다 (§4.6)
-            MemberStatus.REMOVED -> throw ClubError.joinBlocked()
-            MemberStatus.REJECTED -> existing.apply {
+            // 내보낸 사람도 다시 신청한다 — 들어오려면 운영진이 다시 승인해야 한다 (2026-10-20 사용자 결정 · D28 정정)
+            MemberStatus.REJECTED, MemberStatus.REMOVED -> existing.apply {
                 this.nickname = name
                 status = MemberStatus.PENDING
+                // 내보내기가 이미 MEMBER 로 내리지만, 아니어도 다시 승인되는 순간 운영진으로 돌아오면 안 된다
+                role = MemberRole.MEMBER
                 // 거절 기록을 남겨 두면 화면이 대기 상태 위에 "거절됨" 시각을 그릴 수 있다
                 decidedAt = null
                 decidedBy = null
@@ -138,8 +139,8 @@ class MembershipService(
         return tx.execute {
             val m = members.findForUpdateByUserId(uid)
             when (m?.status) {
-                null, MemberStatus.REJECTED -> throw ClubError.notJoined()
-                MemberStatus.REMOVED -> throw ClubError.joinBlocked()
+                // 내보낸 사람도 같다 — 다시 가입 신청하면 대기가 되어 고칠 수 있다
+                null, MemberStatus.REJECTED, MemberStatus.REMOVED -> throw ClubError.notJoined()
                 MemberStatus.PENDING, MemberStatus.APPROVED -> m.nickname = name
             }
             saveProfile(uid, clean)
@@ -203,7 +204,7 @@ class MembershipService(
         if (m.status == MemberStatus.REMOVED) return@decide false
         if (m.isActiveAdmin() && admins.size <= 1) throw ClubError.lastAdmin()
         m.status = MemberStatus.REMOVED
-        // ADMIN 으로 남기면, 나중에 되살리는 길이 생겼을 때 관리자로 돌아온다
+        // ADMIN 으로 남기면, 다시 가입 신청해서 승인될 때 관리자로 돌아온다
         m.role = MemberRole.MEMBER
         true
     }

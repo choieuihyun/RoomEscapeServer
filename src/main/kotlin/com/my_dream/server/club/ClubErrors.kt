@@ -33,7 +33,7 @@ class ClubError(
         fun kakaoUnavailable() = ClubError(HttpStatus.SERVICE_UNAVAILABLE, "KAKAO_UNAVAILABLE", "카카오와 연결이 잘 안 돼요. 잠시 뒤 다시 눌러 주세요.")
         fun kakaoAlreadyLinked() = ClubError(HttpStatus.CONFLICT, "KAKAO_ALREADY_LINKED", "이미 다른 카카오 연결이 있어요. 다른 계정에 연결된 카카오인지 확인해 주세요.")
         fun badNickname() = ClubError(HttpStatus.BAD_REQUEST, "BAD_NICKNAME", "닉네임은 1자에서 20자 사이로 적어 주세요.")
-        fun joinBlocked() = ClubError(HttpStatus.FORBIDDEN, "JOIN_BLOCKED", "이 계정으로는 가입할 수 없어요. 운영진에게 물어봐 주세요.")
+        // JOIN_BLOCKED(내보낸 계정의 가입 신청)는 2026-10-20 에 없앴다 — 내보낸 계정도 다시 신청한다 (D28 정정)
         fun notAdmin() = ClubError(HttpStatus.FORBIDDEN, "NOT_ADMIN", "운영진만 할 수 있어요.")
         fun noSuchMember() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_MEMBER", "그런 멤버를 찾을 수 없어요.")
         fun lastAdmin() = ClubError(HttpStatus.CONFLICT, "LAST_ADMIN", "마지막 운영진은 내보내거나 내릴 수 없어요. 다른 운영진을 먼저 지정해 주세요.")

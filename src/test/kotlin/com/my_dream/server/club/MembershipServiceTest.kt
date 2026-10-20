@@ -105,10 +105,23 @@ class MembershipServiceTest @Autowired constructor(
     }
 
     @Test
-    fun `내보낸 사람은 다시 못 들어온다`() {
+    fun `내보낸 사람도 다시 신청하면 대기로 — 운영진으로는 안 돌아온다`() {
+        // 2026-10-20 사용자 결정 — 전에는 403 JOIN_BLOCKED 였다 (D28 정정)
+        member("u1", MemberStatus.REMOVED, MemberRole.ADMIN).apply { decidedAt = Instant.now(); decidedBy = "관리자" }
+        val me = service.join("u1", "새닉")
+        assertEquals("PENDING", me.status)
+        assertEquals("새닉", me.nickname)
+        assertEquals("MEMBER", me.role, "내보내기 전에 운영진이었어도 다시 승인될 때 운영진으로 돌아오면 안 된다")
+        assertNull(members.findByUserId("u1")!!.decidedAt)
+    }
+
+    @Test
+    fun `내보낸 사람을 운영진이 바로 승인하는 길은 없다 — 본인 신청이 먼저`() {
+        admin()
         member("u1", MemberStatus.REMOVED)
-        assertClubError("JOIN_BLOCKED", HttpStatus.FORBIDDEN) { service.join("u1", "철수") }
-        assertEquals("이 계정으로는 가입할 수 없어요. 운영진에게 물어봐 주세요.", assertFailsWith<ClubError> { service.join("u1", "철수") }.message)
+        assertClubError("BAD_STATE", HttpStatus.CONFLICT) { service.approve("관리자", "u1") }
+        service.join("u1", "철수")
+        assertEquals("APPROVED", service.approve("관리자", "u1").status)
     }
 
     @Test
@@ -195,11 +208,11 @@ class MembershipServiceTest @Autowired constructor(
 
     @Test
     fun `대기 중인 사람도 내보낼 수 있다`() {
-        // 가입 신청자를 영구히 막는 용도 (§4.6)
+        // ~~가입 신청자를 영구히 막는 용도~~ — 2026-10-20 부터 내보내도 다시 신청할 수 있다. 영구히 막는 길은 없다
         admin()
         member("u1", MemberStatus.PENDING)
         assertEquals("REMOVED", service.remove("관리자", "u1").status)
-        assertClubError("JOIN_BLOCKED", HttpStatus.FORBIDDEN) { service.join("u1", "철수") }
+        assertEquals("PENDING", service.join("u1", "철수").status)
     }
 
     // --- 역할 · 마지막 관리자 ---
@@ -234,7 +247,7 @@ class MembershipServiceTest @Autowired constructor(
 
     @Test
     fun `관리자를 내보내면 역할도 내려간다`() {
-        // REMOVED 인데 role=ADMIN 으로 남으면, 나중에 되살리는 길이 생겼을 때 관리자로 돌아온다
+        // REMOVED 인데 role=ADMIN 으로 남으면, 다시 신청해서 승인될 때 관리자로 돌아온다
         admin("A")
         admin("B")
         val dto = service.remove("A", "B")
