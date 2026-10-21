@@ -44,6 +44,13 @@ object BranchRegions {
         "pointnine-gangnam" to "강남",
         "zeroworld-gangnam" to "강남",
         "playpointlab-gangnam" to "강남",
+        // 신비웹 공통 어댑터 (D41) — 플레이방탈 강남 목록
+        "studioesc-gangnam" to "강남",
+        "dolo-gangnam" to "강남",
+        "eroom8-gangnam" to "강남",
+        "goldkey-gangnam-timesquare" to "강남",
+        "goldkey-gangnam-flowerroad" to "강남",
+        "dpsnnn-gangnam" to "강남", // 아임웹 (D41)
 
         "keyescape-hongdae" to "홍대",
         "bitphobia-hongdae" to "홍대",
