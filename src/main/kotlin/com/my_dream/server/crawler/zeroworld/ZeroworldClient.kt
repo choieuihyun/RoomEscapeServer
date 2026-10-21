@@ -54,8 +54,6 @@ class ZeroworldClient(private val rateLimiter: HostRateLimiter) {
             client.post()
                 .uri(PATH)
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                // 빈 값으로 덮어쓴다. 헤더를 빼면 자바 기본값이 대신 나간다
-                .header("User-Agent", "")
                 .body(body)
                 .retrieve()
                 .body(String::class.java)

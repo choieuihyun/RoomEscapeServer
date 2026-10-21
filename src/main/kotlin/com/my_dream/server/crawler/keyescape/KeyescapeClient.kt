@@ -58,8 +58,6 @@ class KeyescapeClient(private val rateLimiter: HostRateLimiter) {
             client.post()
                 .uri("/controller/run_proc.php")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                // 빈 값으로 덮어쓴다. 헤더를 빼면 자바 기본값이 대신 나간다
-                .header("User-Agent", "")
                 .body(form)
                 .retrieve()
                 .body(String::class.java)

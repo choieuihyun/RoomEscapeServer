@@ -99,8 +99,6 @@ class ImwebCrawler(private val rateLimiter: HostRateLimiter) {
             clients.computeIfAbsent(site.baseUrl) { CrawlHttp.client(it) }.post()
                 .uri("/booking/get_prod_list.cm")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                // 빈 값으로 덮어쓴다. 헤더를 빼면 자바 기본값(Java-http-client/…)이 대신 나간다
-                .header("User-Agent", "")
                 .body(form)
                 .retrieve()
                 .body(String::class.java)

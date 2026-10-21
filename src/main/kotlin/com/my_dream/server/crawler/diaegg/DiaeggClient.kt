@@ -26,8 +26,6 @@ class DiaeggClient(private val rateLimiter: HostRateLimiter) {
                         .queryParam("rev_days", date)
                         .build()
                 }
-                // 빈 값으로 덮어쓴다. 헤더를 빼면 자바 기본값(Java-http-client/…)이 대신 나간다
-                .header("User-Agent", "")
                 .retrieve()
                 .body(String::class.java)
                 .orEmpty()

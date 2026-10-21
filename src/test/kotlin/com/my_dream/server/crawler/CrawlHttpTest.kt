@@ -64,6 +64,33 @@ class CrawlHttpTest {
     }
 
     @Test
+    fun `모든 요청이 같은 User-Agent 를 달고 나간다`() {
+        // 실제로 소켓에 실린 값을 본다 — 설정만 보면 매장 Client 가 덮어쓴 것을 못 잡는다
+        var seen: String? = null
+        server.createContext("/ua") { ex ->
+            seen = ex.requestHeaders.getFirst("User-Agent")
+            ex.sendResponseHeaders(200, 0)
+            ex.responseBody.use { it.write("ok".toByteArray()) }
+        }
+        server.start()
+
+        CrawlHttp.client(base).get().uri("/ua").retrieve().body(String::class.java)
+        assertEquals(CrawlHttp.USER_AGENT, seen)
+    }
+
+    @Test
+    fun `매장 Client 는 User-Agent 를 따로 넣지 않는다`() {
+        // 한 곳(CrawlHttp)에 있어야 바꿀 때 한 번에 바뀐다. 매장마다 다른 값을 끼우는 것도 이걸로 막힌다 (D43)
+        val crawler = File("src/main/kotlin/com/my_dream/server/crawler")
+        val offenders = crawler.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" && it.name != "CrawlHttp.kt" }
+            .filter { f -> f.readText().contains("\"User-Agent\"") }
+            .map { it.name }.toList()
+        assertTrue(crawler.isDirectory, "경로가 바뀌었다 — 이 검사가 아무것도 안 보고 통과한다")
+        assertEquals(emptyList(), offenders)
+    }
+
+    @Test
     fun `매장 Client 는 RestClient 를 직접 만들지 않는다`() {
         // 새 매장이 23곳 붙는다. 하나라도 RestClient.create 를 베끼면 그 매장만 타임아웃 없이 돈다
         val crawler = File("src/main/kotlin/com/my_dream/server/crawler")

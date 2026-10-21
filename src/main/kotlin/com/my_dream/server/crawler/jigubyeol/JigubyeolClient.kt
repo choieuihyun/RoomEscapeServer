@@ -15,8 +15,6 @@ class JigubyeolClient(private val rateLimiter: HostRateLimiter) {
         rateLimiter.throttled(branch.host) {
             client.get()
                 .uri { uri -> uri.path("/reservation").queryParam("branch", branch.id).queryParam("date", date).build() }
-                // 빈 값으로 덮어쓴다. 헤더를 빼면 자바 기본값이 대신 나간다
-                .header("User-Agent", "")
                 .retrieve()
                 .body(String::class.java)
                 .orEmpty()

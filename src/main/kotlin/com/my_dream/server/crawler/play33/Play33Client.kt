@@ -31,9 +31,6 @@ class Play33Client(private val rateLimiter: HostRateLimiter) {
                     .queryParam("date", date)
                     .build()
             }
-            // 빈 값으로 덮어쓴다. 헤더를 아예 안 보내면 자바가 `Java-http-client/21.0.11` 을
-            // 대신 보내서 JDK 버전까지 나간다 — 빈 값이 실제로 제일 덜 남기는 쪽이다.
-            .header("User-Agent", "")
             .retrieve()
             .body(String::class.java)
             .orEmpty()

@@ -33,11 +33,28 @@ object CrawlHttp {
      */
     val READ_TIMEOUT: Duration = Duration.ofSeconds(15)
 
+    /**
+     * 모든 매장 요청의 `User-Agent` — **일반 데스크톱 크롬 값**이다 (사용자 결정 2026-10-21 · 아키텍처 D43).
+     *
+     * 2026-10-21 까지는 빈 값이었다("정보를 제일 덜 남긴다"). 사용자가 "브라우저 값이 기본" 이라며 바꾸기로 했다.
+     * 바꾸기 전 오라클 서버에서 19개 호스트 첫 화면을 이 값으로 1건씩 물어 403 이 없는 것을 확인했다.
+     *
+     * ⚠️ **이 값은 차단을 풀려고 쓰는 것이 아니다.** 막힌 매장(단편선 · IP 차단)은 그대로 제외다 —
+     * 403 · 429 · 503 이면 백오프(D39)하고, 계속 막히면 대상에서 뺀다. 값을 매장마다 바꿔 끼우거나 돌려 쓰지 않는다.
+     * 버전 숫자는 크롬이 올라가도 굳이 따라 올리지 않는다(실제 크롬도 `142.0.0.0` 처럼 끝자리를 0 으로 보낸다).
+     *
+     * 매장 Client 에서 `.header("User-Agent", …)` 로 덮어쓰지 않는다 — `CrawlHttpTest` 가 막는다. 한 곳에 있어야 한 번에 바뀐다
+     */
+    const val USER_AGENT =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+
     /** [readTimeout] 은 테스트가 15초를 기다리지 않으려고 줄여 쓴다. 운영 코드는 기본값만 쓴다 */
     fun client(baseUrl: String, readTimeout: Duration = READ_TIMEOUT): RestClient {
         val http = HttpClient.newBuilder().connectTimeout(CONNECT_TIMEOUT).build()
         val factory = JdkClientHttpRequestFactory(http).apply { setReadTimeout(readTimeout) }
-        return RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build()
+        return RestClient.builder().baseUrl(baseUrl).requestFactory(factory)
+            .defaultHeader("User-Agent", USER_AGENT)
+            .build()
     }
 }
 
