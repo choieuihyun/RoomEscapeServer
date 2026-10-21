@@ -8,14 +8,15 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * 실제로 받아온 HTML 조각 네 장으로 파서를 고정한다 (아키텍처 D5).
+ * 실제로 받아온 HTML 조각 다섯 장으로 파서를 고정한다 (아키텍처 D5).
  *
- * | | 오리진 09-10 | 오리진 09-06 | 탄탄 09-11 | 해운대 09-11 |
- * |---|---|---|---|---|
- * | 매진 섞임 | ✅ 11/32 | | ✅ 3/24 | ✅ 14/50 |
- * | **전량 매진** | | ✅ 33/33 | | |
- * | `난이도 3+2` | | | | ✅ BANG |
- * | 테마 수 | 4 | 4 | 3 | 6 |
+ * | | 오리진 09-10 | 오리진 09-06 | 탄탄 09-11 | 해운대 09-11 | 강남 10-21 |
+ * |---|---|---|---|---|---|
+ * | 매진 섞임 | ✅ 11/32 | | ✅ 3/24 | ✅ 14/50 | ✅ 1/35 |
+ * | **전량 매진** | | ✅ 33/33 | | | |
+ * | `난이도 3+2` | | | | ✅ BANG | ✅ 작은창고 |
+ * | 소요시간 태그 없음 | | | | | ✅ 리허설 · STAFF ONLY |
+ * | 테마 수 | 4 | 4 | 3 | 6 | 6 |
  *
  * **전량 매진 한 장이 중요하다** — 매진 자리에는 `data-booking-time` 속성이 안 붙어서,
  * 속성만 읽는 파서는 이 픽스처에서 **회차가 0개로 나온다.**
@@ -32,18 +33,22 @@ class PlayPointLabParserTest {
     private val originSoldOut = fixture("playpointlab-seomyeon-origin-2026-09-06-전량매진.html")
     private val tantan = fixture("playpointlab-tantan-2026-09-11.html")
     private val haeundae = fixture("playpointlab-haeundae-2026-09-11.html")
+    private val gangnam = fixture("playpointlab-gangnam-2026-10-21.html")
 
     @Test
     fun `지점마다 테마가 다르다`() {
         val o = parser.parse(origin).themes.map { it.themeName }
         val t = parser.parse(tantan).themes.map { it.themeName }
         val h = parser.parse(haeundae).themes.map { it.themeName }
+        val g = parser.parse(gangnam).themes.map { it.themeName }
 
         assertEquals(4, o.size)
         assertEquals(3, t.size)
         assertEquals(6, h.size)
+        assertEquals(6, g.size)
+        // 이름은 겹칠 수 있다 — 해운대와 강남에 둘 다 `리허설` 이 있다. 지점을 가르는 건 room-id 다
         val all = o + t + h
-        assertEquals(all.size, all.toSet().size, "지점 사이에 겹치는 테마: $all")
+        assertEquals(all.size, all.toSet().size, "부산 지점 사이에 겹치는 테마: $all")
     }
 
     @Test
@@ -52,6 +57,11 @@ class PlayPointLabParserTest {
         assertEquals(setOf("220", "222", "224", "234"), parser.roomIds(origin))
         assertEquals(setOf("217", "218", "219"), parser.roomIds(tantan))
         assertEquals(setOf("201", "202", "203", "204", "206", "223"), parser.roomIds(haeundae))
+        assertEquals(setOf("193", "194", "195", "196", "208", "209"), parser.roomIds(gangnam))
+
+        // 네 지점의 room-id 가 하나도 안 겹쳐야 이 대조가 성립한다
+        val sets = PlayPointLabBranch.entries.map { it.roomIds }
+        assertEquals(sets.sumOf { it.size }, sets.flatten().toSet().size, "지점 사이에 겹치는 room-id: $sets")
 
         // enum 에 박아 둔 값과 실제 응답이 일치해야 한다 — 어긋나면 크롤러가 매 요청을 끊는다
         for (branch in PlayPointLabBranch.entries) {
@@ -59,6 +69,7 @@ class PlayPointLabParserTest {
                 PlayPointLabBranch.SEOMYEON_ORIGIN -> origin
                 PlayPointLabBranch.TANTAN_STREET -> tantan
                 PlayPointLabBranch.HAEUNDAE -> haeundae
+                PlayPointLabBranch.GANGNAM -> gangnam
             }
             assertEquals(branch.roomIds, parser.roomIds(html), "${branch.branchName} room-id 불일치")
         }
@@ -109,8 +120,20 @@ class PlayPointLabParserTest {
         val bang = parser.parse(haeundae).themes.first { it.themeName == "BANG" }
         assertEquals(3.0, bang.difficulty)
 
+        // 강남 `작은창고` 도 `난이도 3+2` 다 — 한 테마만의 버릇이 아니었다
+        assertEquals(3.0, parser.parse(gangnam).themes.first { it.themeName == "작은창고" }.difficulty)
+
         // 나머지는 평범한 정수다
         assertTrue(parser.parse(origin).themes.all { it.difficulty != null })
+    }
+
+    @Test
+    fun `소요시간 태그가 없는 테마는 시간만 비고 장르는 남는다`() {
+        // 강남 `리허설` 은 `<p>#공포 </p>` 뿐이다. 시간이 없다고 테마를 버리면 회차까지 사라진다
+        val rehearsal = parser.parse(gangnam).themes.first { it.themeName == "리허설" }
+        assertNull(rehearsal.runningMinutes)
+        assertEquals("공포", rehearsal.genre)
+        assertTrue(rehearsal.slots.isNotEmpty())
     }
 
     @Test
