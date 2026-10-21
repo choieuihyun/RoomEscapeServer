@@ -55,6 +55,7 @@ object BranchRegions {
         "thefrank-gangnam" to "강남", // 신비웹 AJAX 세대 (D41)
         "roomsa-gangnam" to "강남", // Reserv Company (D41)
         "pagetoday-gangnam" to "강남",
+        "smurf-gangnam" to "강남", // 스머프 — 관을 합쳐 센다
 
         "keyescape-hongdae" to "홍대",
         "bitphobia-hongdae" to "홍대",
