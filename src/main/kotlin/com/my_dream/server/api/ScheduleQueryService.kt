@@ -34,10 +34,20 @@ class ScheduleQueryService(
      */
     fun supportedBranches() = adapters.flatMap { it.branches }
 
+    /**
+     * 오늘이 지났는데 아직 지점 예약 창 앞인 날짜인가 (D42). 그 자리 행은 수집이 더는 고치지 않는 옛 값이다.
+     * **지난 날짜는 건드리지 않는다** — 그건 원래부터 그대로 주던 값이다
+     */
+    fun isBeforeWindow(storeKey: String, date: LocalDate, today: LocalDate = LocalDate.now()): Boolean {
+        val adapter = adapters.firstOrNull { a -> a.branches.any { it.key == storeKey } } ?: return false
+        return !date.isBefore(today) && date.isBefore(adapter.firstOpenDay(storeKey, today))
+    }
+
     /** 지원하는 지점 전부. 아직 수집 안 된 지점은 [BranchDto.dates] 가 비어 있다. */
     fun branches(today: LocalDate = LocalDate.now()): List<BranchDto> = supportedBranches().map { branch ->
         val store = stores.findByStoreKey(branch.key)
         val dates = store?.let { slots.findDatesByStore(it, today) }.orEmpty()
+            .filterNot { isBeforeWindow(branch.key, it, today) }
         BranchDto(
             id = branch.key,
             store = branch.brand,
@@ -68,9 +78,10 @@ class ScheduleQueryService(
     }
 
     /** 없는 지점이거나 아직 수집되지 않았으면 null. 호출자가 그 사실을 구분해 알릴 수 있게 한다. */
-    fun schedule(branchKey: String, date: LocalDate): ScheduleDto? {
+    fun schedule(branchKey: String, date: LocalDate, today: LocalDate = LocalDate.now()): ScheduleDto? {
         // 모르는 키로 DB 를 뒤지지 않는다. 지원 목록에 있는 지점만 응답한다
         supportedBranches().firstOrNull { it.key == branchKey } ?: return null
+        if (isBeforeWindow(branchKey, date, today)) return null
         val store = stores.findByStoreKey(branchKey) ?: return null
         val rows = slots.findByStoreAndDate(store, date)
         if (rows.isEmpty()) return null

@@ -26,4 +26,8 @@ class DiaeggAdapter(private val crawler: DiaeggCrawler) : StoreAdapter {
                 FetchUnit("${branch.branchName} $date", branch.key, date) { crawler.fetch(branch, date) }
             }
         }
+
+    /** 앞을 자르는 매장이라, 잘린 자리에 남은 옛 값이 화면에 나가지 않게 한다 (D42) */
+    override fun firstOpenDay(storeKey: String, today: LocalDate): LocalDate =
+        DiaeggBranch.entries.firstOrNull { it.key == storeKey }?.let { today.plusDays(it.leadDays.toLong()) } ?: today
 }

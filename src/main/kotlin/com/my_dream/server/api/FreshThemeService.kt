@@ -88,7 +88,8 @@ class FreshThemeService(
 
         val supported = schedule.supportedBranches()
         val supportedKeys = supported.map { it.key }.toSet()
-        val rows = slots.findAllOnDate(date).filter { it.theme.store.storeKey in supportedKeys }
+        val rows = slots.findAllOnDate(date)
+            .filter { it.theme.store.storeKey in supportedKeys && !schedule.isBeforeWindow(it.theme.store.storeKey, date) }
         val seen = rows.map { it.theme.store.storeKey }.toSet()
 
         val korean = Collator.getInstance(Locale.KOREAN)

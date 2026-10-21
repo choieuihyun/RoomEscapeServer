@@ -36,6 +36,18 @@ interface StoreAdapter {
 
     /** 이 날짜들을 긁으려면 어떤 요청이 필요한가. */
     fun plan(dates: List<LocalDate>): List<FetchUnit>
+
+    /**
+     * 이 지점 예약 창의 첫날 (아키텍처 D42). **조회 API 는 오늘과 이 날 사이의 날짜를 내놓지 않는다.**
+     *
+     * 수집은 창 안만 묻고(`openWithin`), 저장은 받아 온 행만 고친다 — 그래서 창이 오늘부터 시작하지 않는 매장은
+     * **창에서 빠진 앞쪽 날짜가 마지막으로 본 값 그대로 남는다.** 다이아에그가 그랬다: 오늘~+3 이
+     * 4일 묵은 "가능" 으로 화면에 떴다(2026-10-21 운영 DB · 68회차 중 66개 가능).
+     *
+     * **[plan] 으로 알아내지 않는다.** plan 은 매장 사이트에 묻기도 한다(프랭크 달력) — 조회 요청이 크롤이 된다.
+     * 그래서 계산만 하는 따로 된 자리다.
+     */
+    fun firstOpenDay(storeKey: String, today: LocalDate): LocalDate = today
 }
 
 /**
