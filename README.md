@@ -249,13 +249,13 @@ curl 'http://127.0.0.1:8080/api/branches'
 | `DEBUG_ENDPOINTS` | `false` | 인증 없는 확인용 엔드포인트 |
 | `SERVER_ADDRESS` | `127.0.0.1` | 루프백 전용. 남에게 보여줄 때만 `0.0.0.0` |
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | 로컬 compose 기준 | |
-| `API_CORS_ORIGINS` | Pages + localhost | 쉼표로 여러 개 |
+| `API_CORS_ORIGINS` | Pages + localhost (운영 compose 는 Pages + Firebase Hosting) | 쉼표로 여러 개. 운영은 `.env` 에 안 적는다 — 적으면 기본값을 통째로 덮는다 |
 | `FIREBASE_PROJECT_ID` | `roomescapescheduler` | 감시 API 토큰을 검증할 대상. 비밀값 아님 |
 | `NOTIFY_CHANNEL` | `log` | `fcm` 으로 바꾸면 실제 푸시. **서비스 계정 키 파일이 있어야 뜬다** |
 | `NOTIFY_COOLDOWN_MINUTES` | `60` | 같은 자리를 다시 알리기까지의 최소 간격 |
 | `KAKAO_REST_API_KEY` | (없음) | 카카오 로그인(동호회). 비어 있으면 카카오 로그인만 `503`. 비밀값 아님 |
 | `KAKAO_CLIENT_SECRET` | (없음) | REST API 키의 클라이언트 시크릿(카카오 로그인용). 개편 후 콘솔은 기본으로 켜 두어 **사실상 필수**. **비밀값** |
-| `KAKAO_ALLOWED_REDIRECT_URIS` | Pages + localhost | 카카오가 돌려보낼 수 있는 화면 주소. 콘솔 값과 글자 그대로 같게 |
+| `KAKAO_ALLOWED_REDIRECT_URIS` | Pages + Firebase Hosting + localhost | 카카오가 돌려보낼 수 있는 화면 주소. 콘솔 값과 글자 그대로 같게 |
 | `CLUB_BOOTSTRAP_ADMIN_UID` | (없음) | 첫 동호회 관리자 uid. **관리자가 0명일 때만** 쓰인다. 빈자리 알림이 승인 멤버로 묶여 있어 배포 전에 넣는다 (배포.md "⑬") |
 
 ```bash

@@ -32,7 +32,9 @@ services:
       # 감시 걸린 자리만 2분마다 한 번 더 보는 길 (아키텍처 D27). 매장 쪽에서 불편해하는 기색이 보이면
       # .env 에 COLLECTOR_WATCH_ENABLED=false 를 적고 `docker compose up -d` — 코드를 안 고치고 끈다
       COLLECTOR_WATCH_ENABLED: ${COLLECTOR_WATCH_ENABLED:-true}
-      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-https://choieuihyun.github.io}
+      # 화면 주소 둘 — Pages(옛 주소 · 전환 기간 동안 계속) · Firebase Hosting(2026-10-21 추가).
+      # **값은 여기(git)에 둔다** — 비밀이 아니고, 운영 .env 에 박아 두면 이 줄을 고쳐도 반영이 안 된다 (배포.md "화면 주소 바꾸기")
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-https://choieuihyun.github.io,https://roomescapescheduler.web.app}
       # 인증이 없는 엔드포인트다. 배포에서는 반드시 꺼 둔다 (Caddy 도 라우팅하지 않는다)
       DEBUG_ENDPOINTS: "false"
       # 감시 API 토큰을 검증할 대상. 비밀값이 아니다 — 브라우저에도 그대로 내려가는 이름이다
@@ -49,7 +51,8 @@ services:
       KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY:-}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET:-}
       # localhost 는 Floduler 를 로컬에서 띄워 운영 서버에 붙여 볼 때 쓴다. 카카오 콘솔에도 같은 값이 있어야 한다
-      KAKAO_ALLOWED_REDIRECT_URIS: ${KAKAO_ALLOWED_REDIRECT_URIS:-https://choieuihyun.github.io/RoomEscapeScheduler/,http://localhost:5173/}
+      # 끝의 / 까지 글자 그대로 비교한다 — 화면이 location.origin + pathname 을 보낸다
+      KAKAO_ALLOWED_REDIRECT_URIS: ${KAKAO_ALLOWED_REDIRECT_URIS:-https://choieuihyun.github.io/RoomEscapeScheduler/,https://roomescapescheduler.web.app/,http://localhost:5173/}
       # 첫 관리자 uid (아키텍처 D28). 관리자가 0명일 때만 쓰인다. **빈자리 알림이 승인 멤버로 묶여 있어서
       # 이게 비어 있으면 아무도 알림을 못 건다** — 배포 전에 .env 에 넣는다 (배포.md "⑬")
       CLUB_BOOTSTRAP_ADMIN_UID: ${CLUB_BOOTSTRAP_ADMIN_UID:-}
