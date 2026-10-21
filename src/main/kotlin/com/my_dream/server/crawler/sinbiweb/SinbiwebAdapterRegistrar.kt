@@ -7,7 +7,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProce
 import org.springframework.stereotype.Component
 
 /**
- * [SinbiwebSites.ALL] 의 매장마다 [SinbiwebAdapter] 빈을 하나씩 만든다 (아키텍처 D41).
+ * [SinbiwebSites.ALL] · [SinbiwebAjaxSites.ALL] 의 매장마다 어댑터 빈을 하나씩 만든다 (아키텍처 D41).
  *
  * **왜 `@Bean` 을 손으로 안 다나.** 수집기·조회 API·지역 표가 전부 `List<StoreAdapter>` 를 받는다 —
  * 스프링은 **빈 하나하나**만 그 목록에 넣는다. 매장마다 `@Bean` 을 달면 "설정 한 줄 + 빈 한 줄" 로 두 군데를
@@ -25,6 +25,16 @@ class SinbiwebAdapterRegistrar : BeanDefinitionRegistryPostProcessor {
                 .addConstructorArgReference("sinbiwebCrawler")
                 .beanDefinition
             registry.registerBeanDefinition("sinbiwebAdapter:${site.host}", definition)
+        }
+        SinbiwebAjaxSites.ALL.forEach { site ->
+            registry.registerBeanDefinition(
+                "sinbiwebAjaxAdapter:${site.host}",
+                BeanDefinitionBuilder.genericBeanDefinition(SinbiwebAjaxAdapter::class.java)
+                    .addConstructorArgValue(site)
+                    .addConstructorArgReference("sinbiwebAjaxCalendar")
+                    .addConstructorArgReference("sinbiwebAjaxCrawler")
+                    .beanDefinition,
+            )
         }
     }
 

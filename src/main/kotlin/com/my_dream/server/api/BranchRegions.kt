@@ -53,6 +53,7 @@ object BranchRegions {
         "dpsnnn-gangnam" to "강남", // 아임웹 (D41)
         "codek-gangnam" to "강남", // ASP 예약 솔루션 (D41)
         "signescape-gangnamcity" to "강남",
+        "thefrank-gangnam" to "강남", // 신비웹 AJAX 세대 (D41)
 
         "keyescape-hongdae" to "홍대",
         "bitphobia-hongdae" to "홍대",
