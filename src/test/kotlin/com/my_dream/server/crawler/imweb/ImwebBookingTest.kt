@@ -76,7 +76,9 @@ class ImwebBookingTest {
     }
 
     @Test
-    fun `매장마다 픽스처 테스트가 있다`() {
-        assertEquals(setOf("www.dpsnnn.com"), ImwebSites.ALL.map { it.host }.toSet(), "픽스처 없이 더한 매장이 있다")
+    fun `수집 대상은 모두 픽스처 테스트가 있다`() {
+        // 단편선은 운영 서버에서 403 이라 수집 목록에서 뺐다(2026-10-21). 픽스처는 아임웹 코드를 지키려고 남긴다
+        val tested = setOf("www.dpsnnn.com")
+        assertTrue(ImwebSites.ALL.map { it.host }.all { it in tested }, "픽스처 없이 더한 매장이 있다")
     }
 }

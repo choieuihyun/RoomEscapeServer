@@ -56,8 +56,12 @@ data class ImwebTheme(val name: String, val runningMinutes: Int?)
 object ImwebSites {
 
     /**
-     * 강남만이다. **성수는 지점 파라미터가 아니라 다른 사이트**(`dpsnnn-s.imweb.me`)다 — 테마가 하나도 안 겹친다(2026-10-21 실측).
-     * 붙이려면 여기에 한 줄을 더 둔다.
+     * ⛔ **수집 목록([ALL])에서 뺐다 (2026-10-21 · 배포 첫 바퀴).** 운영 서버(오라클)에서 `HTTP 403` 이 왔다 —
+     * 같은 요청이 사무실 PC 에서는 200 이었으니, 데이터센터 IP 를 막는 것으로 보인다(추정).
+     * **차단당하면 우회하지 않고 뺀다**(CLAUDE.md 수집 윤리 · 조사 문서 "포인트나인" WAF). 백오프(D39)가 403 에 바로 멈췄다.
+     *
+     * 설정과 픽스처 테스트는 남긴다 — 아임웹 매장이 또 나오면 이 코드를 그대로 쓰고, 이 매장이 풀리면 한 줄로 되살린다.
+     * 성수는 지점 파라미터가 아니라 다른 사이트(`dpsnnn-s.imweb.me`)다.
      */
     val DANPYEONSEON_GANGNAM = ImwebSite(
         brand = "단편선",
@@ -70,7 +74,8 @@ object ImwebSites {
         ),
     )
 
-    val ALL = listOf(DANPYEONSEON_GANGNAM)
+    /** 수집 대상. 지금은 비어 있다 — 위 단편선 주석 */
+    val ALL: List<ImwebSite> = emptyList()
 }
 
 class ImwebCrawlException(message: String) : RuntimeException(message)

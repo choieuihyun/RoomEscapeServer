@@ -16,7 +16,7 @@ data class SinbiwebPage(
     /** 응답이 밝힌 지점 번호. 사이트 설정에 따라 select · hidden 에서 읽는다. 없으면 null */
     val renderedZizum: Int?,
     /**
-     * `<div class='reserve_info'>예약가능일이 아닙니다</div>` — **사이트가 직접 "범위 밖" 이라고 말했다.**
+     * `<div class='reserve_info'>…</div>` 에 **사이트가 직접 "그날은 회차가 없다" 고 말했다** — 범위 밖이거나 휴무일.
      * 테마가 0개일 때 이게 있으면 정상이고, 없으면 틀린 요청(없는 지점)이거나 파서 고장이다 (D41).
      */
     val saysNotOpen: Boolean,
@@ -44,7 +44,7 @@ class SinbiwebParser {
                 BranchReadback.SELECT ->
                     doc.selectFirst("select[name=s_zizum] option[selected]")?.attr("value")?.trim()?.toIntOrNull()
             },
-            saysNotOpen = doc.select(".reserve_info").any { NOT_OPEN in it.text() },
+            saysNotOpen = doc.select(".reserve_info").any { info -> NOT_OPEN.any { it in info.text() } },
         )
     }
 
@@ -92,7 +92,13 @@ class SinbiwebParser {
         }
 
     companion object {
-        const val NOT_OPEN = "예약가능일이 아닙니다"
+        /**
+         * "그날 회차가 없다" 는 **답**. 모르는 문구는 예외로 둔다 — 그래야 새 문구가 드러난다 (키이스케이프 NOT_OPEN 과 같은 방식).
+         *
+         * - `예약가능일이 아닙니다` — 창 밖 (2026-10-21 GET 세대 넷 공통)
+         * - `지점휴무일 입니다` — 정기 휴무. **배포 첫날 Studio ESC 월요일에 실패로 잡혀 알았다** — 조사한 날이 수요일이었다
+         */
+        val NOT_OPEN = listOf("예약가능일이 아닙니다", "휴무일")
 
         /** `인원 : 2~6명` · `인원 : 1~6명` */
         private val CAPACITY = Regex("인원\\s*:\\s*([0-9]+\\s*~\\s*[0-9]+\\s*명?)")

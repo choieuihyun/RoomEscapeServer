@@ -25,6 +25,7 @@ import kotlin.test.assertTrue
  * | 황금열쇠 6번 10-27 | 2 | 18 · 17 | select 지점 · 드롭다운이 없다 |
  * | 황금열쇠 5번 10-21 | 2 | 19 · 17 | 지점이 둘이라 서로 덮지 않는다 |
  * | Studio ESC 10-28 범위 밖 | 0 | — | "예약가능일이 아닙니다" 는 정상 |
+ * | Studio ESC 10-26 휴무 | 0 | — | "지점휴무일 입니다" 도 정상 — 배포 첫날 월요일에 실패로 잡혀 더했다 |
  * | 돌로 2번 (없는 지점) | 0 | — | 문구 없는 0개는 예외 — hidden 은 보낸 값을 그대로 돌려준다 |
  */
 class SinbiwebParserTest {
@@ -136,6 +137,15 @@ class SinbiwebParserTest {
         assertTrue(parser.parse(closed, SinbiwebSites.STUDIO_ESC).saysNotOpen)
 
         val day = crawler.validate(SinbiwebSites.STUDIO_ESC, SinbiwebSites.STUDIO_ESC.branches.single(), LocalDate.of(2026, 10, 28), closed)
+        assertTrue(day.themes.isEmpty())
+    }
+
+    @Test
+    fun `휴무일이라고 밝힌 0개도 정상이다`() {
+        // 2026-10-26(월) Studio ESC — 배포 첫날 이 날짜가 실패로 잡혀서 알았다. 조사한 10-21 은 수요일이었다
+        val off = fixture("sinbiweb-studioesc-2026-10-26-휴무.html")
+        assertTrue(parser.parse(off, SinbiwebSites.STUDIO_ESC).saysNotOpen)
+        val day = crawler.validate(SinbiwebSites.STUDIO_ESC, SinbiwebSites.STUDIO_ESC.branches.single(), LocalDate.of(2026, 10, 26), off)
         assertTrue(day.themes.isEmpty())
     }
 
