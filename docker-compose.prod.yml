@@ -44,8 +44,9 @@ services:
       NOTIFY_COOLDOWN_MINUTES: ${NOTIFY_COOLDOWN_MINUTES:-60}
       # 컨테이너 **안쪽** 경로다. 바깥 파일은 아래 volumes 가 여기로 붙여 준다
       FIREBASE_CREDENTIALS_FILE: /run/secrets/firebase-service-account.json
-      # 알림을 눌렀을 때 열 주소
-      FCM_LINK: ${FCM_LINK:-https://choieuihyun.github.io/RoomEscapeScheduler/}
+      # 알림을 눌렀을 때 열 주소. 아이콘도 이 주소 옆 icon-192.png 다.
+      # 2026-10-21 Pages → Firebase Hosting (사용자 결정 — Pages 에서 구독한 기기는 알림을 누르면 일정 대신 새 주소 첫 화면이 열린다. 그때 기존 사용자는 본인뿐이었다)
+      FCM_LINK: ${FCM_LINK:-https://roomescapescheduler.web.app/}
       # 카카오 로그인 (아키텍처 D29). 비어 있으면 카카오 로그인만 503 이고 나머지는 돈다.
       # REST API 키는 비밀이 아니지만 시크릿은 비밀이다 — 둘 다 .env 에만 적는다
       KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY:-}
