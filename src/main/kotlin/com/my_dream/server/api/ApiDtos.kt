@@ -15,6 +15,11 @@ data class BranchDto(
     val dates: List<LocalDate>,
     /** 마지막으로 확인한 시각. null 이면 아직 수집된 적이 없다 */
     val checkedAt: Instant?,
+    /**
+     * 지역 — 앱 지역 목록(§4.4) 안의 값만. **모르면 null** 이고 앱이 이름으로 추측한다 ([BranchRegions]).
+     * 맨 뒤에 둔 칸이라 옛 앱은 모르고 지나간다
+     */
+    val region: String?,
 )
 
 data class ScheduleDto(

@@ -50,6 +50,13 @@ class ScheduleQueryServiceTest @Autowired constructor(
     }
 
     @Test
+    fun `지점 목록에 지역을 싣는다`() {
+        // §4.4 "지역 region" — 앱은 이 값이 있으면 이름 추측보다 먼저 쓴다
+        val konkuk = query.branches().single { it.id == "play33-konkuk" }
+        assertEquals("건대", konkuk.region)
+    }
+
+    @Test
     fun `예약 불가를 soldout 으로 뒤집어 준다`() {
         sync.sync(day())
 

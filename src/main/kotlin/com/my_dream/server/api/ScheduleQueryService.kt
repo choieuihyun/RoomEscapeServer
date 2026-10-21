@@ -46,6 +46,7 @@ class ScheduleQueryService(
             checkedAt = store?.let { s ->
                 dates.firstOrNull()?.let { d -> slots.findByStoreAndDate(s, d).maxOfOrNull { it.lastCheckedAt } }
             },
+            region = BranchRegions.of(branch.key),
         )
     }
 
