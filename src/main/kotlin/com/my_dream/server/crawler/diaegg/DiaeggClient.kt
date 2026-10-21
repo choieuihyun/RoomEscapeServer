@@ -1,8 +1,8 @@
 package com.my_dream.server.crawler.diaegg
 
+import com.my_dream.server.crawler.CrawlHttp
 import com.my_dream.server.crawler.HostRateLimiter
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClient
 import java.time.LocalDate
 
 /**
@@ -13,7 +13,7 @@ import java.time.LocalDate
 @Component
 class DiaeggClient(private val rateLimiter: HostRateLimiter) {
 
-    private val client = RestClient.create(BASE_URL)
+    private val client = CrawlHttp.client(BASE_URL)
 
     /** 지점 하루치. 그 지점 테마가 전부 온다 — `s_theme_num` 은 화면 필터일 뿐이라 안 넘긴다. */
     fun fetchReservationPage(branch: DiaeggBranch, date: LocalDate): String =

@@ -1,9 +1,19 @@
 package com.my_dream.server.crawler
 
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.client.HttpServerErrorException
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneOffset
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -97,5 +107,123 @@ class HostRateLimiterTest {
         val took = requireNotNull(slow.lastRequestMs("play33.kr"))
         assertTrue(took in 25..150, "대기 200ms 가 섞였다: ${took}ms")
         assertNull(slow.lastRequestMs("keyescape.com"), "호스트마다 따로 적는다")
+    }
+
+    // ── "그만 보내라" (D39) ─────────────────────────────────────────────
+
+    /** 시계를 손으로 돌린다 — 30분 멈춤을 진짜로 기다리지 않는다 */
+    private class Hands(var now: Instant = Instant.parse("2026-10-21T02:00:00Z")) {
+        fun clock(): Clock = Clock.fixed(now, ZoneOffset.UTC)
+    }
+
+    private fun backoff(hands: Hands) = HostRateLimiter(0, backoffMinutes = 30, backoffMaxMinutes = 240).also { it.clock = hands.clock() }
+
+    private fun HostRateLimiter.tick(hands: Hands, by: Duration) {
+        hands.now = hands.now.plus(by)
+        clock = hands.clock()
+    }
+
+    private fun tooMany(retryAfter: String? = null) = HttpClientErrorException.create(
+        HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests",
+        HttpHeaders().apply { if (retryAfter != null) set("Retry-After", retryAfter) }, ByteArray(0), null,
+    )
+
+    @Test
+    fun `429 를 받으면 그 호스트로는 요청 자체가 안 나간다`() {
+        val hands = Hands()
+        val limiter = backoff(hands)
+        assertFailsWith<HttpClientErrorException> { limiter.throttled("a.example") { throw tooMany() } }
+
+        var sent = 0
+        val paused = assertFailsWith<HostPausedException> { limiter.throttled("a.example") { sent++ } }
+        assertEquals(0, sent, "쉬는 중인데 요청이 나갔다")
+        assertEquals(hands.now.plus(Duration.ofMinutes(30)), paused.until)
+
+        // 다른 호스트는 상관없다
+        limiter.throttled("b.example") { sent++ }
+        assertEquals(1, sent)
+    }
+
+    @Test
+    fun `503 · 403 도 멈춘다 — 그 밖의 오류는 안 멈춘다`() {
+        val limiter = backoff(Hands())
+        runCatching { limiter.throttled("busy.example") { throw HttpServerErrorException(HttpStatus.SERVICE_UNAVAILABLE) } }
+        runCatching { limiter.throttled("waf.example") { throw HttpClientErrorException(HttpStatus.FORBIDDEN) } }
+        // 404·500 은 "그만" 이 아니다 — 창 밖 날짜나 상대 버그일 수 있다. 멈추면 멀쩡한 날짜까지 못 본다
+        runCatching { limiter.throttled("missing.example") { throw HttpClientErrorException(HttpStatus.NOT_FOUND) } }
+        runCatching { limiter.throttled("buggy.example") { throw HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR) } }
+
+        assertNotNull(limiter.pausedUntil("busy.example"))
+        assertNotNull(limiter.pausedUntil("waf.example"))
+        assertNull(limiter.pausedUntil("missing.example"))
+        assertNull(limiter.pausedUntil("buggy.example"))
+    }
+
+    @Test
+    fun `크롤러가 감싸서 던져도 상태 코드를 찾는다`() {
+        val limiter = backoff(Hands())
+        runCatching { limiter.throttled("a.example") { throw IllegalStateException("파싱 전에 실패", tooMany()) } }
+        assertNotNull(limiter.pausedUntil("a.example"))
+    }
+
+    @Test
+    fun `시간이 지나면 풀리고, 또 걸리면 두 배를 쉰다`() {
+        val hands = Hands()
+        val limiter = backoff(hands)
+        runCatching { limiter.throttled("a.example") { throw tooMany() } }
+
+        limiter.tick(hands, Duration.ofMinutes(31))
+        assertNull(limiter.pausedUntil("a.example"), "30분이 지났는데 안 풀렸다")
+
+        // 풀리자마자 또 429 — 이번엔 60분
+        runCatching { limiter.throttled("a.example") { throw tooMany() } }
+        assertEquals(hands.now.plus(Duration.ofMinutes(60)), limiter.pausedUntil("a.example"))
+    }
+
+    @Test
+    fun `두 배씩 늘어도 상한에서 멈춘다`() {
+        val hands = Hands()
+        val limiter = backoff(hands)
+        repeat(6) {
+            runCatching { limiter.throttled("a.example") { throw tooMany() } }
+            limiter.tick(hands, Duration.ofHours(5))
+        }
+        runCatching { limiter.throttled("a.example") { throw tooMany() } }
+        assertEquals(hands.now.plus(Duration.ofMinutes(240)), limiter.pausedUntil("a.example"))
+    }
+
+    @Test
+    fun `한 번 성공하면 다시 처음 길이부터 센다`() {
+        val hands = Hands()
+        val limiter = backoff(hands)
+        runCatching { limiter.throttled("a.example") { throw tooMany() } }
+        limiter.tick(hands, Duration.ofMinutes(31))
+        limiter.throttled("a.example") { }
+
+        runCatching { limiter.throttled("a.example") { throw tooMany() } }
+        assertEquals(hands.now.plus(Duration.ofMinutes(30)), limiter.pausedUntil("a.example"), "성공 뒤인데 두 배로 쉬었다")
+    }
+
+    @Test
+    fun `Retry-After 가 더 길면 그걸 따른다`() {
+        val hands = Hands()
+        val limiter = backoff(hands)
+        runCatching { limiter.throttled("a.example") { throw tooMany(retryAfter = "7200") } }
+        assertEquals(hands.now.plus(Duration.ofHours(2)), limiter.pausedUntil("a.example"))
+
+        // 더 짧으면 우리 기본값 — 상대가 "10초 뒤" 라고 해도 30분은 쉰다
+        runCatching { limiter.throttled("b.example") { throw tooMany(retryAfter = "10") } }
+        assertEquals(hands.now.plus(Duration.ofMinutes(30)), limiter.pausedUntil("b.example"))
+    }
+
+    @Test
+    fun `쉬는 중이라 안 보낸 요청은 간격 기록을 건드리지 않는다`() {
+        val hands = Hands()
+        val limiter = backoff(hands)
+        runCatching { limiter.throttled("a.example") { Thread.sleep(20); throw tooMany() } }
+        val before = limiter.lastRequestMs("a.example")
+
+        runCatching { limiter.throttled("a.example") { } }
+        assertEquals(before, limiter.lastRequestMs("a.example"), "보내지도 않은 요청이 응답 시간으로 적혔다")
     }
 }

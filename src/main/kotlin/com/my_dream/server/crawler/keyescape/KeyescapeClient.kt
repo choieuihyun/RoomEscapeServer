@@ -1,11 +1,11 @@
 package com.my_dream.server.crawler.keyescape
 
+import com.my_dream.server.crawler.CrawlHttp
 import com.my_dream.server.crawler.HostRateLimiter
 import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.util.LinkedMultiValueMap
-import org.springframework.web.client.RestClient
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.module.kotlin.kotlinModule
 import java.time.LocalDate
@@ -22,7 +22,7 @@ class KeyescapeCrawlException(message: String) : RuntimeException(message)
 @Component
 class KeyescapeClient(private val rateLimiter: HostRateLimiter) {
 
-    private val client = RestClient.create(BASE_URL)
+    private val client = CrawlHttp.client(BASE_URL)
 
     /**
      * **사이트가 JSON 을 `text/html` 로 보낸다.** 그대로 두면 스프링이

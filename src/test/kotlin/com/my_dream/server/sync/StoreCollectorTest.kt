@@ -11,6 +11,9 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
+import org.springframework.http.HttpStatus
+import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.client.ResourceAccessException
 import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.assertEquals
@@ -156,5 +159,76 @@ class StoreCollectorTest @Autowired constructor(
         val summary = collector(flaky).collect(dates)
 
         assertEquals(1, summary.failures)
+    }
+
+    /** 지점 하나 · 날짜마다 요청 하나. [fail] 이 던지면 그 요청은 실패한다. **보낸 요청 수**를 센다 */
+    private inner class Scripted(override val host: String, private val fail: (Int) -> Exception?) : StoreAdapter {
+        val sent = AtomicInteger()
+        override val brand = host
+        override val branches = listOf(StoreRef("$host-1", host, "1지점"))
+        override fun plan(dates: List<LocalDate>) = dates.mapIndexed { i, d ->
+            FetchUnit("$host $d", "$host-1", d) {
+                limiter.throttled(host) {
+                    sent.incrementAndGet()
+                    fail(i)?.let { throw it }
+                    DaySchedule(StoreRef("$host-1", host, "1지점"), d, 7, 7, emptyList())
+                }
+            }
+        }
+    }
+
+    private val five = (0..4).map { LocalDate.now().plusDays(it.toLong()) }
+
+    @Test
+    fun `429 를 받으면 그 호스트의 남은 요청은 안 보내고, 다른 호스트는 그대로 돈다`() {
+        val angry = Scripted("angry.example") { i -> if (i == 1) HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS) else null }
+        val calm = Scripted("calm.example") { null }
+
+        val summary = collector(angry, calm).collect(five)
+
+        assertEquals(2, angry.sent.get(), "429 뒤에도 요청이 나갔다")
+        assertEquals(5, calm.sent.get(), "다른 호스트까지 멈췄다")
+        assertEquals(1, summary.failures, "429 하나만 실패다")
+        assertEquals(3, summary.skipped, "보내지 않은 것은 실패가 아니라 따로 센다")
+    }
+
+    @Test
+    fun `쉬는 중인 호스트는 다음 바퀴에도 한 건도 안 보낸다`() {
+        val angry = Scripted("angry.example") { i -> if (i == 0) HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS) else null }
+        val c = collector(angry)
+        c.collect(five)
+        val afterFirst = angry.sent.get()
+
+        val second = c.collect(five)
+
+        assertEquals(afterFirst, angry.sent.get(), "멈춤이 다음 바퀴로 안 이어졌다")
+        assertEquals(5, second.skipped)
+        assertEquals(0, second.failures)
+    }
+
+    @Test
+    fun `응답을 못 받으면 그 바퀴의 남은 요청을 접는다 — 멈춤은 걸지 않는다`() {
+        val down = Scripted("down.example") { i -> if (i == 0) ResourceAccessException("Read timed out") else null }
+        val c = collector(down)
+
+        val first = c.collect(five)
+        assertEquals(1, down.sent.get(), "타임아웃 뒤에도 같은 호스트에 계속 물었다")
+        assertEquals(4, first.skipped)
+
+        // 타임아웃은 "그만" 이 아니다 — 다음 바퀴에는 다시 물어본다
+        c.collect(five)
+        assertTrue(down.sent.get() > 1, "타임아웃 한 번으로 호스트를 쉬게 했다")
+    }
+
+    @Test
+    fun `파싱 실패로는 접지 않는다`() {
+        // 우리 쪽 판정 실패다. 같은 호스트의 다른 날짜는 멀쩡할 수 있다
+        val odd = Scripted("odd.example") { i -> if (i == 0) IllegalStateException("날짜 대조 실패") else null }
+
+        val summary = collector(odd).collect(five)
+
+        assertEquals(5, odd.sent.get())
+        assertEquals(1, summary.failures)
+        assertEquals(0, summary.skipped)
     }
 }

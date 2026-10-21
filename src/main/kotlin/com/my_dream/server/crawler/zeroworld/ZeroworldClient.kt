@@ -1,10 +1,10 @@
 package com.my_dream.server.crawler.zeroworld
 
+import com.my_dream.server.crawler.CrawlHttp
 import com.my_dream.server.crawler.HostRateLimiter
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.util.LinkedMultiValueMap
-import org.springframework.web.client.RestClient
 import java.time.LocalDate
 
 /**
@@ -25,7 +25,7 @@ import java.time.LocalDate
 @Component
 class ZeroworldClient(private val rateLimiter: HostRateLimiter) {
 
-    private val client = RestClient.create(BASE_URL)
+    private val client = CrawlHttp.client(BASE_URL)
 
     /** 지점의 테마 목록. `rev_days` 를 받지만 **응답은 날짜와 무관하다**(2026-08-31 확인) */
     fun themeList(branch: ZeroworldBranch, date: LocalDate): String =

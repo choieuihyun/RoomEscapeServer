@@ -23,6 +23,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpStatus
 import org.springframework.web.client.HttpClientErrorException
+import org.springframework.web.client.HttpServerErrorException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -215,8 +216,9 @@ class WatchedSlotCollectorTest @Autowired constructor(
         watch(slot("a-1"))
         watch(slot("b-1"))
         val failing = FakeStore("a.example", listOf("a-1")) { _, _, _ ->
-            // 크롤러가 감싸서 던지는 경우까지 본다
-            throw IllegalStateException("수집 실패", HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS))
+            // 크롤러가 감싸서 던지는 경우까지 본다. 500 은 "그만" 이 아니라 이 길만 쉰다 —
+            // 429 는 공용 멈춤까지 걸어서 아래 테스트가 따로 본다 (D39)
+            throw IllegalStateException("수집 실패", HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR))
         }
         val c = collector(failing, FakeStore("b.example", listOf("b-1")))
 
@@ -231,6 +233,23 @@ class WatchedSlotCollectorTest @Autowired constructor(
         hits.clear()
         c.check(noon.plusMinutes(31))
         assertTrue("a-1|$day|-" in hits, "30분이 지나면 다시 물어 본다: $hits")
+    }
+
+    @Test
+    fun `429 는 전체 바퀴와 같은 멈춤이라 이 길의 30분이 지나도 안 보낸다`() {
+        watch(slot("a-1"))
+        val angry = FakeStore("a.example", listOf("a-1")) { _, _, _ ->
+            throw HttpClientErrorException(HttpStatus.TOO_MANY_REQUESTS)
+        }
+        val c = collector(angry)
+        assertEquals(1, c.check(noon).failures)
+
+        // 공용 멈춤(HostRateLimiter)은 진짜 시계로 30분이다. 이 길의 시계만 31분 넘겨도 아직 쉬는 중이다
+        hits.clear()
+        val later = c.check(noon.plusMinutes(31))
+        assertEquals(emptyList(), hits, "전체 바퀴가 쉬는 호스트에 이 길이 요청을 보냈다")
+        assertEquals(0, later.requests, "보내지 않은 것을 요청으로 셌다")
+        assertEquals(0, later.failures, "보내지 않은 것을 실패로 셌다")
     }
 
     @Test

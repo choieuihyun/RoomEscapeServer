@@ -1,14 +1,15 @@
 package com.my_dream.server.sync
 
 import com.my_dream.server.crawler.FetchUnit
+import com.my_dream.server.crawler.HostPausedException
 import com.my_dream.server.crawler.HostRateLimiter
+import com.my_dream.server.crawler.describe
 import com.my_dream.server.crawler.StoreAdapter
 import com.my_dream.server.domain.WatchRepository
 import com.my_dream.server.domain.isPast
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClientResponseException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -91,9 +92,14 @@ class WatchedSlotCollector(
             requests++
             val day = try {
                 pick.unit.fetch()
+            } catch (e: HostPausedException) {
+                // 상대가 "그만" 이라고 해서 전체 바퀴와 같이 쉬는 중이다 (D39). 요청은 안 나갔다 —
+                // 여기서 또 멈춤을 걸면 "요청 실패" 라는 틀린 로그가 남는다
+                requests--
+                continue
             } catch (e: Exception) {
                 failures++
-                pause(pick.host, now, "${pick.unit.label} 요청 실패 (${describe(e)})")
+                pause(pick.host, now, "${pick.unit.label} 요청 실패 (${e.describe()})")
                 continue
             }
 
@@ -203,13 +209,6 @@ class WatchedSlotCollector(
         )
     }
 
-    /** `429` · `503` 인지 로그만 보고 알 수 있게 상태 코드를 꺼낸다. 크롤러가 감싸서 던져도 찾는다 */
-    private fun describe(e: Throwable): String {
-        val http = generateSequence(e) { it.cause }.take(MAX_CAUSE_DEPTH)
-            .filterIsInstance<RestClientResponseException>().firstOrNull()
-        return if (http != null) "HTTP ${http.statusCode.value()}" else e.message ?: e.javaClass.simpleName
-    }
-
     /**
      * 쉬는 시간인가. 끝 시각은 포함하지 않는다 — `1~7` 이면 01:00 부터 06:59 까지 쉰다.
      * 자정을 넘기는 설정(`23~6`)도 받는다. 두 값이 같으면 쉬는 시간이 없다.
@@ -220,10 +219,6 @@ class WatchedSlotCollector(
         else -> hour >= quietFromHour || hour < quietUntilHour
     }
 
-    companion object {
-        /** 예외 원인 사슬이 자기 자신을 가리키는 경우를 대비한 한도 */
-        private const val MAX_CAUSE_DEPTH = 10
-    }
 }
 
 data class WatchCheckSummary(val requests: Int = 0, val transitions: Int = 0, val failures: Int = 0)

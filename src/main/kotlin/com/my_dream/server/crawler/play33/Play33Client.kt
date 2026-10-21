@@ -1,14 +1,14 @@
 package com.my_dream.server.crawler.play33
 
+import com.my_dream.server.crawler.CrawlHttp
 import com.my_dream.server.crawler.HostRateLimiter
 import org.springframework.stereotype.Component
-import org.springframework.web.client.RestClient
 import java.time.LocalDate
 
 @Component
 class Play33Client(private val rateLimiter: HostRateLimiter) {
 
-    private val client = RestClient.create(BASE_URL)
+    private val client = CrawlHttp.client(BASE_URL)
 
     /**
      * 지점 하나의 특정 날짜 예약 페이지 HTML.
