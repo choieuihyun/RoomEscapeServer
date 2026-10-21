@@ -1,0 +1,603 @@
+
+<!doctype html><html lang="ko"><head>
+<meta charset="euc-kr">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+<link href="https://fonts.googleapis.com/css?family=Oranienbaum" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="/css/import.css" />
+<link rel="stylesheet" type="text/css" href="/css/sub.css" />
+<link rel="stylesheet" type="text/css" href="/css/4.css" />
+<link rel="stylesheet" type="text/css" href="/css/lightslider.css"/>
+<link rel="stylesheet" type="text/css" href="/css/jquery.bxslider.css"/>
+<link type="text/css" href="/themes/base/ui.all.css" rel="stylesheet" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="/js/jquery-1.7.1.min.js"></script>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script type="text/javascript" src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script> <!-- 제이쿼리 확장 라이브러리 -->
+<script type="text/javascript" src="/js/jquery.bxslider.min.js"></script>
+<script type="text/javascript" src="/slick/slick.min.js"></script>
+<!-- <script type="text/javascript" src="/js/lightslider.js"></script> --> 
+<script type="text/javascript" src="/js/include.js"></script>
+<script type="text/javascript" src="/js/main.js"></script>
+<script type="text/javascript" src="/js/ScrollTrigger.min.js"></script>
+<script type="text/javascript" src="/ui/ui.core.js"></script>
+<script type="text/javascript" src="/ui/ui.datepicker.js"></script>
+<script type="text/javascript" src="/ui/ui.datepicker-ko.js"></script>
+<script type="text/javascript">
+function CQview(str) {
+        if (str.style.display == "none") {
+            for (var i = 0; i < document.all.length; i++) {
+ 
+                if (document.all[i].id != null && document.all[i].id.substr(0, 2) == "CQ") {
+                    document.all[i].style.display = "none";
+                }                
+            }
+            str.style.display = "block";            
+        }
+        else {
+            str.style.display = "none";            
+        }
+    }
+function theform()
+{
+   var form = document.TIN;
+/* 지점 및 테마방 정보 전달  */	
+   	form.action = "/sub/code_sub04_1.html";   
+    form.method = "post";
+  	form.submit();
+}
+</script>
+<script type="text/javascript">
+ $(function() {
+  $('#datepicker').datepicker({
+   changeMonth: true,
+   changeYear: true,
+   yearRange: '2020:2050'
+  });
+ });
+ //  $("#datepicker").datepicker($.datepicker.regional['ko']);
+ </script>
+<style>
+#reser3 > ul > a > li:active, #reser3 > ul > a.active > li {display:block; margin:3px auto; width:98%; padding:4px; font-size:15px; text-indent:20px; background:#888; color:#fff;  }
+</style>
+ </head>
+
+<body>
+
+<!-- 상단 메뉴 -->
+<body>
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+<link rel="stylesheet" type="text/css" href="/css/demo.css"/>
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+<meta name="format-detection" content="telephone=no" />
+<style>
+div#header { position:fixed; top:0; left:0; width:100%; z-index:50;background:transparent; }
+</style>
+<script type="text/javascript">
+		$(document).ready(function(){
+			$("#screen_black").css({'height':$(document).height()}); 
+			$("#m_header ul.menu").hide();
+			$("#m_header .m_menu").click(function(){
+				$("ul.menu").show();
+			});
+			$("ul.menu li a.close").click(function(){
+				$("ul.menu").hide();
+			});
+		});
+</script>
+<div id="header">
+   <div id="wrap2">
+      <div class="h_cont2">
+   		<h1><a href="/main.html"><img src="/images/common/logo.png" /></a></h1>
+		<ul class="nav">
+			<li><a href="/sub/code_sub01.html">CODE_K소개</a>
+				<ul class="sub_menu">
+					<!--<li><a href="/sub/code_sub01.html">CODE_K소개</a></li>-->
+				</ul>
+			</li>
+			<li><a href="/sub/code_sub02_1.html">지점안내</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/code_sub02_1.html">강남점</a></li>
+					<li><a href="/sub/code_sub02_2.html">구월점</a></li>
+					<li><a href="/sub/code_sub02_3.html">홍대점</a></li>
+				</ul>
+			</li>
+	    	<li><a href="/sub/code_sub03.html?R_JIJEM=S1">테마소개</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/code_sub03.html?R_JIJEM=S1">강남점테마</a></li>
+					<li><a href="/sub/code_sub03.html?R_JIJEM=S2">구월점테마</a></li>
+					<li><a href="/sub/code_sub03.html?R_JIJEM=S3">홍대점테마</a></li>
+				</ul>
+			</li>
+			<li><a href="/sub/code_sub04_1.html">예약하기</a>
+				<ul class="sub_menu">
+					<!--<li><a href="/sub/code_sub04_1.html">예약하기</a></li>-->
+				</ul>
+			</li>
+	    	<li><a href="/sub/code_sub05.html">예약확인&#47;취소</a>
+				<ul class="sub_menu">
+					<!--<li><a href="/sub/code_sub05.html">취소하기</a></li>-->
+				</ul>
+			</li>
+	    	<li><a href="/sub/code_sub06_2.html?B_BOARDNAME=공지사항">공지/이벤트</a>
+				<ul class="sub_menu">
+					<!--<li><a href="/sub/code_sub06_2.html?B_BOARDNAME=공지사항">공지/이벤트</a></li>-->
+				</ul>
+<!--
+				<ul class="sub_menu">
+					<li><a href="/escape/sub/code_sub06_1.html">블랙픽/이벤트</a></li>
+					<li><a href="/escape/sub/code_sub06_2.html?B_BOARDNAME=공지사항">공지/이벤트</a></li>
+				</ul>
+-->
+			</li>
+		</ul> <!--// nav -->
+     </div>
+	<div id="sub_bg"></div> <!--// sub_bg -->
+  </div>
+  <div style="clear: both"></div>
+
+</div> <!--// h_cont1 -->
+<div style="clear: both"></div>
+
+<div id="m_header">
+	<div id="m_wrap2">
+		<a href="/main.html"><img src="/images/common/logo.png" class="logo" alt="로고" /></a>
+		<a href="#/" class="to_nav"><img src="/images/common/menu.png" style="width:30px" alt="메뉴" /></a>
+		<div id="nav_wrap">
+    		<ul class="nav">
+			<li><a href="/sub/code_sub01.html">CODE_K소개</a></li>
+			<li><a href="/sub/code_sub02_1.html">지점안내</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/code_sub02_1.html">강남점</a></li>
+					<li><a href="/sub/code_sub02_2.html">구월점</a></li>
+					<li><a href="/sub/code_sub02_3.html">홍대점</a></li>
+				</ul>
+			</li>
+	    	<li><a href="/sub/code_sub03.html?R_JIJEM=S1">테마소개</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/code_sub03.html?R_JIJEM=S1">강남점</a></li>
+					<li><a href="/sub/code_sub03.html?R_JIJEM=S2">구월점</a></li>
+					<li><a href="/sub/code_sub03.html?R_JIJEM=S3">홍대점</a></li>
+				</ul>
+			</li>
+			<li><a href="/sub/code_sub04_1.html">예약하기</a></li>
+	    	<li><a href="/sub/code_sub05.html">예약확인&#47;취소</a></li>
+	    	<li><a href="/sub/code_sub06_2.html?B_BOARDNAME=공지사항">공지/이벤트</a>
+<!--
+				<ul class="sub_menu">
+					<li><a href="/sub/code_sub06_1.html">블랙픽/할인이벤트</a></li>
+					<li><a href="/sub/code_sub06_2.html?B_BOARDNAME=공지사항">공지/이벤트</a></li>
+				</ul>
+-->
+			</li>
+			<div style="clear: both"></div>
+		</ul> <!--// nav -->
+		</div> <!--// nav_wrap -->
+	</div> <!--// wrap2 -->
+    <div id="screen_black"></div>
+
+</div> <!--// m_header -->
+
+<script>
+window.counter = function() {
+	// this refers to the html element with the data-scroll-showCallback tag
+	var span = this.querySelector('span');
+	var current = parseInt(span.textContent);
+
+	span.textContent = current + 1;
+};
+
+document.addEventListener('DOMContentLoaded', function(){
+  var trigger = new ScrollTrigger({
+	  addHeight: true
+  });
+});
+</script>
+
+ <div class="6_2_wrap" style="padding-bottom:80px;">
+  <div id="cont_text">
+    	<ul class="sub_title">
+         	예약하기 
+        </ul>
+        <div style="clear:both"></div>
+        <div class="Lbline"></div><br/>
+	    <div class="tt">
+		<!--
+		      <ul>
+     		      <li class="block">
+                     <h1>CODE-K 예약하기</h1><br/>
+                     <div class="text">국내 최대 스토리의 CODE-K의 다양한 테마를 예약하세요.</div> 
+				   </li>
+			</ul>
+		-->
+		</div> 	
+        <div style="clear:both"></div>
+        <form name="TIN" method="post">
+        <input type = "hidden" name="R_JIJEM" value="S2">  <!-- 테마방 -->
+        <div id="reser1"> 
+		   <ul>
+                <li class="title">지점선택</li>
+
+                         <a href="code_sub04_1.html?R_JIJEM=S1&DIS_T=A"><li class='taboff2'> 강남점 </li></a>						 
+
+                         <a href="code_sub04_1.html?R_JIJEM=S2&DIS_T=A"><li class='tabon2'> 구월점 </li></a>						 
+
+                         <a href="code_sub04_1.html?R_JIJEM=S3&DIS_T=A"><li class='taboff2'> 홍대점 </li></a>						 
+
+                 </ul>
+            </div>
+            <div id="reser2"> 
+			   <ul>
+                   <li class="title">날짜선택</li>
+                   <div class="demo">
+                      <input type="text" id="datepicker" name="chois_date" value="2026-10-22" class="box" style="cursor:pointer;width:102%;" onChange="theform();" required readonly="readonly" />
+                   </div>
+                   <div class="demo-description"></div>
+			       <br/>예약가능 최대일수는 <span class="orange_b">30</span>입니다.
+               </ul>
+            </div>
+    		</form>
+
+            <div id="reser3"> 
+			   <ul>
+                   <li class="title">테마선택</li>
+                   <li>
+				      <table class="sspv_list">
+					     <tr>
+						     <td style="width:50%;font-size:15px;">
+
+							      <a href="code_sub04_1.html?R_JIJEM=S2&R_THEMA=&CHOIS_DATE=2026-10-22&DIS_T=A"><b>&#91;전체테마시간&#93;</b></a>
+
+
+							 </td>
+						     <td style="width:50%;font-size:15px;">
+
+    						      <a href="code_sub04_1.html?R_JIJEM=S2&R_THEMA=&CHOIS_DATE=2026-10-22&DIS_T=S">&#91;예약가능시간&#93;</a>
+
+							 </td>
+                         </tr>
+                      </table>							 
+				   </li>
+
+                         <a href="javascript:CQview(document.all.CQ1)"  >
+<!--                     <a href="code_sub04_1.html?R_JIJEM=S2&R_THEMA=codek_s9&CHOIS_DATE=2026-10-22&DIS_T=A" >  -->
+
+						     <li class="thema2">
+감옥탈출 
+							 </li>
+						 </a>
+
+            				  <li id="CQ1" style="display:none;" >
+
+		    			       <div>
+			     			      <ul class="list">
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=12:30&jijem_code=S2&room_code=codek_s9&room_name=감옥탈출 &room_week=">
+   						    	     <li class="timeOn">☆ 12:30</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=13:50&jijem_code=S2&room_code=codek_s9&room_name=감옥탈출 &room_week=">
+   						    	     <li class="timeOn">☆ 13:50</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=15:10&jijem_code=S2&room_code=codek_s9&room_name=감옥탈출 &room_week=">
+   						    	     <li class="timeOn">☆ 15:10</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=16:30&jijem_code=S2&room_code=codek_s9&room_name=감옥탈출 &room_week=">
+   						    	     <li class="timeOn">☆ 16:30</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=17:50&jijem_code=S2&room_code=codek_s9&room_name=감옥탈출 &room_week=">
+   						    	     <li class="timeOn">☆ 17:50</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=19:10&jijem_code=S2&room_code=codek_s9&room_name=감옥탈출 &room_week=">
+   						    	     <li class="timeOn">☆ 19:10</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=20:30&jijem_code=S2&room_code=codek_s9&room_name=감옥탈출 &room_week=">
+   						    	     <li class="timeOn">☆ 20:30</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=21:50&jijem_code=S2&room_code=codek_s9&room_name=감옥탈출 &room_week=">
+   						    	     <li class="timeOn">☆ 21:50</li>
+ 							      </a>  
+
+                                    </ul>
+                                </div>
+		    				 </li>
+                       <div style="clear: both"></div>
+
+                         <a href="javascript:CQview(document.all.CQ2)"  >
+<!--                     <a href="code_sub04_1.html?R_JIJEM=S2&R_THEMA=codek_s11&CHOIS_DATE=2026-10-22&DIS_T=A" >  -->
+
+						     <li class="thema2">
+좀비 90일후
+							 </li>
+						 </a>
+
+            				  <li id="CQ2" style="display:none;" >
+
+		    			       <div>
+			     			      <ul class="list">
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=12:40&jijem_code=S2&room_code=codek_s11&room_name=좀비 90일후&room_week=">
+   						    	     <li class="timeOn">☆ 12:40</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=14:00&jijem_code=S2&room_code=codek_s11&room_name=좀비 90일후&room_week=">
+   						    	     <li class="timeOn">☆ 14:00</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=15:20&jijem_code=S2&room_code=codek_s11&room_name=좀비 90일후&room_week=">
+   						    	     <li class="timeOn">☆ 15:20</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=16:40&jijem_code=S2&room_code=codek_s11&room_name=좀비 90일후&room_week=">
+   						    	     <li class="timeOn">☆ 16:40</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=18:00&jijem_code=S2&room_code=codek_s11&room_name=좀비 90일후&room_week=">
+   						    	     <li class="timeOn">☆ 18:00</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=19:20&jijem_code=S2&room_code=codek_s11&room_name=좀비 90일후&room_week=">
+   						    	     <li class="timeOn">☆ 19:20</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=20:40&jijem_code=S2&room_code=codek_s11&room_name=좀비 90일후&room_week=">
+   						    	     <li class="timeOn">☆ 20:40</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=22:00&jijem_code=S2&room_code=codek_s11&room_name=좀비 90일후&room_week=">
+   						    	     <li class="timeOn">☆ 22:00</li>
+ 							      </a>  
+
+                                    </ul>
+                                </div>
+		    				 </li>
+                       <div style="clear: both"></div>
+
+                         <a href="javascript:CQview(document.all.CQ3)"  >
+<!--                     <a href="code_sub04_1.html?R_JIJEM=S2&R_THEMA=codek_s12&CHOIS_DATE=2026-10-22&DIS_T=A" >  -->
+
+						     <li class="thema2">
+납치 (2인전용)
+							 </li>
+						 </a>
+
+            				  <li id="CQ3" style="display:none;" >
+
+		    			       <div>
+			     			      <ul class="list">
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=12:50&jijem_code=S2&room_code=codek_s12&room_name=납치 (2인전용)&room_week=">
+   						    	     <li class="timeOn">☆ 12:50</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=14:10&jijem_code=S2&room_code=codek_s12&room_name=납치 (2인전용)&room_week=">
+   						    	     <li class="timeOn">☆ 14:10</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=15:30&jijem_code=S2&room_code=codek_s12&room_name=납치 (2인전용)&room_week=">
+   						    	     <li class="timeOn">☆ 15:30</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=16:50&jijem_code=S2&room_code=codek_s12&room_name=납치 (2인전용)&room_week=">
+   						    	     <li class="timeOn">☆ 16:50</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=18:10&jijem_code=S2&room_code=codek_s12&room_name=납치 (2인전용)&room_week=">
+   						    	     <li class="timeOn">☆ 18:10</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=19:30&jijem_code=S2&room_code=codek_s12&room_name=납치 (2인전용)&room_week=">
+   						    	     <li class="timeOn">☆ 19:30</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=20:50&jijem_code=S2&room_code=codek_s12&room_name=납치 (2인전용)&room_week=">
+   						    	     <li class="timeOn">☆ 20:50</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=22:10&jijem_code=S2&room_code=codek_s12&room_name=납치 (2인전용)&room_week=">
+   						    	     <li class="timeOn">☆ 22:10</li>
+ 							      </a>  
+
+                                    </ul>
+                                </div>
+		    				 </li>
+                       <div style="clear: both"></div>
+
+                         <a href="javascript:CQview(document.all.CQ4)"  >
+<!--                     <a href="code_sub04_1.html?R_JIJEM=S2&R_THEMA=codek_s8&CHOIS_DATE=2026-10-22&DIS_T=A" >  -->
+
+						     <li class="thema2">
+충무공 이순신
+							 </li>
+						 </a>
+
+            				  <li id="CQ4" style="display:none;" >
+
+		    			       <div>
+			     			      <ul class="list">
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=13:00&jijem_code=S2&room_code=codek_s8&room_name=충무공 이순신&room_week=">
+   						    	     <li class="timeOn">☆ 13:00</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=14:20&jijem_code=S2&room_code=codek_s8&room_name=충무공 이순신&room_week=">
+   						    	     <li class="timeOn">☆ 14:20</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=15:40&jijem_code=S2&room_code=codek_s8&room_name=충무공 이순신&room_week=">
+   						    	     <li class="timeOn">☆ 15:40</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=17:00&jijem_code=S2&room_code=codek_s8&room_name=충무공 이순신&room_week=">
+   						    	     <li class="timeOn">☆ 17:00</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=18:20&jijem_code=S2&room_code=codek_s8&room_name=충무공 이순신&room_week=">
+   						    	     <li class="timeOn">☆ 18:20</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=19:40&jijem_code=S2&room_code=codek_s8&room_name=충무공 이순신&room_week=">
+   						    	     <li class="timeOn">☆ 19:40</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=21:00&jijem_code=S2&room_code=codek_s8&room_name=충무공 이순신&room_week=">
+   						    	     <li class="timeOn">☆ 21:00</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=22:20&jijem_code=S2&room_code=codek_s8&room_name=충무공 이순신&room_week=">
+   						    	     <li class="timeOn">☆ 22:20</li>
+ 							      </a>  
+
+                                    </ul>
+                                </div>
+		    				 </li>
+                       <div style="clear: both"></div>
+
+                         <a href="javascript:CQview(document.all.CQ5)"  >
+<!--                     <a href="code_sub04_1.html?R_JIJEM=S2&R_THEMA=codek_s15&CHOIS_DATE=2026-10-22&DIS_T=A" >  -->
+
+						     <li class="thema2">
+미스터리 거울의 방 (3인이상) -15세 이상-
+							 </li>
+						 </a>
+
+            				  <li id="CQ5" style="display:none;" >
+
+		    			       <div>
+			     			      <ul class="list">
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=13:10&jijem_code=S2&room_code=codek_s15&room_name=미스터리 거울의 방 (3인이상) -15세 이상-&room_week=">
+   						    	     <li class="timeOn">☆ 13:10</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=14:30&jijem_code=S2&room_code=codek_s15&room_name=미스터리 거울의 방 (3인이상) -15세 이상-&room_week=">
+   						    	     <li class="timeOn">☆ 14:30</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=15:50&jijem_code=S2&room_code=codek_s15&room_name=미스터리 거울의 방 (3인이상) -15세 이상-&room_week=">
+   						    	     <li class="timeOn">☆ 15:50</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=17:10&jijem_code=S2&room_code=codek_s15&room_name=미스터리 거울의 방 (3인이상) -15세 이상-&room_week=">
+   						    	     <li class="timeOn">☆ 17:10</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=18:30&jijem_code=S2&room_code=codek_s15&room_name=미스터리 거울의 방 (3인이상) -15세 이상-&room_week=">
+   						    	     <li class="timeOn">☆ 18:30</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=19:50&jijem_code=S2&room_code=codek_s15&room_name=미스터리 거울의 방 (3인이상) -15세 이상-&room_week=">
+   						    	     <li class="timeOn">☆ 19:50</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=21:10&jijem_code=S2&room_code=codek_s15&room_name=미스터리 거울의 방 (3인이상) -15세 이상-&room_week=">
+   						    	     <li class="timeOn">☆ 21:10</li>
+ 							      </a>  
+
+                                  <a href="code_sub04_2.html?chois_date=2026-10-22&room_time=22:30&jijem_code=S2&room_code=codek_s15&room_name=미스터리 거울의 방 (3인이상) -15세 이상-&room_week=">
+   						    	     <li class="timeOn">☆ 22:30</li>
+ 							      </a>  
+
+                                    </ul>
+                                </div>
+		    				 </li>
+                       <div style="clear: both"></div>
+
+					</ul>
+
+
+				</div> <!--// cont_text -->
+
+			</div> <!--// cont_right -->
+
+			<div style="clear: both"></div>
+
+
+
+		</div> <!--// conts -->
+	</div> <!--// contents -->
+</div> <!--// contents -->
+<div style="clear: both"></div>
+
+</div> <!--// contents -->
+
+
+</div>
+
+
+<!-- 하단 정보 -->
+<div id="footer">
+  <div id="wrap">
+	<div class="f_left">
+	    <img src="/images/common/code_main.png" /><br/>
+        <h1>코드케이</h1>
+		<div class="Wbline"></div>
+		<br/>
+		<h3>
+        대표이사 최병우 <br/>
+        사업자등록번호 464-28-00120<br/>
+        통신판매업신고 2016-서울강남-01081호<br/>
+        대표주소 서울시 강남구 봉은사로 2길 31, 지하 1층 (역삼동 813-4)<br/><br/>
+        Copyright ⓒ code-k
+        </h3>
+	</div>
+	<div class="f_right">
+	   <ul class="m">
+<!--	       <li><a href="/escape/sub/b01.html">이용약관</a></li>  -->
+	       <li><a href="/sub/b02.html" />개인정보처리방침</a></li>
+	       <li><a href="/sub/code_sub03.html?R_JIJEM=S1" />테마소개</a></li>
+	       <li><a href="/sub/code_sub01.html" />코드케이</a></li>
+	   </ul>
+       <div style="clear: both"></div>
+       <ul class="co">
+	       <li>
+		     <h1>고객센터</h1>
+			 <div class="Wbline"></div>
+			 <h4>
+			 운영시간 : 10:00~23:00 
+			 </h4>
+			 <br/>
+			</li>
+			
+			<li class="sns">
+				<div><a href="https://www.facebook.com/방탈출카페-코드케이-868529836606996/?ref=ts&fref=ts" target="_blank" /><img src="/images/common/facebook.png" alt="facebook"></a></div>
+				<div><a href="https://instagram.com/code_k1?igshid=aoti1skbpfrm1" target="_blank" /><img src="/images/common/instagram.png" alt="instargram"></a></div>
+			</li>
+			
+			<li>
+			 <div class="a">
+			     <a href="/sub/code_sub02_1.html">강남점</a>
+			 </div>
+			 <div class="b">
+			     <a href="/sub/code_sub02_2.html">구월점</a>
+			 </div>
+			 <div class="c">
+			     <a href="/sub/code_sub02_3.html">홍대점</a>
+			 </div>
+			 <div class="d">
+			     <b><a href="tel:02-501-8245">02-501-8245</a></b>
+                 서울시 강남구 역삼동 813-4 지층 
+			 </div>
+			 <div class="e">
+			     <b><a href="tel:032-421-1768">032-421-1768</a></b>
+                 인천시 남동구 구월동 1467-1 5층 
+			 </div>
+			 <div class="f">
+			     <b><a href="tel:02-332-8842">02-332-8842</a></b>
+                 서울시 마포구 상수동 86-22 3층
+			 </div>
+			</li>
+       </ul>  
+    </div>
+   </div>
+   <div style="clear: both"></div>
+</div> <!--// footer -->
+</body>
+</html>

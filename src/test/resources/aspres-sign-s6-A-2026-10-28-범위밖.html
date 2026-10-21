@@ -1,0 +1,360 @@
+
+<!doctype html><html lang="ko"><head>
+<head>
+<meta charset="euc-kr">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" type="text/css" href="/css/new_import.css" />
+<link rel="stylesheet" type="text/css" href="/css/sub.css" />
+<link rel="stylesheet" type="text/css" href="/css/lightslider.css"/>
+<link type="text/css" href="/themes/base/ui.all.css" rel="stylesheet" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="/js/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script> <!-- 제이쿼리 확장 라이브러리 -->
+<script type="text/javascript" src="/js/include.js"></script>
+<script type="text/javascript" src="/js/ScrollTrigger.min.js"></script>
+<script type="text/javascript" src="/ui/ui.core.js"></script>
+<script type="text/javascript" src="/ui/ui.datepicker.js"></script>
+<script type="text/javascript" src="/ui/ui.datepicker-ko.js"></script>
+<script type="text/javascript">
+function theform()
+{
+   var form = document.TIN;
+/* 지점 및 테마방 정보 전달  */	
+   	form.action = "/sub/sub03_1.html";   
+    form.method = "post";
+  	form.submit();
+}
+</script>
+</head>
+<body>
+   
+<!-- 상단 메뉴 -->
+<body>
+<title>방탈출카페 싸인이스케이프</title>
+<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+<link rel="stylesheet" type="text/css" href="/css/demo.css"/>
+<style>
+div#header { position:fixed; top:0; left:0; width:100%; z-index:50;background:transparent; }
+</style>
+<script type="text/javascript">
+		$(document).ready(function(){
+			$("#m_header ul.menu").hide();
+			$("#m_header .m_menu").click(function(){
+				$("ul.menu").show();
+			});
+			$("ul.menu li a.close").click(function(){
+				$("ul.menu").hide();
+			});
+		});
+</script>
+<div id="header">
+   <div id="wrap2">
+      <div class="h_cont2">
+   		<h1><a href="/main.html"><img src="/images/common/new_logo.png" /></a></h1>
+		<ul class="nav">
+			<li><a href="/sub/sub01.html">SIGN ESCAPE</a></li>
+	    	<li><a href="/sub/sub02.html">테마소개</a>
+      			<ul class="sub_menu">
+					<li><a href="/sub/sub02.html">테마소개</a></li>
+				</ul>
+			</li>
+			<li><a href="/sub/sub03_1.html">예약하기</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/sub03_1.html">예약하기</a></li>
+					<li><a href="/sub/sub03_5.html?tin=g">예약확인</a></li>
+					<li><a href="/sub/sub03_5.html?tin=c">예약취소</a></li>
+				</ul>
+			</li>
+	    	<li><a href="/sub/sub04.html">오시는길</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/sub04.html?jijem=S1">지점별맵</a></li>
+				</ul>
+			</li>
+<!--			
+	    	<li><a href="/sub/sub05.html">가맹문의</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/sub05.html">가맹안내</a></li>
+				</ul>
+			</li>
+-->			
+		</ul> <!--// nav -->
+     </div>
+	<div id="sub_bg"></div> <!--// sub_bg -->
+  </div>
+  <div style="clear: both"></div>
+
+</div> <!--// h_cont1 -->
+<div style="clear: both"></div>
+
+<div id="m_header" class="m_wrap1">
+		<a href="/main.html"><img src="/images/common/new_logo.png" style="width:120px" class="logo" alt="로고" /></a>
+		<a href="#/" class="to_nav"><img src="/images/common/menu.png" style="width:30px;right:20px;" alt="메뉴" /></a>
+		<div id="nav_wrap">
+    		<ul class="nav">
+			<li><a href="/sub/sub01.html">SIGN ESCAPE</a></li>
+	    	<li><a href="/sub/sub02.html">테마소개</a>
+      			<ul class="sub_menu">
+					<li><a href="/sub/sub02.html">테마소개</a></li>
+				</ul>
+			</li>
+			<li><a href="/sub/sub03_1.html">예약하기</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/sub03_1.html">예약하기</a></li>
+					<li><a href="/sub/sub03_5.html?tin=g">예약확인</a></li>
+					<li><a href="/sub/sub03_5.html?tin=c">예약취소</a></li>
+				</ul>
+			</li>
+	    	<li><a href="/sub/sub04.html">오시는길</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/sub04.html?jijem=S1">지점별맵</a></li>
+				</ul>
+			</li>
+<!--
+	    	<li><a href="/sub/sub05.html">가맹문의</a>
+				<ul class="sub_menu">
+					<li><a href="/sub/sub05.html">가맹안내</a></li>
+				</ul>
+			</li>
+-->			
+			<div style="clear: both"></div>
+		</ul> <!--// nav -->
+		</div> <!--// nav_wrap -->
+	</div> <!--// wrap -->
+    <div id="screen_black"></div>
+
+</div> <!--// m_header -->
+
+
+ <div id="cont">
+    <div id="cont_text" class="block">
+		<ul class="sub_title" data-scroll="toggle(.fromTopIn, .fromTopOut)">
+	         테마예약
+		</ul>
+		<div style="clear:both"></div>
+		<div class="tt">
+			<ul>
+				<li class="block">
+            		<div class="Lbline"></div>
+<!--				<div class="text">No. 방탈출카페 싸인이스케이프</div><br/>  -->
+                </li>
+			</ul>
+		</div>
+        <div style="clear:both"></div>
+    	<ul class="sub_4_tab" data-scroll="toggle(.fromBottomIn, .fromBottomOut)">
+
+               <li Class='taboff'>
+	    		    <a href='sub03_1.html?R_JIJEM=S2'>성대역점</a></li>
+
+               <li Class='taboff'>
+	    		    <a href='sub03_1.html?R_JIJEM=S5'>홍대점</a></li>
+
+               <li Class='tabon'>
+	    		    <a href='sub03_1.html?R_JIJEM=S6'>강남시티점</a></li>
+
+               <li Class='taboff'>
+	    		    <a href='sub03_1.html?R_JIJEM=S7'>홍대（상수점）</a></li>
+
+       	</ul>
+		<div style="clear:both"></div>
+
+        <form name="TIN" method="post">
+        <input type = "hidden" name="R_JIJEM" value="S6">  <!-- 테마방 -->
+            <div id="reser1"> 
+			   <ul>
+                   <li class="title">예약날짜</li>
+                   <div>
+                       <table class='cat_list'><tr><td colspan='7'><a href=?r_thema=A&r_jijem=S6&y=2026&m=9><img src='/images/main/p_left.png' style='margin-top:3px;width:12px;'>&nbsp;&nbsp;<a href=><span style='font-size:17px;'>2026.10월</span></a>&nbsp;&nbsp;<a href=?r_thema=A&r_jijem=S6&y=2026&m=11><img src='/images/main/p_right.png' style='margin-top:3px;width:12px;'></td></tr><tr><th style='padding:2px;font-size:14px;'>일</th><th style='padding:2px;font-size:14px;'>월</th><th style='padding:2px;font-size:14px;'>화</th><th style='padding:2px;font-size:14px;'>수</th><th style='padding:2px;font-size:14px;'>목</th><th style='padding:2px;font-size:14px;'>금</th><th style='padding:2px;font-size:14px;'>토</th></tr><tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>1</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>2</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'><span style='color:#56c9fe;'>3</span></span></td></a></td></tr><tr><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'><span style='color:red;'>4</span></span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>5</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>6</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>7</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>8</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>9</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'><span style='color:#56c9fe;'>10</span></span></td></a></td></tr><tr><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'><span style='color:red;'>11</span></span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>12</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>13</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>14</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>15</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>16</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'><span style='color:#56c9fe;'>17</span></span></td></a></td></tr><tr><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'><span style='color:red;'>18</span></span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>19</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>20</span></td></a><td style='background:#fff;'><a href=?chois_date=2026-10-21&R_JIJEM=S6&R_THEMA=A style='color:#222;'><span style='text-align:left;font-size:15px;'>21</span></td></a><td style='background:#fff;'><a href=?chois_date=2026-10-22&R_JIJEM=S6&R_THEMA=A style='color:#222;'><span style='text-align:left;font-size:15px;'>22</span></td></a><td style='background:#fff;'><a href=?chois_date=2026-10-23&R_JIJEM=S6&R_THEMA=A style='color:#222;'><span style='text-align:left;font-size:15px;'>23</span></td></a><td style='background:#fff;'><a href=?chois_date=2026-10-24&R_JIJEM=S6&R_THEMA=A style='color:#222;'><span style='text-align:left;font-size:15px;'><span style='color:#56c9fe;'>24</span></span></td></a></td></tr><tr><td style='background:#fff;'><a href=?chois_date=2026-10-25&R_JIJEM=S6&R_THEMA=A style='color:#222;'><span style='text-align:left;font-size:15px;'><span style='color:red;'>25</span></span></td></a><td style='background:#fff;'><a href=?chois_date=2026-10-26&R_JIJEM=S6&R_THEMA=A style='color:#222;'><span style='text-align:left;font-size:15px;'>26</span></td></a><td style='background:#fff;'><a href=?chois_date=2026-10-27&R_JIJEM=S6&R_THEMA=A style='color:#222;'><span style='text-align:left;font-size:15px;'>27</span></td></a><td style='background:#fda305;'><a href=?chois_date=2026-10-28&R_JIJEM=S6&R_THEMA=A&y=2026&m=10 style='color:#fff;'><span style='text-align:left;font-size:15px;'>28</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>29</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'>30</span></td></a><td  style='background:#888888;'><span style='text-align:left;font-size:15px;'><span style='color:#56c9fe;'>31</span></span></td></a></table>
+                   </div>
+				   <br/>예약가능 최대일수는 <span class="orange_b">6</span>일 입니다.
+				   <br/>
+                        장난 예약방지를 위해<br/>
+                        IP주소가 남습니다.<br/>
+               </ul>
+            </div>
+           <div id="reser2"> 
+		   <ul>
+                <li class="title">테마선택</li>
+
+                         <a href="sub03_1.html?R_JIJEM=S6&chois_date=2026-10-28&R_THEMA=A&DIS_T=">
+						     <li class='tabon' style="text-align:left;"> 러너웨이 </li>
+						 </a>						 
+
+                         <a href="sub03_1.html?R_JIJEM=S6&chois_date=2026-10-28&R_THEMA=C&DIS_T=">
+						     <li class='taboff' style="text-align:left;"> EXPRESS </li>
+						 </a>						 
+
+                         <a href="sub03_1.html?R_JIJEM=S6&chois_date=2026-10-28&R_THEMA=B&DIS_T=">
+						     <li class='taboff' style="text-align:left;"> MUST </li>
+						 </a>						 
+
+                 </ul>
+            </div>
+
+           <div id="reser3"> 
+    		   <ul>
+                   <li class="title">테마정보</li>
+				   <li>
+        			  <table class="input_list">
+						   <tr>
+						       <td style="width:50%;"><img src="/upload_file/room/web.jpg"></td>
+							   <th style="font-size:13px;width:50%;">
+							        <br/>
+							        난이도 : ★★★★☆<br/>
+									<br/>
+                                    오늘 밤 모두의 눈을 피해 탈출한다.(75분)
+							   </th>
+                           </tr>
+                        </table>
+					</li>
+               </ul>
+            </div>
+
+			</form>
+
+            <div id="reser4"> 
+			   <ul>
+                   <li class="title">시간선택</li>
+<!--
+                   <li>
+				      <table class="sspv_list">
+					     <tr>
+						     <td style="width:50%;font-size:15px;">
+							      <a href="sub03_1.html?R_JIJEM=S6&R_THEMA=A&CHOIS_DATE=2026-10-28&DIS_T=A">■ 전체선택</a>
+							 </td>
+						     <td style="width:50%;font-size:15px;">
+							      <a href="sub03_1.html?R_JIJEM=S6&R_THEMA=A&CHOIS_DATE=2026-10-28&DIS_T=S">□ 예약가능</a>
+							 </td>
+                         </tr>
+                      </table>							 
+				   </li>
+-->
+
+				 <li>
+   			       <div>
+     			      <ul class="list">
+
+					    	     <li class="timeOn">☆ 11:20</li>
+
+
+					    	     <li class="timeOn">☆ 13:05</li>
+
+
+					    	     <li class="timeOn">☆ 14:50</li>
+
+
+					    	     <li class="timeOn">☆ 16:35</li>
+
+
+					    	     <li class="timeOn">☆ 18:20</li>
+
+
+					    	     <li class="timeOn">☆ 20:05</li>
+
+
+					    	     <li class="timeOn">☆ 21:50</li>
+
+
+                       </ul>
+                     </div>
+    			 </li>
+                  <div style="clear: both"></div>
+				</div> <!--// cont_text -->\
+	        <table class="input_list">
+    		   <tr>
+			       <td style="width:10%;">지점명</td>
+				   <td style="width:30%;">
+			          강남시티점
+                   </td>
+				   <td rowspan="3">
+				       <b>가격정보</b>
+					   <br/>
+    				   인당 27000원 *평일 첫 타임 팀 8000원할인 *후기할인 팀 5000원 할인 *중복불가
+                   </td>
+               </tr>
+    		   <tr>
+			       <td>주소</td>
+				   <td>
+			          서울시 강남구 강남대로 94길 67 도연빌딩 지하1층
+                   </td>
+               </tr>
+    		   <tr>
+			       <td>전화번호</td>
+				   <td>
+			          02-558-1008
+                   </td>
+               </tr>
+		   
+    		   <tr>
+			       <th colspan=3>이용안내</th>
+               </tr>
+    		   <tr>
+			       <td colspan=3 style="text-align:left">
+				     
+				   </td>
+               </tr>
+			   
+            </table>
+            <br/><br/><br/><br/>
+			</div> <!--// cont_right -->
+			<div style="clear: both"></div>
+		</div> <!--// conts -->
+	</div> <!--// contents -->
+</div> <!--// contents -->
+<div style="clear: both"></div>
+</div> <!--// contents -->
+</div>
+<!-- 하단 정보 -->
+<div id="footer">
+	<div id="footer_top">
+		<div class="wrap">
+			<div id="footer_top_left">
+				<ul class="shortcut_left">
+					<h3>SHORTCUTS</h3>
+					<li><a href="/sub/sub01.html">SIGN ESCAPE</a></li>
+					<li><a href="/sub/sub02.html">테마소개</a></li>
+					<li><a href="/sub/sub03_1.html">예약하기</a></li>
+					<li><a href="/sub/sub04.html">오시는길</a></li>
+					<li><a href="/sub/sub05.html">가맹문의</a></li>
+				</ul> <!--// shortcut_left -->
+				<ul class="shortcut_right"></ul> <!--// shortcut_right -->
+			</div> <!--// footer_top_left -->
+			<div id="footer_top_right">
+				<ul class="footer_top_right_left">
+					<h3>POLICY</h3>
+					<li><a href="#">이용약관</a></li>
+					<li><a href="#">개인정보취급방침</a></li>
+					<br />
+					<h3>CONTACT US</h3>
+					<li><a href="#">CONTACT US</a></li>
+					
+				</ul> <!--// footer_top_right_left -->
+				<ul class="footer_top_right_right">
+					<!--<h3>LINKS</h3>-->
+					<br />
+					<br />
+					<br />
+					<br />
+					<br />
+					<a href="/sub/sub03_1.html"><img src="/images/common/banner.png" width="283" height="54" alt="방문예약" /></a>
+				</ul> <!--// footer_top_right_right -->
+			</div> <!--// footer_top_right -->
+			<div style="clear: both"></div>
+		</div> <!--// wrap -->
+	</div> <!--// footer_top -->
+	<div id="footer_bottom">
+		<div class="wrap">
+			<p class="copy"><b>싸인 이스케이프</b>, <span class="mob"></span>서울시 강남구 강남대로 94길 67 도연빌딩 지하1층<br />
+			T. 031-211-8782&nbsp;&nbsp;<a href="mailto:nairmath@naver.com" style="color: white">＠Mail to Administrator</a><br />
+			Copyright ⓒThe Sign. All Rights Reserved.</p> <!--// copy -->
+
+			<select name="select" class="box300" onchange="window.open(this.value);">
+				<option value="#">:: 관련업체 / 홈페이지 ::</option>
+				<option value="http://www.design-soom.com/">제작관리 Design-Soom</option>
+			</select>
+		</div>
+	</div> <!--// footer_bottom -->
+</div> <!--// footer -->
+</body>
+</html>

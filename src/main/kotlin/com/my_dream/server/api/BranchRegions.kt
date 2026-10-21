@@ -51,6 +51,8 @@ object BranchRegions {
         "goldkey-gangnam-timesquare" to "강남",
         "goldkey-gangnam-flowerroad" to "강남",
         "dpsnnn-gangnam" to "강남", // 아임웹 (D41)
+        "codek-gangnam" to "강남", // ASP 예약 솔루션 (D41)
+        "signescape-gangnamcity" to "강남",
 
         "keyescape-hongdae" to "홍대",
         "bitphobia-hongdae" to "홍대",
