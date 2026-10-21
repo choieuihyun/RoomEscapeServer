@@ -65,10 +65,10 @@ class StoreCollectorTest @Autowired constructor(
         }
     }
 
-    private fun collector(vararg adapters: StoreAdapter, concurrency: Int = 4) =
+    private fun collector(vararg adapters: StoreAdapter) =
         StoreCollector(
             adapters.toList(), ingest, PollingSchedule(rangeDays = 7, farRangeDays = 7),
-            SweepTicker(counters), concurrency, dbPoolSize = 24,
+            SweepTicker(counters),
         )
 
     private fun gaps(host: String) =
@@ -121,25 +121,15 @@ class StoreCollectorTest @Autowired constructor(
     }
 
     @Test
-    fun `호스트가 동시 실행 수보다 많으면 파도로 쪼개진다`() {
-        // 매장이 늘면 호스트도 늘어난다. 동시 실행 수가 그대로면 한 바퀴가 몇 배로 길어지는데,
-        // **로그의 "한 바퀴 N초" 만 봐서는 원인이 안 보인다** — 그래서 여기서 못 박는다
-        val nine = (1..9).map { FakeStore("h$it.example", "매장$it", listOf("1지점")) }
+    fun `호스트가 몇 개든 전부 같이 돈다 — 상한이 없다`() {
+        // 예전엔 동시 16 으로 묶어서, 호스트가 그보다 많으면 바퀴가 파도로 쪼개졌다 —
+        // 로그의 "한 바퀴 N초" 만 봐서는 원인이 안 보이는 종류다 (D18 → D40).
+        // 호스트마다 한 줄씩이 정답이다. 속도 제한은 호스트별로 걸리므로(D13) 더 많으면 할 일이 없다
+        val many = (1..24).map { FakeStore("h$it.example", "매장$it", listOf("1지점")) }
 
-        collector(*nine.toTypedArray(), concurrency = 4).collect(dates)
+        collector(*many.toTypedArray()).collect(dates)
 
-        assertEquals(4, peakInFlight.get(), "동시 4로 묶어 뒀으면 9곳이 있어도 4개씩만 돈다")
-    }
-
-    @Test
-    fun `동시 실행 수가 넉넉하면 호스트 전부가 같이 돈다`() {
-        val nine = (1..9).map { FakeStore("h$it.example", "매장$it", listOf("1지점")) }
-
-        // 호스트마다 한 줄씩이 정답이다. 속도 제한은 호스트별로 걸리므로(D13)
-        // 호스트 수보다 많은 스레드는 아무것도 더 해 주지 않고, 적으면 서로 기다리기만 한다
-        collector(*nine.toTypedArray(), concurrency = 16).collect(dates)
-
-        assertEquals(9, peakInFlight.get(), "호스트가 9곳이면 9개가 같이 떠 있어야 한다")
+        assertEquals(24, peakInFlight.get(), "호스트가 24곳이면 24개가 같이 떠 있어야 한다")
     }
 
     @Test

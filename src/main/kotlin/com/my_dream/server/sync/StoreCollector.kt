@@ -5,9 +5,7 @@ import com.my_dream.server.crawler.HostPausedException
 import com.my_dream.server.crawler.StoreAdapter
 import com.my_dream.server.crawler.describe
 import com.my_dream.server.crawler.isUnreachable
-import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.Duration
 import java.time.LocalDate
@@ -23,6 +21,11 @@ import java.util.concurrent.Executors
  * **병렬 단위는 매장이 아니라 사이트(호스트)다** (D13). 어댑터가 서로 달라도 같은 서버를
  * 두드리면 한 줄로 선다. 속도는 `HostRateLimiter` 가 요청마다 직접 건다 —
  * 여기서 `sleep` 으로 조절하지 않는 이유는 그렇게 하면 규칙이 구조가 아니라 관례가 되기 때문이다.
+ *
+ * **스레드는 호스트 수만큼이다 — 상한이 없다** (D40 · D18 정정). 예전엔 `collector.site-concurrency=16` 으로
+ * 묶었는데, 호스트가 그보다 많아지는 순간 바퀴가 파도로 쪼개져 **모든 매장이 같이 느려진다.**
+ * 상한이 막던 것은 DB 커넥션이었고, 그건 이제 저장하는 자리([ScheduleIngest])가 직접 막는다.
+ * 스레드는 대부분의 시간을 상대 응답과 1.2초 간격을 기다리며 보낸다 — 120개여도 CPU 를 거의 안 쓴다.
  */
 @Component
 class StoreCollector(
@@ -30,30 +33,9 @@ class StoreCollector(
     private val ingest: ScheduleIngest,
     private val schedule: PollingSchedule,
     private val ticker: SweepTicker,
-    @param:Value("\${collector.site-concurrency:16}") private val siteConcurrency: Int,
-    @param:Value("\${spring.datasource.hikari.maximum-pool-size:10}") private val dbPoolSize: Int,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
-
-    /**
-     * 두 설정이 어긋나면 **증상이 "조회 API 가 가끔 느리다" 로만 나타난다.** 수집 스레드가
-     * 저장할 때 커넥션을 하나씩 쥐는데 풀이 그보다 작으면, 수집이 도는 동안 API 가 대기한다.
-     * 로그 어디에도 원인이 안 남는 종류라 기동할 때 한 번 크게 말해 둔다.
-     *
-     * 기동을 막지는 않는다 — 느려질 뿐 틀린 값을 저장하지는 않기 때문이다.
-     * (키 없는 FCM 은 조용히 안 가므로 그쪽은 막는다. 실패 방향이 다르다)
-     */
-    @PostConstruct
-    fun warnIfPoolTooSmall() {
-        if (dbPoolSize <= siteConcurrency) {
-            log.warn(
-                "커넥션 풀({})이 동시 사이트 수({})보다 크지 않다 — 수집이 도는 동안 조회 API 가 커넥션을 못 잡는다. " +
-                    "DB_POOL_SIZE 를 올리거나 COLLECTOR_SITE_CONCURRENCY 를 내릴 것",
-                dbPoolSize, siteConcurrency,
-            )
-        }
-    }
 
     /**
      * 이번 바퀴 몫만 긁는다. **번호는 [SweepTicker] 가, 그 번호로 볼 날짜는 [PollingSchedule] 이** 정한다 (D14).
@@ -69,7 +51,10 @@ class StoreCollector(
             .mapValues { (_, group) -> group.flatMap { it.plan(dates) } }
         if (byHost.isEmpty()) return SweepSummary(0, 0, 0)
 
-        val threads = siteConcurrency.coerceIn(1, byHost.size)
+        // 호스트마다 한 줄. 속도 제한이 호스트별이라(D13) 더 많으면 할 일이 없고, 적으면 서로 기다리기만 한다.
+        // **가상 스레드는 안 쓴다** — HostRateLimiter 가 synchronized 안에서 sleep 하는데, JDK 21 은 그 동안
+        // 가상 스레드를 운반 스레드(코어 수만큼)에 묶어 버린다. 1 OCPU 서버에서 호스트 둘이 쉬면 나머지가 다 선다
+        val threads = byHost.size
         // 바퀴마다 만들고 접는다. 스케줄러를 꺼 두면 스레드도 남지 않는다
         val pool = Executors.newFixedThreadPool(threads) { r ->
             Thread(r, "collect").apply { isDaemon = true }

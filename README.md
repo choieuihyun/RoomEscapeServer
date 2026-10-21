@@ -245,7 +245,7 @@ curl 'http://127.0.0.1:8080/api/branches'
 | 환경변수 | 기본값 | |
 |---|---|---|
 | `COLLECTOR_ENABLED` | `false` | 주기 수집. **실제로 돌릴 기기에서만 켠다** |
-| `COLLECTOR_SITE_CONCURRENCY` | `4` | 동시에 긁을 **사이트** 수. 지점이 아니라 **호스트**가 늘 때 올린다 |
+| `DB_POOL_SIZE` | `24` | DB 커넥션 풀. **저장 문(`collector.save-concurrency` 16)보다 커야 한다** — 남는 것이 조회 API 몫이다 |
 | `DEBUG_ENDPOINTS` | `false` | 인증 없는 확인용 엔드포인트 |
 | `SERVER_ADDRESS` | `127.0.0.1` | 루프백 전용. 남에게 보여줄 때만 `0.0.0.0` |
 | `DB_URL` / `DB_USER` / `DB_PASSWORD` | 로컬 compose 기준 | |

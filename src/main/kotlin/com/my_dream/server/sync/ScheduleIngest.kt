@@ -2,9 +2,12 @@ package com.my_dream.server.sync
 
 import com.my_dream.server.crawler.DaySchedule
 import com.my_dream.server.notify.NotificationService
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Semaphore
 
 /**
  * 받아온 하루치를 **저장하고, 알리고, 이상하면 소리내는** 자리.
@@ -16,9 +19,43 @@ import java.util.concurrent.ConcurrentHashMap
 class ScheduleIngest(
     private val sync: ScheduleSyncService,
     private val notifications: NotificationService,
+    @param:Value("\${collector.save-concurrency:16}") private val saveConcurrency: Int = 16,
+    @param:Value("\${spring.datasource.hikari.maximum-pool-size:10}") private val dbPoolSize: Int = 24,
 ) {
 
     private val log = LoggerFactory.getLogger(javaClass)
+
+    /**
+     * **한 번에 저장하는 수의 문** (아키텍처 D40).
+     *
+     * 수집 스레드는 이제 호스트 수만큼 뜬다(상한 없음). 저장할 때마다 DB 커넥션을 하나씩 쥐므로,
+     * 문이 없으면 호스트가 100개일 때 커넥션도 100개를 달라고 한다 — 풀(24)을 다 쓰면 그동안
+     * **조회 API 가 커넥션을 못 잡고**, 풀을 키우면 Postgres 기본 상한(100)에 닿는다.
+     * 문을 여기 두면 호스트가 몇 개든 수집이 쓰는 커넥션은 [saveConcurrency] 를 안 넘는다.
+     *
+     * 이게 속도를 깎지 않는 이유: 스레드는 대부분 상대 응답과 1.2초 간격을 기다리고, 저장은 그 사이 잠깐이다.
+     * 막히면 [warnIfGateIsNarrow] 가 로그로 알린다 — 조용히 느려지지 않게.
+     */
+    private val saveGate = Semaphore(saveConcurrency, true)
+
+    /** 문 앞에서 오래 기다린 경고를 너무 자주 찍지 않게. 마지막으로 찍은 시각 (나노초) */
+    @Volatile private var lastNarrowWarnAt = 0L
+
+    /**
+     * 문이 풀보다 크거나 같으면 저장이 커넥션을 다 쥐어 조회 API 가 기다린다. 증상이 "가끔 느리다" 뿐이라
+     * 기동할 때 크게 말해 둔다. 막지는 않는다 — 느려질 뿐 틀린 값을 저장하지는 않는다
+     * (키 없는 FCM 은 조용히 안 가므로 그쪽은 막는다. 실패 방향이 다르다)
+     */
+    @PostConstruct
+    fun warnIfPoolTooSmall() {
+        if (dbPoolSize <= saveConcurrency) {
+            log.warn(
+                "커넥션 풀({})이 저장 문({})보다 크지 않다 — 수집이 저장하는 동안 조회 API 가 커넥션을 못 잡는다. " +
+                    "DB_POOL_SIZE 를 올리거나 collector.save-concurrency 를 내릴 것",
+                dbPoolSize, saveConcurrency,
+            )
+        }
+    }
 
     /**
      * 지점마다 하나씩 두는 잠금. 지점 수(수십 개)만큼만 생기고 더 자라지 않는다.
@@ -39,7 +76,30 @@ class ScheduleIngest(
      * 알림까지 잠금 안에 두는 이유가 첫째 항목이다. 저장만 잠그면 판정이 다시 겹친다.
      */
     fun ingest(day: DaySchedule): SyncResult =
-        synchronized(storeLocks.computeIfAbsent(day.store.key) { Any() }) { ingestLocked(day) }
+        synchronized(storeLocks.computeIfAbsent(day.store.key) { Any() }) {
+            // 지점 잠금 **안에서** 문을 받는다 — 문을 쥔 채 남의 지점 잠금을 기다리는 일이 없게
+            val waitedAt = System.nanoTime()
+            saveGate.acquire()
+            try {
+                warnIfGateIsNarrow((System.nanoTime() - waitedAt) / 1_000_000)
+                ingestLocked(day)
+            } finally {
+                saveGate.release()
+            }
+        }
+
+    /** 문 앞에서 [NARROW_WAIT_MS] 넘게 기다렸으면 문이 좁다는 뜻이다. 1분에 한 번만 찍는다 */
+    private fun warnIfGateIsNarrow(waitedMs: Long) {
+        if (waitedMs < NARROW_WAIT_MS) return
+        val now = System.nanoTime()
+        if (now - lastNarrowWarnAt < 60_000_000_000L) return
+        lastNarrowWarnAt = now
+        log.warn(
+            "저장 문 앞에서 {}ms 기다렸다 — 동시에 저장하려는 호스트가 문({})보다 많다. " +
+                "자주 뜨면 collector.save-concurrency 와 DB_POOL_SIZE 를 같이 올린다 (풀 > 문)",
+            waitedMs, saveConcurrency,
+        )
+    }
 
     private fun ingestLocked(day: DaySchedule): SyncResult {
         warnIfRangeChanged(day)
@@ -96,5 +156,10 @@ class ScheduleIngest(
                 reported, day.store.branchName, day.date, day.openDays,
             )
         }
+    }
+
+    companion object {
+        /** 저장 하나는 수십 ms 다(추정). 1초를 기다렸으면 문 앞에 여럿이 줄 서 있었다는 뜻이다 */
+        private const val NARROW_WAIT_MS = 1_000L
     }
 }
