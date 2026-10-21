@@ -35,13 +35,14 @@ class MemberProfileTest @Autowired constructor(
 
     private fun admin() = member("운영", role = MemberRole.ADMIN)
 
-    private fun profile(name: String = "김철수", genres: List<Any?> = listOf("공포", "추리"), rooms: Any? = 120) = ProfileInput(
+    private fun profile(name: String = "김철수", genres: List<Any?> = listOf("공포", "추리"), rooms: Any? = 120, residence: String? = null) = ProfileInput(
         realName = name,
         birthDate = "1997-06-28",
         mbti = "INTJ",
         roomCount = rooms,
         genres = genres,
         lifeTheme = LifeThemeInput("비밀의 화원", "강남점", null),
+        residence = residence,
     )
 
     private fun assertClubError(code: String, status: HttpStatus, block: () -> Unit) {
@@ -119,6 +120,17 @@ class MemberProfileTest @Autowired constructor(
         member("내보냄", status = MemberStatus.REMOVED)
         assertClubError("NOT_JOINED", HttpStatus.FORBIDDEN) { membership.updateProfile("내보냄", "철수", profile()) }
         assertEquals(0, profiles.count())
+    }
+
+    @Test
+    fun `거주지역 — 가입에 같이 저장되고, 통째로 바꾸는 PUT 에서 빠지면 지워진다`() {
+        member("u1", status = MemberStatus.PENDING)
+        assertEquals("서울 마포구", membership.join("u1", "철수", profile(residence = "서울 마포구")).profile?.residence)
+        assertEquals("서울 마포구", membership.me("u1").profile?.residence)
+        assertEquals("부산", membership.updateProfile("u1", "철수", profile(residence = "부산")).profile?.residence)
+        // §4.11 "부분 수정 없음" — 칸을 모르는 옛 앱이 고치면 지워진다. 화면이 "채워 주세요" 줄로 다시 받는다
+        assertNull(membership.updateProfile("u1", "철수", profile()).profile?.residence)
+        assertEquals(1, profiles.count())
     }
 
     @Test

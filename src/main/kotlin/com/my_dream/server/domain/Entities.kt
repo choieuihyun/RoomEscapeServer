@@ -212,6 +212,8 @@ class MemberProfile(
     @Column(name = "life_theme_branch", length = 40) var lifeThemeBranch: String?,
     @Column(name = "life_theme_key", length = 80) var lifeThemeKey: String?,
     @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+    /** 거주지역 (V15). 기존 행·옛 앱은 null — 맨 뒤에 기본값으로 둬서 기존 생성자 호출이 그대로 돈다 */
+    @Column(length = 20) var residence: String? = null,
 )
 
 /**

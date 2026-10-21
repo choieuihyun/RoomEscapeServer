@@ -17,6 +17,8 @@ data class ProfileInput(
     val roomCount: Any? = null,
     val genres: List<Any?>? = null,
     val lifeTheme: LifeThemeInput? = null,
+    /** 거주지역 (2026-10-21). **없어도 된다** — 옛 앱은 이 칸을 모른다. 필수는 화면이 강제한다 */
+    val residence: String? = null,
 )
 
 data class LifeThemeInput(val themeName: String? = null, val branchName: String? = null, val themeKey: String? = null)
@@ -29,6 +31,8 @@ data class ProfileDto(
     val roomCount: Int,
     val genres: List<String>,
     val lifeTheme: LifeThemeDto,
+    /** 없으면 **키를 빼지 않고** null 로 내린다 — 화면이 키를 보고 "거주지역을 채워 주세요" 줄을 켠다 */
+    val residence: String?,
 )
 
 data class LifeThemeDto(val themeName: String, val branchName: String?, val themeKey: String?)
@@ -40,6 +44,7 @@ fun MemberProfile.toDto() = ProfileDto(
     roomCount = roomCount,
     genres = genres.split(GENRE_SEPARATOR),
     lifeTheme = LifeThemeDto(lifeThemeName, lifeThemeBranch, lifeThemeKey),
+    residence = residence,
 )
 
 /** 저장에 쓸 수 있게 검사를 마친 프로필 */
@@ -52,6 +57,7 @@ data class CleanProfile(
     val lifeThemeName: String,
     val lifeThemeBranch: String?,
     val lifeThemeKey: String?,
+    val residence: String?,
 ) {
     fun applyTo(row: MemberProfile, now: Instant) = row.apply {
         realName = this@CleanProfile.realName
@@ -62,12 +68,14 @@ data class CleanProfile(
         lifeThemeName = this@CleanProfile.lifeThemeName
         lifeThemeBranch = this@CleanProfile.lifeThemeBranch
         lifeThemeKey = this@CleanProfile.lifeThemeKey
+        // 통째로 바꾼다 (§4.11 "부분 수정 없음") — 안 보낸 PUT 은 지운다. 옛 앱의 PUT 이 지우는 것은 계약이 받아들였다
+        residence = this@CleanProfile.residence
         updatedAt = now
     }
 
     fun newRow(userId: String, now: Instant) = MemberProfile(
         userId, realName, birthDate, mbti, roomCount, genres.joinToString(GENRE_SEPARATOR),
-        lifeThemeName, lifeThemeBranch, lifeThemeKey, now,
+        lifeThemeName, lifeThemeBranch, lifeThemeKey, now, residence,
     )
 }
 
@@ -97,6 +105,7 @@ object ProfileRules {
     const val NAME_MAX = 20
     const val ROOM_MAX = 9999L
     const val GENRES_MAX = 5
+    const val RESIDENCE_MAX = 20
 
     fun clean(p: ProfileInput, today: LocalDate): CleanProfile {
         val name = p.realName?.trim().orEmpty()
@@ -137,10 +146,18 @@ object ProfileRules {
             lifeThemeName = themeName,
             lifeThemeBranch = optional(life.branchName, 40),
             lifeThemeKey = optional(life.themeKey, 80),
+            residence = residence(p.residence),
         )
     }
 
     private fun String.letters(): Int = codePointCount(0, length)
+
+    /** 공백뿐이면 null — "안 적음" 과 같게 본다. 화면이 필수로 막으니 여기서 400 을 낼 이유가 없다 */
+    private fun residence(raw: String?): String? {
+        val s = raw?.trim()?.ifEmpty { null } ?: return null
+        if (s.letters() > RESIDENCE_MAX) throw ClubError.badProfile("거주지역은 20자까지 적어 주세요.")
+        return s
+    }
 
     private fun optional(raw: String?, max: Int): String? {
         val s = raw?.trim()?.ifEmpty { null } ?: return null

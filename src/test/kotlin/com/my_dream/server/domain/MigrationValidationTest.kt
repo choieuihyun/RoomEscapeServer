@@ -83,7 +83,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V14 까지 돌고 엔티티와 맞는다`() {
+    fun `V15 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -237,6 +237,17 @@ class MigrationValidationTest @Autowired constructor(
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "e", "철수", "INTJ", 10000) }
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "f", "철수", "INTJ", -1) }
         assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "a", "철수", "INTJ", 1) }
+    }
+
+    @Test
+    fun `V15 거주지역 — 기존 행은 null, 이모지 20자는 들어가고 21자는 안 된다`() {
+        jdbc.update("""INSERT INTO member_profile (user_id, real_name, birth_date, mbti, room_count, genres, life_theme_name, updated_at)
+                       VALUES ('old', '철수', '1997-06-28', 'INTJ', 1, '공포', '비밀의 화원', now())""")
+        assertEquals(null, jdbc.queryForObject("SELECT residence FROM member_profile WHERE user_id = 'old'", String::class.java))
+        jdbc.update("UPDATE member_profile SET residence = ? WHERE user_id = 'old'", "🙂".repeat(20))
+        assertFailsWith<DataIntegrityViolationException> {
+            jdbc.update("UPDATE member_profile SET residence = ? WHERE user_id = 'old'", "🙂".repeat(21))
+        }
     }
 
     @Test

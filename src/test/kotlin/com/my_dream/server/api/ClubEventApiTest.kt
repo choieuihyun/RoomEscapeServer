@@ -360,6 +360,21 @@ class ClubEventApiTest @Autowired constructor(
             .andExpect(jsonPath("$.profile.birthDate").value("1997-06-28"))
             .andExpect(jsonPath("$.profile.genres[1]").value("추리"))
             .andExpect(jsonPath("$.profile.lifeTheme.themeName").value("비밀의 화원"))
+            // 안 보낸 거주지역은 **키가 있고 null** — 화면이 키를 보고 "채워 주세요" 줄을 켠다
+            .andExpect(content().string(org.hamcrest.Matchers.containsString(""""residence":null""")))
+    }
+
+    @Test
+    fun `거주지역 — 저장되면 멤버 목록에 실리고, 21자는 BAD_PROFILE 문구로`() {
+        putProfile("나", """{"nickname":"닉나","profile":${profileJson.dropLast(1)},"residence":" 서울 마포구 "}}""")
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.profile.residence").value("서울 마포구"))
+        mvc.perform(get("/api/club/members").with(as_("나")))
+            .andExpect(jsonPath("$[?(@.uid=='나')].profile.residence").value("서울 마포구"))
+        putProfile("나", """{"nickname":"닉나","profile":${profileJson.dropLast(1)},"residence":"${"가".repeat(21)}"}}""")
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.error").value("BAD_PROFILE"))
+            .andExpect(jsonPath("$.message").value("거주지역은 20자까지 적어 주세요."))
     }
 
     @Test

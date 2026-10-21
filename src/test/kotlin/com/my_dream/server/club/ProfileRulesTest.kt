@@ -22,7 +22,8 @@ class ProfileRulesTest {
         roomCount: Any? = 120,
         genres: List<Any?>? = listOf("공포", "추리"),
         lifeTheme: LifeThemeInput? = LifeThemeInput("비밀의 화원", "강남점", "keyescape-3:7"),
-    ) = ProfileInput(realName, birthDate, mbti, roomCount, genres, lifeTheme)
+        residence: String? = null,
+    ) = ProfileInput(realName, birthDate, mbti, roomCount, genres, lifeTheme, residence)
 
     private fun rejects(p: ProfileInput) {
         val e = assertFailsWith<ClubError> { ProfileRules.clean(p, today) }
@@ -106,5 +107,17 @@ class ProfileRulesTest {
         assertEquals("테마", p.lifeThemeName)
         assertNull(p.lifeThemeBranch)
         assertNull(p.lifeThemeKey)
+    }
+
+    @Test
+    fun `거주지역 — 없어도 되고, 공백뿐이면 없음, 코드 포인트로 20자까지`() {
+        // 옛 앱은 이 칸을 모른다 — 없다고 거절하면 서버를 먼저 올리는 동안 가입·고치기가 막힌다
+        assertNull(ProfileRules.clean(input(residence = null), today).residence)
+        assertNull(ProfileRules.clean(input(residence = "   "), today).residence)
+        assertEquals("서울 마포구", ProfileRules.clean(input(residence = " 서울 마포구 "), today).residence)
+        assertEquals(20, ProfileRules.clean(input(residence = "🙂".repeat(20)), today).residence!!.codePointCount(0, 40))
+        val e = assertFailsWith<ClubError> { ProfileRules.clean(input(residence = "가".repeat(21)), today) }
+        assertEquals("BAD_PROFILE", e.code)
+        assertEquals("거주지역은 20자까지 적어 주세요.", e.message)
     }
 }
