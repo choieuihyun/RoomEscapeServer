@@ -107,8 +107,10 @@ class ScheduleIngest(
 
         val result = sync.sync(day)
 
+        // 로그에는 **매장 이름까지** 적는다 — 강남에만 "강남점" 이 열 곳이 넘어서 지점 이름만으로는 어느 매장인지 모른다(2026-10-21)
+        val where = "${day.store.brand} ${day.store.branchName}"
         result.transitions.forEach {
-            log.info("🎟️  자리 남 — {} {} {} {}", it.branchName, it.themeName, it.date, it.time)
+            log.info("🎟️  자리 남 — {} {} {} {}", where, it.themeName, it.date, it.time)
         }
         // **저장이 끝난 뒤에** 알린다. 같은 트랜잭션 안에서 보내면 롤백돼도 알림은 못 되돌린다.
         // 알림 경로가 통째로 터져도 수집 한 바퀴는 계속 돌아야 한다 — 수집이 알림에 종속되면 안 된다
@@ -122,8 +124,8 @@ class ScheduleIngest(
                 "이번 수집분은 저장하지 않음 (${it.consecutive}회 연속)"
             }
             log.error(
-                "⚠️  위생 검사 격리 — {} {} : 매진이던 {}개 중 {}개가 한 번에 풀렸다. 파서 확인 필요. {}",
-                it.themeName, it.date, it.previouslyUnavailable, it.flipped, tail,
+                "⚠️  위생 검사 격리 — {} {} {} : 매진이던 {}개 중 {}개가 한 번에 풀렸다. 파서 확인 필요. {}",
+                where, it.themeName, it.date, it.previouslyUnavailable, it.flipped, tail,
             )
         }
         return result
@@ -139,8 +141,8 @@ class ScheduleIngest(
     private fun warnIfNoThemes(day: DaySchedule) {
         if (day.themes.isEmpty()) {
             log.warn(
-                "테마가 하나도 없다 — {} {}. 지점이 비어 있는 게 맞는지, 파서가 깨진 건지 확인이 필요하다",
-                day.store.branchName, day.date,
+                "테마가 하나도 없다 — {} {} {}. 지점이 비어 있는 게 맞는지, 파서가 깨진 건지 확인이 필요하다",
+                day.store.brand, day.store.branchName, day.date,
             )
         }
     }
@@ -152,8 +154,8 @@ class ScheduleIngest(
             // **전역 상수와 비교하면 안 된다.** 창은 지점마다 다르다(지구별 대구 2주 / 홍대 1주).
             // 하나로 비교하면 정상인 지점이 매 바퀴 경고를 뱉고, 그 잡음에 진짜 변화가 묻힌다
             log.warn(
-                "예약 오픈 범위가 {}일로 바뀌었다 — {} {} (우리는 {}일로 보고 있다). 지점 openDays 를 조정할 것",
-                reported, day.store.branchName, day.date, day.openDays,
+                "예약 오픈 범위가 {}일로 바뀌었다 — {} {} {} (우리는 {}일로 보고 있다). 지점 openDays 를 조정할 것",
+                reported, day.store.brand, day.store.branchName, day.date, day.openDays,
             )
         }
     }
