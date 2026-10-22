@@ -88,7 +88,27 @@ object AspSites {
         themesPerRequest = linkedMapOf("A" to "러너웨이", "B" to "MUST"),
     )
 
-    val ALL = listOf(CODEK_GANGNAM, SIGN_GANGNAM_CITY)
+    // ── 홍대 (2026-10-22 조사) ──
+
+    /** 테마 둘(꼬레아 우라 A · B) — 같은 이야기를 방 둘로 돌리는 것으로 보이지만 매장이 이름을 A · B 로 갈라 둬서 그대로 둔다 */
+    val CODEK_HONGDAE = CODEK_GANGNAM.copy(branchName = "홍대점", key = "codek-hongdae", jijem = "S3")
+
+    /**
+     * ⚠️ 플레이방탈은 홍대점에 S5·S6·S7 을 걸었다 — 지점 탭을 되읽으면 S5 홍대점 · S6 강남시티 · S7 상수점이다.
+     * 최대일수 7(강남시티는 6) → 오늘~+7 = 8일. +8 은 링크 없는 timeOn 이다
+     */
+    val SIGN_HONGDAE = SIGN_GANGNAM_CITY.copy(
+        branchName = "홍대점", key = "signescape-hongdae", jijem = "S5",
+        themesPerRequest = linkedMapOf("A" to "거상", "B" to "졸업", "C" to "하이팜"), openDays = 8,
+    )
+
+    /** 홍대점(S5)과 같은 건물(와우산로 65)의 다른 지점. 사이트 표기는 `홍대（상수점）` 이다 */
+    val SIGN_SANGSU = SIGN_GANGNAM_CITY.copy(
+        branchName = "상수점", key = "signescape-sangsu", jijem = "S7",
+        themesPerRequest = linkedMapOf("A" to "원티드"), openDays = 8,
+    )
+
+    val ALL = listOf(CODEK_GANGNAM, SIGN_GANGNAM_CITY, CODEK_HONGDAE, SIGN_HONGDAE, SIGN_SANGSU)
 }
 
 class AspCrawlException(message: String) : RuntimeException(message)
@@ -150,7 +170,7 @@ class AspCrawler(private val rateLimiter: HostRateLimiter) {
         return DaySchedule(site.storeRef(), date, maxDays.toInt() + 1, site.openDays, themes)
     }
 
-    /** 코드케이 — 지점 한 페이지에 테마가 `<li class="thema1">이름</li>` 로 줄줄이 온다 */
+    /** 코드케이 — 지점 한 페이지에 테마가 `<li class="thema1">이름</li>` 로 줄줄이 온다 (숫자는 지점마다 다르다 — [THEME_HEAD]) */
     private fun branchPage(site: AspSite, html: String): List<ThemeSchedule> {
         val chunks = html.split(THEME_HEAD)
         return chunks.drop(1).mapIndexed { i, chunk ->
@@ -197,7 +217,11 @@ class AspCrawler(private val rateLimiter: HostRateLimiter) {
         private val JIJEM = Regex("""R_JIJEM" value="([A-Za-z0-9]+)"""")
         private val MAX_DAYS = Regex("""최대일수는\s*<span class="orange_b">\s*([0-9]+)""")
 
-        private const val THEME_HEAD = "<li class=\"thema1\">"
+        /**
+         * 클래스 숫자가 **지점을 따라간다** — 강남 `thema1` · 구월 `thema2` · 홍대 `thema3` (2026-10-22).
+         * `thema1` 로 고정했을 때는 홍대 페이지가 테마 0개로 읽혀 "회차가 하나도 없다" 로 끊겼을 것이다
+         */
+        private val THEME_HEAD = Regex("""<li class="thema[0-9]+">""")
         private const val THEME_END = "<div style=\"clear: both\"></div>"
         private val THEME_CODE = Regex("""R_THEMA=([A-Za-z0-9_]+)&""")
         private val ROOM_CODE = Regex("""room_code=([A-Za-z0-9_]+)&""")

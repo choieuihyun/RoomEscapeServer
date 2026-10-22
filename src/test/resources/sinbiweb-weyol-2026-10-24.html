@@ -1,0 +1,422 @@
+<!DOCTYPE HTML>
+<html lang="ko">
+	<head>
+		<title>WEYOL</title>
+		<link rel="shortcut icon" href="../images/ico/favicon.ico" type="image/x-icon">
+		<link rel="icon" href="../images/ico/favicon.ico" type="image/x-icon">
+
+
+		<meta charset="utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+		<meta name="format-detection" content="telephone=no">
+		<meta name="naver-site-verification" content=""/>
+<meta name="author" content="" />
+<meta name="keywords" content="">
+<meta name="description" content="" / >
+<meta property="og:type" content="website" />
+<meta property="og:title" content="WEYOL" />
+<meta property="og:description" content="" />
+<meta property="og:image" content="">
+<meta property="og:url" content="http://weyol.com" />
+
+<link rel="canonical" href="http://weyol.com">
+<link rel="canonical" href="https://weyol.com">
+
+
+<meta property="og:image" content="http://weyol.com/layout/images/common/logo_og.png">		<meta name="publisher" content="(주)신비웹,신비웹,sinbiweb,sinbiweb.co.kr,www.sinbiweb.co.kr" />
+		<link rel="stylesheet" type="text/css" href="../css/style.css" />
+		<link rel="stylesheet" type="text/css" href="../css/slick.css" />
+		<link rel="stylesheet" type="text/css" href="../css/slick-theme.css" />
+		<link rel="stylesheet" type="text/css" href="../css/swiper.css">
+
+		<script type="text/javascript" src="../js/jquery-1.10.2.min.js"></script>
+		<script type="text/javascript" src="../js/jquery.easing.1.3.js"></script>
+		<script type="text/javascript" src="../js/ui.js"></script>
+		<script type="text/javascript" src="../js/slick.min.js"></script>
+		<script type="text/javascript" src="../js/swiper.js"></script>
+
+		<link rel="stylesheet" type="text/css" href="../css/board_reaction.css">
+		<script type="text/javascript" src="../../core/res/common.js"></script>
+		<script type="text/javascript" src="../../core/js/board.js"></script>
+		<script type="text/javascript" src="../../cheditor/cheditor.js"></script>
+
+		<!--[if IE 7]>
+			<link rel="stylesheet" type="text/css" href="../css/ie7.css" media="all" />
+		<![endif]-->
+		<!--[if lte IE 8]>
+			<script src="./js/lib/respond.min.js" type="text/javascript" charset="utf-8"></script>
+			<script src="./js/lib/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+		<![endif]-->
+	</head>
+
+
+	<!-- 달력 -->
+    <div id=popCal  style='position:absolute; left:-400px; top:0px; width:0; height=0; z-index:1; VISIBILITY:hidden;'>
+    <iframe name='pop_frame_cal' src='' frameborder='0' scrolling='no' width='300' height='320'></iframe>
+    </div>
+
+	<!-- submit 사용시 -->
+	<div style='position:absolute'>
+	<iframe src='' name='ifr_ok'  width=0 height=0 frameborder=0 scrolling=no></iframe>
+	</div>
+
+	<body>
+		<div id="wrap">
+			<dl id="skip">
+				<dt class="hide">메뉴 바로가기</dt>
+				<dd><a href="#self">주메뉴 바로가기</a></dd>
+				<dd><a href="#self">컨텐츠 바로가기</a></dd>
+			</dl>
+
+			<nav class="right_Box">
+				<div class="nav_top">
+					<div class="logo"><a href="home.php?go=main"><img src="../images/common/logo.png" alt=""></a></div>
+					<div class="close"><img src="../images/ico/close.png" alt="닫기"></div>
+				</div><!-- end : class : nav_top -->
+				<div class="nav_in">
+					<ul class="m_gnb">
+						<li><a href="home.php?go=theme.list">THEME</a></li>
+						<li><a href="home.php?go=rev.make">RESERVATION</a>
+						<li><a href="home.php?go=location">LOCATION</a>
+						<li><a href="home.php?go=pds.list&pds_type=2">NOTICE/Q&A</a></li>
+					</ul>
+				</div>
+			</nav><!--right_Box-->
+			<div class="wrap_bg"></div>
+
+			<header>
+				<div id="header">
+					<div class="in_Layer">
+						<h1 class="logo"><a href="home.php?go=main"><img src="../images/common/logo.png"></a></h1>
+						<div class="m_menu"><img src="../images/ico/m_menu.png"></div>
+						<div class="gnb_area">
+							<ul class="gnb">
+								<li><a href="home.php?go=theme.list">THEME</a></li>
+								<li><a href="home.php?go=rev.make">RESERVATION</a>
+								<li><a href="home.php?go=location">LOCATION</a>
+								<li><a href="home.php?go=pds.list&pds_type=2">NOTICE/Q&A</a></li>
+							</ul><!--gnb-->
+						</div><!--gnb_area-->
+					</div><!--in_Layer-->
+				</div><!-- end : id : header -->
+			</header><!-- end : header -->
+
+
+			<div id="visual">
+				<div class="sub_visual" style="background-image:url('../images/contents/sub_visual.jpg')">
+					<h2>RESERVATION</h2>
+				</div><!--sub_visual-->
+			</div><!-- end : id : visual -->
+
+			<div id="contents">
+				<div class="sub_contents">
+					<div class="in_Layer">
+
+
+<script>
+function fun_rev_change() {
+    f = eval('document.register'); 
+	f.submit();
+}
+</script>
+
+	<div class="process">
+		<ul>
+			<li class="on">01.날짜/룸 선택</li>
+			<li>02.예약정보 입력</li>
+			<li>03.결제하기</li>
+			<li>04.예약완료</li>
+		</ul>
+	</div>
+
+	<form name=register method=get action=home.php>	
+	<div class="reserve_Box">
+		<dl class="reserve_Dl">
+			<div class="reserve_in">
+				<dt><label for="day">예약날짜</label></dt>
+				<dd>
+					<input type="text" name=rev_days id=rev_days value='2026-10-24' size=20 maxlength=10 readonly class="selectType" onclick=fun_calendar('register.rev_days','B','img_001');  onChange=fun_rev_change()>
+					<img src='../images/board/blank.gif' style='width:0px; height:0px;' name=img_001>
+				</dd>
+			</div>
+			<div class="reserve_in">
+			<dt><label for="theme">테마선택</label></dt>
+			<dd>
+				<select name=s_theme_num onChange=fun_rev_change() class='selectType'>
+				<option value=''>전체테마</option>
+		<option value='4'  >디어마이프렌드</option><option value='5'  >즐거운나의집</option><option value='6'  >콩닥콩닥베이커리</option>				</select>
+			</dd>
+		</div>
+		</dl>
+	</div>
+		<input type=hidden name=go value='rev.make'>
+	</form>
+
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">디어마이프렌드  </h3>
+						<p class="p_theme">어린시절 친구로부터 한통의 편지를 받았다.</p>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 2~6명
+								 &nbsp; &nbsp; 시간 : 70분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/4_a.jpg" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=119">
+								<span class="time">10:50 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">12:20 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">13:45 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">15:10 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">16:35 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">18:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">19:25 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">20:50 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=135">
+								<span class="time">22:15 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">즐거운나의집  </h3>
+						<p class="p_theme">지금은 비어있는 나의 옛 집. 오랜만에 내려가 짐을 정리하던 중 수상한 흔적이 발견되기 시작했다.</p>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 2~4명
+								 &nbsp; &nbsp; 시간 : 60분							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/5_a.jpg" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a class="end">
+								<span class="time">10:30 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">11:50 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=157">
+								<span class="time">13:05 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=159">
+								<span class="time">14:20 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">15:35 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">16:50 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=165">
+								<span class="time">18:05 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">19:20 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=169">
+								<span class="time">20:35 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=171">
+								<span class="time">21:55 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+				<div class="theme_box">
+					<div class="theme_Title">
+						<h3 class="h3_theme">콩닥콩닥베이커리  </h3>
+						<p class="p_theme">안녕하세요 복숭아향이 나는 이번달 우수사원 피치입니다.</p>
+						<div class="theme_div">
+							<span class="level">난이도 : 
+								<span class="level_img">
+							<img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> <img src="../images/board/ico_level.png" /> 								</span>
+							</span>
+							<span>
+								인원 : 2~4명
+								 &nbsp; &nbsp; 시간 : 70							</span>
+						</div>
+					</div>
+					<div class="theme_pic"><img src="../../file/theme/6_a.jpg" alt="" /></div><!-- image-size:408x290 -->
+					<div class="time_Area">
+						<ul class="reserve_Time">
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=220">
+								<span class="time">10:40 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">12:10 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">13:35 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a class="end">
+								<span class="time">15:00 </span>
+								<span class="impossible">예약마감</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=228">
+								<span class="time">16:25 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=230">
+								<span class="time">17:50 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=232">
+								<span class="time">19:15 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=234">
+								<span class="time">20:40 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									<li>
+							<a href="home.php?go=rev.make.input&rev_days=2026-10-24&theme_time_num=236">
+								<span class="time">22:05 </span>
+								<span class="possible">예약가능</span>
+							</a>
+						</li>
+									</ul>
+					</div>
+				</div>
+
+
+					</div><!--in_Layer-->
+				</div><!--sub_contents-->
+			</div><!-- end : id : contents -->
+
+			<footer>
+				<div id="footer">
+					<div class="f_top">
+						<div class="in_Layer">
+							<ul>
+								<li><a href="home.php?go=pds.list&pds_type=1">공지사항</a></li>
+								<li><a href="home.php?go=rev.login">예약확인</a></li>
+								<li><a href="home.php?go=contact.make">제휴문의</a></li>
+								<li><a href="javascript:fun_pop_privacy()">개인정보취급방침</a></li>
+							</ul>
+						</div>
+					</div><!--f_top-->
+					<div class="f_mid">
+						<div class="in_Layer">
+							<p>상호 : 위욜(WEYOL)   ㅣ   사업자번호 : 631-63-00492<br/>
+							TEL : 02-332-3305   ㅣ   본사·제휴문의 : weyol@naver.com  ㅣ   MAIL : weyol@naver.com<br/>
+							주소 : 서울시 마포구 와우산로27길 7, 지하1층(서교동, 베뉴에스)<br/>
+							</p>
+						</div>
+					</div><!--f_mid-->
+					<div class="f_bot">
+						<div class="in_Layer">
+							<p> 
+								Copyright ⓒ 2022 위욜.  All right reserved.  /  
+								Created by <a href="http://sinbiweb.co.kr?s_url=weyol.com" target=_blank>sinbiweb</a>
+							</p>
+						</div>
+					</div><!--f_bot-->
+				</div><!-- end : id : footer -->
+			</footer><!-- end : footer -->
+		</div><!-- end : id : wrap -->
+	</body>
+</html>

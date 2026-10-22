@@ -70,7 +70,13 @@ object SmurfSites {
         themeName = "파파스머프의 마법실험실",
     )
 
-    val ALL = listOf(GANGNAM)
+    /**
+     * 2026-10-22 조사 — 창은 강남과 같은 20일. 휴무 문구는 `정기휴무`(강남은 `고정휴무`) · 수 · 목.
+     * +22 쯤 `days` 밖 날짜는 "날짜를 다시 선택하세요" 가 온다 — 휴무가 아니라 모르는 안내문으로 끊긴다(안전한 쪽). `days` 가 준 날짜만 물으니 평소엔 안 나온다
+     */
+    val HONGDAE = GANGNAM.copy(branchName = "홍대점", key = "smurf-hongdae", zizum = 17, halls = 5)
+
+    val ALL = listOf(GANGNAM, HONGDAE)
 }
 
 class SmurfCrawlException(message: String) : RuntimeException(message)

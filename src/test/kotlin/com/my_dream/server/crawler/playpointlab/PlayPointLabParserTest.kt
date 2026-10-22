@@ -34,6 +34,7 @@ class PlayPointLabParserTest {
     private val tantan = fixture("playpointlab-tantan-2026-09-11.html")
     private val haeundae = fixture("playpointlab-haeundae-2026-09-11.html")
     private val gangnam = fixture("playpointlab-gangnam-2026-10-21.html")
+    private val hongdae = fixture("playpointlab-hongdae-2026-10-22.html")
 
     @Test
     fun `지점마다 테마가 다르다`() {
@@ -58,6 +59,7 @@ class PlayPointLabParserTest {
         assertEquals(setOf("217", "218", "219"), parser.roomIds(tantan))
         assertEquals(setOf("201", "202", "203", "204", "206", "223"), parser.roomIds(haeundae))
         assertEquals(setOf("193", "194", "195", "196", "208", "209"), parser.roomIds(gangnam))
+        assertEquals(setOf("71", "72", "73"), parser.roomIds(hongdae))
 
         // 네 지점의 room-id 가 하나도 안 겹쳐야 이 대조가 성립한다
         val sets = PlayPointLabBranch.entries.map { it.roomIds }
@@ -70,9 +72,18 @@ class PlayPointLabParserTest {
                 PlayPointLabBranch.TANTAN_STREET -> tantan
                 PlayPointLabBranch.HAEUNDAE -> haeundae
                 PlayPointLabBranch.GANGNAM -> gangnam
+                PlayPointLabBranch.HONGDAE -> hongdae
             }
             assertEquals(branch.roomIds, parser.roomIds(html), "${branch.branchName} room-id 불일치")
         }
+    }
+
+    @Test
+    fun `홍대점 — 세 테마 · 소요시간 태그가 없어도 회차는 읽는다`() {
+        // 2026-10-22 받음. 33회차 중 31 가능 · 세 테마 다 해시태그에 소요시간이 없다(강남 리허설과 같다)
+        val themes = parser.parse(hongdae).themes
+        assertEquals(listOf("71", "72", "73"), themes.map { it.externalId })
+        assertEquals(33 to 31, themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
     }
 
     @Test

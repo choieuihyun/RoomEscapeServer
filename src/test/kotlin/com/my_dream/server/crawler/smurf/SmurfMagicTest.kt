@@ -17,6 +17,10 @@ import kotlin.test.assertTrue
  * | 강남 10-21 | — | — | 휴무 문구 = 회차 0개인 정상 하루 |
  * | 홍대 10-23 | 5 | — | 관 수가 다르면 다른 지점 응답이다 — 끊는다 |
  * | 강남 날짜 목록 | — | 10-21~11-09 | 이 목록에 없는 날은 묻지 않는다 (`time` 은 창 밖에도 회차를 준다) |
+ * | **홍대 (2026-10-22 붙임)** | | | |
+ * | 홍대 10-23 (위 장) | 5 | 17 시각 | 홍대 설정으로 읽으면 통과한다 — 관 다섯을 시각으로 합친다 |
+ * | 홍대 10-28 | — | — | `정기휴무` 도 휴무다 (강남은 `고정휴무`) |
+ * | 홍대 날짜 목록 (10-22 받음) | — | 10-22~11-10 | 창 20일 — 강남과 같다 |
  */
 class SmurfMagicTest {
 
@@ -91,7 +95,25 @@ class SmurfMagicTest {
     }
 
     @Test
+    fun `홍대 — 관 다섯을 시각으로 합치고 정기휴무를 휴무로 읽는다`() {
+        val hongdae = SmurfSites.HONGDAE
+        val theme = crawler.parse(hongdae, friday, fixture("smurf-time-z17-2026-10-23-홍대.html")).themes.single()
+        assertEquals(17, theme.slots.size, "1·3·5관 9칸 + 2·4관 8칸 → 시각 17개")
+        assertEquals(theme.slots.map { it.time }.distinct(), theme.slots.map { it.time })
+
+        val off = crawler.parse(hongdae, LocalDate.of(2026, 10, 28), fixture("smurf-time-z17-2026-10-28-정기휴무.html"))
+        assertTrue(off.themes.single().slots.isEmpty())
+
+        // 강남 응답(4관)을 홍대로 읽으면 끊는다 — 반대 방향도 막혀야 둘이 서로 덮지 않는다
+        assertFailsWith<SmurfCrawlException> { crawler.parse(hongdae, friday, fixture("smurf-time-z6-2026-10-23.html")) }
+
+        val days = SmurfCalendar.parseDays(fixture("smurf-days-z17-2026-10-22.html"))
+        assertEquals(20, days.size)
+        assertEquals(LocalDate.of(2026, 11, 10), days.max())
+    }
+
+    @Test
     fun `매장마다 픽스처 테스트가 있다`() {
-        assertEquals(setOf("smurfmagic.com:6"), SmurfSites.ALL.map { "${it.host}:${it.zizum}" }.toSet(), "픽스처 없이 더한 지점이 있다")
+        assertEquals(setOf("smurfmagic.com:6", "smurfmagic.com:17"), SmurfSites.ALL.map { "${it.host}:${it.zizum}" }.toSet(), "픽스처 없이 더한 지점이 있다")
     }
 }

@@ -20,6 +20,10 @@ import kotlin.test.assertTrue
  * | 싸인 S6 A·B 10-21 | 1씩 | 7 · 4 / 7 · 3 | 테마마다 요청 · 선택된 탭 대조 |
  * | 싸인 S6 A 10-28 | — | — | 범위 밖인데 `timeOn` — 클래스로 판정했다면 전부 가능이었다 |
  * | 싸인 기본값(S2) | — | — | R_JIJEM 을 빼면 수원이 답한다 |
+ * | **홍대 (2026-10-22 받음)** | | | |
+ * | 코드케이 S3 10-22 | 2 | 15 · 2 | 테마 머리 클래스가 `thema3` — 지점마다 숫자가 다르다 |
+ * | 싸인 S5 A · S7 A 10-22 | 1씩 | 7 · 5 / 7 · 6 | 최대일수 7 지점 (강남시티는 6) |
+ * | 싸인 S5 A 10-30 | — | — | +8 은 링크 없는 timeOn — 받지 않는다 |
  */
 class AspReservationTest {
 
@@ -107,6 +111,45 @@ class AspReservationTest {
         assertEquals(sign.openDays, a.reservationRangeDays, "다르면 매 요청마다 '범위가 바뀌었다' 경고가 뜬다")
         val c = crawler.parse(codek, today, null, fixture("aspres-codek-s1-2026-10-21.html"), today)
         assertEquals(codek.openDays, c.reservationRangeDays)
+    }
+
+    @Test
+    fun `코드케이 홍대 — 테마 머리 숫자가 달라도 읽는다`() {
+        val today = LocalDate.of(2026, 10, 22)
+        val day = crawler.parse(AspSites.CODEK_HONGDAE, today, null, fixture("aspres-codek-s3-2026-10-22.html"), today)
+        assertEquals(listOf("꼬레아 우라 A", "꼬레아 우라 B"), day.themes.map { it.themeName })
+        assertEquals(listOf("codek_s16", "codek_s17"), day.themes.map { it.externalId })
+        assertEquals(15 to 2, day.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+        assertEquals(AspSites.CODEK_HONGDAE.openDays, day.reservationRangeDays)
+        // 강남 설정으로 홍대 응답을 읽으면 지점이 달라 끊는다
+        assertFailsWith<AspCrawlException> { crawler.parse(codek, today, null, fixture("aspres-codek-s3-2026-10-22.html"), today) }
+    }
+
+    @Test
+    fun `싸인 홍대 · 상수 — 지점을 되읽고 창은 오늘~+7 이다`() {
+        val today = LocalDate.of(2026, 10, 22)
+        val s5 = crawler.parse(AspSites.SIGN_HONGDAE, today, "A", fixture("aspres-sign-s5-A-2026-10-22.html"), today)
+        assertEquals("거상", s5.themes.single().themeName)
+        assertEquals(7 to 5, s5.themes.single().slots.let { it.size to it.count { s -> s.available } })
+        assertEquals(8, s5.reservationRangeDays, "최대일수 7 = 오늘~+7 = 8일")
+        assertEquals(AspSites.SIGN_HONGDAE.openDays, s5.reservationRangeDays)
+
+        val s7 = crawler.parse(AspSites.SIGN_SANGSU, today, "A", fixture("aspres-sign-s7-A-2026-10-22.html"), today)
+        assertEquals("원티드", s7.themes.single().themeName)
+        assertEquals(7 to 6, s7.themes.single().slots.let { it.size to it.count { s -> s.available } })
+
+        // 같은 건물 두 지점이 서로 덮지 않는다 — 상수 응답을 홍대점으로 읽으면 끊는다
+        assertFailsWith<AspCrawlException> { crawler.parse(AspSites.SIGN_HONGDAE, today, "A", fixture("aspres-sign-s7-A-2026-10-22.html"), today) }
+        // +8 은 링크 없는 timeOn
+        assertFailsWith<AspCrawlException> {
+            crawler.parse(AspSites.SIGN_HONGDAE, LocalDate.of(2026, 10, 30), "A", fixture("aspres-sign-s5-A-2026-10-30-범위밖.html"), today)
+        }
+    }
+
+    @Test
+    fun `지점 키가 겹치지 않는다`() {
+        val keys = AspSites.ALL.map { it.key }
+        assertEquals(keys.size, keys.toSet().size, "겹치는 지점 키: $keys")
     }
 
     @Test

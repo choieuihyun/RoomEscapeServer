@@ -68,6 +68,14 @@ object BranchRegions {
         "rabbithole-hongdae" to "홍대",
         // 플레이방탈 홍대 목록(2026-10-22)에 있다 — 그 전엔 지역을 몰라 null 이었다
         "bitphobia-dungeon101" to "홍대",
+        "speakeasy-hongdae" to "홍대",
+        "weyol-hongdae" to "홍대",
+        "happyanding-hongdae" to "홍대",
+        "codek-hongdae" to "홍대",
+        "signescape-hongdae" to "홍대",
+        "signescape-sangsu" to "홍대",
+        "smurf-hongdae" to "홍대",
+        "playpointlab-hongdae" to "홍대",
 
         "play33-konkuk" to "건대",
         "pointnine-konkuk" to "건대",

@@ -38,7 +38,7 @@ data class SinbiwebSite(
     val branches: List<SinbiwebBranch>,
     /** 응답이 어느 지점인지 되읽는 자리. 단일 지점 매장은 [BranchReadback.NONE] */
     val branchReadback: BranchReadback = BranchReadback.NONE,
-    /** 오늘부터 며칠치가 열리나. 조사한 넷 다 +6 까지 열리고 +7 은 "예약가능일이 아닙니다" 였다 (11:16 실측) */
+    /** 오늘부터 며칠치가 열리나. 강남 넷은 +6 까지 열리고 +7 은 "예약가능일이 아닙니다" 였다 (11:16 실측). 홍대엔 2주짜리가 있다 */
     val openDays: Int = 7,
 ) {
     val baseUrl: String get() = "$scheme://$host"
@@ -110,7 +110,32 @@ object SinbiwebSites {
         branchReadback = BranchReadback.SELECT,
     )
 
-    val ALL = listOf(STUDIO_ESC, DOLO, EROOM8, GOLDKEY)
+    // ── 홍대 (2026-10-22 조사) — 셋 다 단일 지점 · 장르 괄호 없음 · 드롭다운 라벨 = 이름 ──
+
+    /** 창이 2주다 — +13 까지 열리고 +14 는 "예약가능일이 아닙니다" (10:14 실측). 휴무는 정기가 아니라 날마다 다르다(10-28 수 휴무 · 11-04 수 영업) */
+    val SPEAKEASY = SinbiwebSite(
+        brand = "스피키지",
+        host = "speakeasyescape.co.kr",
+        branches = listOf(SinbiwebBranch(null, "홍대점", "speakeasy-hongdae")),
+        openDays = 14,
+    )
+
+    /** ⚠️ nesolution 방화벽이 있다(robots 를 부르면 방화벽 404). 막히면 우회하지 않고 뺀다 */
+    val WEYOL = SinbiwebSite(
+        brand = "위욜",
+        host = "weyol.com",
+        branches = listOf(SinbiwebBranch(null, "홍대점", "weyol-hongdae")),
+    )
+
+    /** ⚠️ nesolution 방화벽 · 창 2주(+13 까지 · 10:17 실측) */
+    val HAPPYANDING = SinbiwebSite(
+        brand = "해피앤딩",
+        host = "happyanding.co.kr",
+        branches = listOf(SinbiwebBranch(null, "홍대점", "happyanding-hongdae")),
+        openDays = 14,
+    )
+
+    val ALL = listOf(STUDIO_ESC, DOLO, EROOM8, GOLDKEY, SPEAKEASY, WEYOL, HAPPYANDING)
 }
 
 fun SinbiwebBranch.toStoreRef(site: SinbiwebSite) = StoreRef(key = key, brand = site.brand, branchName = branchName)

@@ -27,6 +27,11 @@ import kotlin.test.assertTrue
  * | Studio ESC 10-28 범위 밖 | 0 | — | "예약가능일이 아닙니다" 는 정상 |
  * | Studio ESC 10-26 휴무 | 0 | — | "지점휴무일 입니다" 도 정상 — 배포 첫날 월요일에 실패로 잡혀 더했다 |
  * | 돌로 2번 (없는 지점) | 0 | — | 문구 없는 0개는 예외 — hidden 은 보낸 값을 그대로 돌려준다 |
+ * | **홍대 (2026-10-22 받음)** | | | |
+ * | 스피키지 10-24 | 2 | 18 · 10 | 창 2주 매장 · 장르 괄호 없음 |
+ * | 위욜 10-24 | 3 | 28 · 13 | 방화벽 매장 · 첫·끝 회차가 늘 마감 |
+ * | 해피앤딩 10-24 | 4 | 45 · 38 | 괄호가 이름에 붙은 테마(`어?계인씨!(야외활동O)`)를 장르로 자르지 않는다 |
+ * | 스피키지 10-28 휴무 | 0 | — | 날짜가 앞에 붙은 휴무 문구(`2026-10-28<br><br>지점휴무일 입니다`)도 정상 |
  */
 class SinbiwebParserTest {
 
@@ -42,6 +47,9 @@ class SinbiwebParserTest {
     private val eroom8 = fixture("sinbiweb-eroom8-2026-10-22.html")
     private val goldkey6 = fixture("sinbiweb-goldkey-6-2026-10-27.html")
     private val goldkey5 = fixture("sinbiweb-goldkey-5-2026-10-21.html")
+    private val speakeasy = fixture("sinbiweb-speakeasy-2026-10-24.html")
+    private val weyol = fixture("sinbiweb-weyol-2026-10-24.html")
+    private val happyanding = fixture("sinbiweb-happyanding-2026-10-24.html")
 
     private fun themes(html: String, site: SinbiwebSite) = parser.parse(html, site).page.themes
 
@@ -55,6 +63,19 @@ class SinbiwebParserTest {
         assertEquals(60 to 52, counts(eroom8, SinbiwebSites.EROOM8))
         assertEquals(18 to 17, counts(goldkey6, SinbiwebSites.GOLDKEY))
         assertEquals(19 to 17, counts(goldkey5, SinbiwebSites.GOLDKEY))
+        assertEquals(18 to 10, counts(speakeasy, SinbiwebSites.SPEAKEASY))
+        assertEquals(28 to 13, counts(weyol, SinbiwebSites.WEYOL))
+        assertEquals(45 to 38, counts(happyanding, SinbiwebSites.HAPPYANDING))
+    }
+
+    @Test
+    fun `홍대 셋 — 이름과 번호가 드롭다운과 맞고 장르를 자르지 않는다`() {
+        val h = themes(happyanding, SinbiwebSites.HAPPYANDING)
+        assertTrue("어?계인씨!(야외활동O)" in h.map { it.themeName }, "괄호를 장르로 잘랐다: ${h.map { it.themeName }}")
+        assertTrue(listOf(speakeasy to SinbiwebSites.SPEAKEASY, weyol to SinbiwebSites.WEYOL, happyanding to SinbiwebSites.HAPPYANDING)
+            .all { (html, site) -> themes(html, site).all { it.externalId != null && it.genre == null } })
+        assertEquals(setOf("4", "5", "6"), themes(weyol, SinbiwebSites.WEYOL).map { it.externalId }.toSet())
+        assertEquals(setOf("1", "2", "3", "4"), h.map { it.externalId }.toSet())
     }
 
     @Test
@@ -150,6 +171,13 @@ class SinbiwebParserTest {
     }
 
     @Test
+    fun `날짜가 앞에 붙은 휴무 문구도 정상이다 — 스피키지`() {
+        val off = fixture("sinbiweb-speakeasy-2026-10-28-휴무.html")
+        val day = crawler.validate(SinbiwebSites.SPEAKEASY, SinbiwebSites.SPEAKEASY.branches.single(), LocalDate.of(2026, 10, 28), off)
+        assertTrue(day.themes.isEmpty())
+    }
+
+    @Test
     fun `문구 없는 0개는 끊는다 — 없는 지점은 hidden 되읽기까지 통과한다`() {
         val missing = fixture("sinbiweb-dolo-2-2026-10-21-없는지점.html")
         val parsed = parser.parse(missing, SinbiwebSites.DOLO)
@@ -173,7 +201,10 @@ class SinbiwebParserTest {
     @Test
     fun `매장마다 픽스처 테스트가 있다`() {
         // 공통 파서는 한 매장을 고치다 다른 매장을 깨뜨린다. 픽스처 없는 매장은 그걸 못 잡는다
-        val tested = setOf("studioesc.co.kr", "doloescape.co.kr", "eroom8.co.kr", "xn--jj0b998aq3cptw.com")
+        val tested = setOf(
+            "studioesc.co.kr", "doloescape.co.kr", "eroom8.co.kr", "xn--jj0b998aq3cptw.com",
+            "speakeasyescape.co.kr", "weyol.com", "happyanding.co.kr",
+        )
         assertEquals(tested, SinbiwebSites.ALL.map { it.host }.toSet(), "픽스처 없이 더한 매장이 있다 — 이 파일에 한 장 더한다")
     }
 
