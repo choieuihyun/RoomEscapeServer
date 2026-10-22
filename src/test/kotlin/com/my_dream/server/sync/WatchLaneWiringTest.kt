@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.ApplicationContext
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
+import org.springframework.scheduling.config.ScheduledTaskHolder
+import org.springframework.scheduling.config.TriggerTask
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -32,9 +34,17 @@ class WatchLaneWiringTest @Autowired constructor(
     }
 
     @Test
+    fun `무작위 간격 트리거가 실제 스케줄러에 걸린다 — 5~7분`() {
+        // @Scheduled 가 아니라 SchedulingConfigurer 로 건다(D44). 빈만 있고 작업이 안 걸리면 감시가 조용히 멈춘다
+        val triggers = context.getBeansOfType(ScheduledTaskHolder::class.java).values
+            .flatMap { it.scheduledTasks }.map { it.task }.filterIsInstance<TriggerTask>().map { it.trigger }
+        assertEquals(1, triggers.count { it is JitteredDelay }, "걸린 트리거: $triggers")
+    }
+
+    @Test
     fun `스케줄러 스레드가 주기 작업 수만큼 있다`() {
         // 하나면 전체 바퀴가 도는 약 2.5분 동안 빠른 확인이 그 뒤에 줄을 선다 —
-        // "2분마다" 가 최대 4.5분이 되는데, 로그 어디에도 원인이 안 남는다.
+        // 간격이 그만큼 늘어나는데(2분 고정이던 때 최대 4.5분), 로그 어디에도 원인이 안 남는다.
         // 셋째는 해 본 테마 자동 기록(D33), 넷째는 전날 알림(D34). 작업을 더하면 이 숫자도 같이 올린다
         assertEquals(4, context.getBean(ThreadPoolTaskScheduler::class.java).scheduledThreadPoolExecutor.corePoolSize)
     }

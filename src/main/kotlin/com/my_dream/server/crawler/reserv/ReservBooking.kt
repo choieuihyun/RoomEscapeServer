@@ -94,7 +94,7 @@ class ReservCrawler(private val rateLimiter: HostRateLimiter) {
 
     /**
      * **60초 안이면 다시 묻지 않는다.** 한 호스트의 작업은 1.2초 간격으로 차례로 돌아서 8일치가 10초 안에 끝난다 —
-     * 그 사이 8번 같은 걸 받을 이유가 없다. 감시 빠른 확인(2분 간격)은 60초가 지나 있으니 늘 새로 받는다
+     * 그 사이 8번 같은 걸 받을 이유가 없다. 감시 빠른 확인(5~7분 간격)은 60초가 지나 있으니 늘 새로 받는다
      */
     private fun body(site: ReservSite): String {
         cache[site.keycode]?.let { (at, body) -> if (Duration.between(at, clock.instant()) < FRESH) return body }

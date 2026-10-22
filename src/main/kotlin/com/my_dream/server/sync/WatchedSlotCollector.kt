@@ -59,7 +59,7 @@ class WatchedSlotCollector(
      */
     private val pausedUntil = ConcurrentHashMap<String, LocalDateTime>()
 
-    /** 마지막으로 로그에 알린 대상. **바뀔 때만** 다시 적는다 — 2분마다 같은 줄을 찍으면 로그가 그것으로 찬다 */
+    /** 마지막으로 로그에 알린 대상. **바뀔 때만** 다시 적는다 — 몇 분마다 같은 줄을 찍으면 로그가 그것으로 찬다 */
     private var announced: Set<String> = emptySet()
     private var unmatchedAnnounced: Set<Target> = emptySet()
 
