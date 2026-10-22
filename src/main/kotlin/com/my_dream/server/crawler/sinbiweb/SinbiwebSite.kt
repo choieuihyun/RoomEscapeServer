@@ -33,7 +33,7 @@ data class SinbiwebSite(
     /** 사람이 읽는 매장 이름 (`/api/branches` 의 store) */
     val brand: String,
     val host: String,
-    /** 황금열쇠는 `http://` 로만 확인했다. https 를 시험하지 않았으므로 바꾸지 않는다 */
+    /** 황금열쇠는 `http://` 로만 확인했다. 위욜은 https 인증서 고리가 깨져 있다(매장 설정 오류) — 둘 다 http */
     val scheme: String = "https",
     val branches: List<SinbiwebBranch>,
     /** 응답이 어느 지점인지 되읽는 자리. 단일 지점 매장은 [BranchReadback.NONE] */
@@ -120,10 +120,16 @@ object SinbiwebSites {
         openDays = 14,
     )
 
-    /** ⚠️ nesolution 방화벽이 있다(robots 를 부르면 방화벽 404). 막히면 우회하지 않고 뺀다 */
+    /**
+     * ⚠️ nesolution 방화벽이 있다(robots 를 부르면 방화벽 404). 막히면 우회하지 않고 뺀다.
+     * 🔒 **http 로 묻는다** — https 는 자바에서 `PKIX path building failed` 다(2026-10-22 붙이기 전 실사이트 확인 ⓕ).
+     * 프랭크와 똑같은 매장 설정 오류: 인증서 발급자는 "Sectigo RSA Domain Validation Secure Server CA" 인데 함께 보내는 중간이 "… DV R36" 이다.
+     * curl 은 스스로 채워서 성공해 조사 때는 안 보였다. **검증을 끄지 않는다** — http 는 리다이렉트 없이 같은 페이지를 준다
+     */
     val WEYOL = SinbiwebSite(
         brand = "위욜",
         host = "weyol.com",
+        scheme = "http",
         branches = listOf(SinbiwebBranch(null, "홍대점", "weyol-hongdae")),
     )
 
