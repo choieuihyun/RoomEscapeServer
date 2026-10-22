@@ -84,6 +84,8 @@ object BranchRegions {
         "decoder-hongdae" to "홍대",
         "murderparker-hongdae1" to "홍대",
         "murderparker-wow-hongdae" to "홍대",
+        "escapers-hongdae1" to "홍대",
+        "escapers-hongdae2" to "홍대",
 
         "play33-konkuk" to "건대",
         "pointnine-konkuk" to "건대",

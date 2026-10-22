@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+    <meta http-equiv="Content-Language" content="ko" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta name="csrf-token" id="csrf" content="PhbBmunvCspYb5CWIfi093DmXNxQQeQNEX3eWhnc" />
+    <meta name="referrer" content="always" />
+    <meta name="author" contents="메이크언에퍼트" />
+    <meta name="reply-to(email)" content="[메일 지움]" />
+    <meta name="publisher" content="메이크언에퍼트" />
+    <meta name="title" content=" 이스케이퍼스 : 예약하기 " />
+    <meta name="description" content=" 이스케이퍼스 예약에 오신걸 환영합니다. " />
+    <meta name="keywords" content="ESCAPERS, 이스케이퍼스, 홍대이스케이퍼스, 방탈출까페, 방탈출, 방탈출제작, 연남동방탈출, 카톡방탈출, 대전방탈출" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="이스케이퍼스" />
+    <meta property="og:url" content="http://www.escapers.co.kr/reservation" />
+    <meta property="og:title" content=" 이스케이퍼스 : 예약하기 " />
+    <meta property="og:description" content=" 이스케이퍼스 예약에 오신걸 환영합니다. " />
+    <title> 이스케이퍼스 : 예약하기 </title>
+    <link rel="canonical" href="http://www.escapers.co.kr/reservation" />
+     <link rel="stylesheet" href="/css/reservation.css"> </head>
+<body>
+
+
+    <header class="header" id="header">
+        <div class="container">
+            <a href="http://www.escapers.co.kr/"><img src="/img/logo2.png" alt="로고"></a>
+            <div class="header-btn"><button id="eveLayerToggleBtn" type="button"><em></em></button></div>
+        </div>
+    </header>
+    <!-- // .header -->
+
+
+    <nav class="nav bs-bb" id="nav" data-name="intro">
+        <div class="container">
+            <ul class="nav-depth1 clear-b">
+                <li>
+                    <button type="button">ESCAPERS</button>
+                    <ul class="nav-depth2">
+                        <li><a href="http://www.escapers.co.kr/about" data-name="about">소개</a></li>
+                        <li><a href="http://www.escapers.co.kr/notice" data-name="notice">공지사항</a></li>
+                        <li><a href="http://www.escapers.co.kr/event" data-name="event">이벤트</a></li>
+                        <li><a href="http://www.escapers.co.kr/map" data-name="map">찾아오시는 길</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <button type="button">테마</button>
+                    <ul class="nav-depth2">
+                        <li><a href="http://www.escapers.co.kr/theme/1" data-name="theme1">홍대 1호점</a></li>
+                        <li><a href="http://www.escapers.co.kr/theme/2" data-name="theme2">홍대 2호점</a></li>
+					    <li><a href="http://www.escapers.co.kr/theme/3" data-name="theme3">대구 동성로점</a></li>
+                        <li><a href="http://www.escapers.co.kr/theme/4" data-name="theme4">대전점(AFSC)</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <button type="button">예약</button>
+                    <ul class="nav-depth2">
+                        <li><a href="http://www.escapers.co.kr/reservation">예약하기</a></li>
+                        <li><a href="http://www.escapers.co.kr/reservation/confirm">예약확인 / 취소</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <button type="button">문의</button>
+                    <ul class="nav-depth2">
+                        <li><a href="http://www.escapers.co.kr/QA">Q & A</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <button type="button">RANKING</button>
+                    <ul class="nav-depth2">
+                        <li><a href="http://www.escapers.co.kr/ranking/1">홍대 1호점</a></li>
+                        <li><a href="http://www.escapers.co.kr/ranking/2">홍대 2호점</a></li>
+                        <li><a href="http://www.escapers.co.kr/ranking/4">대전점(AFSC)</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <button type="button">방탈출제작</button>
+                    <ul class="nav-depth2">
+                        <li><a href="http://www.escapers.co.kr/partner">제작문의</a></li>
+                        <li><a href="http://www.escapers.co.kr/quiz">문제게시판</a></li>
+                        <li><a href="http://www.escapers.co.kr/angel">ANGEL</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <!-- // .nav -->
+
+
+    <article class="wrap o-h" id="wrap">
+            <div class="container container-design bs-bb ef-layout">
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+
+
+        <div class="title">
+            <h1 class="bs-bb">예약</h1>
+        </div>
+        <!-- // .title -->
+
+
+        <br/>
+        <br/>
+        <div class="btns clear-b px-bottom">
+            <a class="bs-bb active" href="http://www.escapers.co.kr/reservation">예약하기</a>
+            <a class="bs-bb" href="http://www.escapers.co.kr/reservation/confirm">예약확인/취소</a>
+        </div>
+        <!-- // .btns -->
+
+
+        <br/>
+        <br/>
+        <br/>
+        <div class="swiper-container swiper o-v" data-swiper-name="position" id="swiperPosition">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide respos ta-r">
+                    <div class="posbox bs-bb active"> 
+                        <span class="posbox-arrow posbox-left lg-none md-none"></span>
+                        <img class="img-active" src="/img/icon12.png">
+                        <img class="img-unactive" src="/img/icon19.png">
+                        <b>지점/날짜/테마 선택</b>
+                        <span class="posbox-arrow posbox-right"></span>
+                    </div>
+                </div>
+                <div class="swiper-slide respos ta-c">
+                    <div class="posbox bs-bb">
+                        <img class="img-active" src="/img/icon13.png">
+                        <img class="img-unactive" src="/img/icon20.png">
+                        <b>예약정보 입력</b>
+                        <span class="posbox-arrow posbox-left"></span>
+                        <span class="posbox-arrow posbox-right"></span>
+                    </div>
+                </div>
+                <div class="swiper-slide respos ta-l">
+                    <div class="posbox bs-bb">
+                        <img class="img-active" src="/img/icon14.png">
+                        <img class="img-unactive" src="/img/icon21.png">
+                        <b>결제하기&예약완료</b>
+                        <span class="posbox-arrow posbox-left"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- // .swiper -->
+
+
+        <form class="swiper-container swiper o-v" data-swiper-name="reservation" method="POST" action="http://www.escapers.co.kr/reservation" id="reservationForm">
+            <div class="swiper-wrapper">
+                <div class="swiper-slide bs-bb resstep">
+                    <br/>
+        <div class="resstep-tabs ta-c clear-b">
+            <a class="btn bs-bb btn-sm-float bg2 color2" href="http://www.escapers.co.kr/reservation/1">홍대 1호점</a>
+            <a class="btn bs-bb btn-sm-float " href="http://www.escapers.co.kr/reservation/2">홍대 2호점</a>
+			<a class="btn bs-bb btn-sm-float " href="https://www.escapersd.com" target="_blank">대구점</a>
+			<a class="btn bs-bb btn-sm-float " href="https://booking.naver.com/booking/12/bizes/1507026" target="_blank">대전점(AFSC)</a>
+<!--			<a class="btn bs-bb btn-sm-float " href="http://www.escapers.co.kr/reservation/4">대전점(AFSC)</a> -->
+        </div>
+        <!-- // .ta-c -->
+
+
+
+
+
+
+        <br/>
+        <br/>
+        <div class="swiper-container swiper md-o-v sm-o-v" data-swiper-name="table">
+            <button type="button" class="swiper-touch swiper-touch-center lg-none">
+                <div><img src="/img/touch.png"><span><b>좌우</b>로 밀어보세요</span></div>
+            </button>
+            <div class="swiper-wrapper">
+                <div class="swiper-slide reslayout bs-bb rescalendar">
+                    <strong>날짜</strong>
+                    <div class="bs-bb">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+                <div class="swiper-slide reslayout bs-bb reschoice">
+                    <strong>테마</strong>
+                    <div class="bs-bb resscrolldesign" id="themeChoice">
+                        
+                    </div>
+                </div>
+                <div class="swiper-slide reslayout bs-bb resdetail">
+                    <strong>상세내용</strong>
+                    <div class="bs-bb clear-b resscrolldesign" id="themeDetailWrap">
+                        
+                    </div>
+                </div>
+                <div class="swiper-slide reslayout bs-bb reschoice active">
+                    <strong>시간</strong>
+                    <div class="bs-bb resscrolldesign" id="themeTimeWrap">
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- // .swiper -->
+
+
+
+
+
+
+        <div class="resstore clear-b">
+            <table>
+                <tr>
+                    
+                    <th>홍대 1호점</th>
+                    <td>서울시 마포구 연희로 1길7, 2층</td>
+                </tr>
+                <tr>
+                    <th>도보이용 시	</th>
+                    <td>홍대입구역 3번출구에서 2분거리</td>
+                </tr>
+                <tr>
+                    <th>매장번호</th>
+                    <td>
+                                            <a href="tel:010-0000-0000" data-unblank="tel">010-0000-0000</a>
+                                                                </td>
+                </tr>
+                <tr>
+                    <th>계좌번호</th>
+                    <td>국민은행 [계좌 지움]</td>
+                </tr>
+            </table>
+            <div class="resstore-price">
+                <b>가격정보</b>
+                <div class="bs-bb resscrolldesign" id="themePricingWrap">
+                    
+                </div>
+            </div>
+        </div>
+        <!-- // .resstore -->
+
+
+
+
+
+
+        <br/>
+        <br/>
+        <div class="ta-c">
+            <button class="btn" type="button" id="nextBtn">다음단계로</button>
+        </div>
+        <!-- // .ta-c -->
+
+
+
+        <input type="hidden" name="reservationDate" value="2026-10-22" id="dataReservationDate">
+        <input type="hidden" name="groupPK" value="1" id="dataGroupPK">
+        <input type="hidden" name="groupPhone" value="010-0000-0000">
+                </div>
+                <div class="swiper-slide bs-bb resstep">
+                    <!-- // .ta-c -->
+
+
+        <br/>
+        <table class="rescustomer-table">
+            <tr>
+                <th>예약정보</th>
+                <td><p class="el-txt" id="temeStep2Title"></p></td>
+            </tr>
+            <tr>
+                <th>성함</th>
+                <td><input class="el-input bs-bb" type="text" name="name" maxlength="10"></td>
+            </tr>
+            <tr>
+                <th>전화번호</th>
+                <td><input class="el-input bs-bb" type="text" name="phone" maxlength="13" id="dataPhone"></td>
+            </tr>
+            <tr>
+                <th>인원</th>
+                <td>
+                    <label class="el-select">
+                        <select class="bs-bb" name="people" id="step2PeopleWrap">
+                            
+                        </select>
+                    </label>
+                </td>
+            </tr>
+            <tr>
+                <th>난이도</th>
+                <td id="step2LavelWrap">
+                    <label class="el-rc bs-bb"><input type="radio" name="level" value="normal"><i></i>normal</label>
+                    <label class="el-rc bs-bb"><input type="radio" name="level" value="hard"><i></i>hard</label>
+                </td>
+            </tr>
+            <tr class="active">
+                <th class="va-t">주의사항</th>
+                <td class="va-t">
+                    <ul>
+                        <li class="bs-bb">예약일을 한번 더 확인해주세요.</li>
+                        <li class="bs-bb">[홍대 1,2호점] 무통장 선결제로 할인 받으실 경우, 테마시작 전날까지 예약금 혹은 전액을 입금해 주셔야 할인 받을 수 있습니다.</li>
+                        <li class="bs-bb">[홍대 1,2호점] 당일 취소 시 예약금(매장별상이)은 반환되지 않으니 신중히 예약 부탁드립니다.</li>
+						<li class="bs-bb">[대전 AFSC] 네이버 예약만 가능합니다.</li>
+						<li class="bs-bb">[스피드런] 예약시 예약자 성함 뒤에 스피드런을 꼭 붙여주세요. ex)홍길동스피드런 </li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+        <!-- // .rescustomer-table -->
+
+
+
+        <br/>
+        <br/>
+        <div class="ta-c">
+            <label class="el-rc fw7"><input type="checkbox" name="policy"><i></i><span>주의사항을 확인했으며, 개인정보처리방침에 동의합니다.</span></label>
+            <br class="sm-none"/>
+            <br class="sm-none"/>
+            <br/>
+            <button class="btn" type="button" id="prevBtn">이전단계로</button>
+            <button class="btn bg2 color2" type="button" id="reservationBtn">예약하기</button>
+        </div>
+        <!-- // .ta-c -->                </div>
+                <div class="swiper-slide bs-bb resstep">
+                    <br/>
+        <div class="resok ta-c">
+
+            <br class="sm-none"/>
+            <br class="sm-none"/>
+            <br/>
+            <br/>
+            <img src="/img/logo1.png">
+
+            <br/>
+            <br/>
+            <p class="fw7">예약한 테마와 지점을 꼭 확인해주세요.</p>
+            <p class="resok-bank fw9">국민은행 [계좌 지움]</p>
+
+
+            <br/>
+            <ul class="resok-table kit-wrap">
+                <ul class="kit" id="step3PricingWrap">
+                    
+                </ul>
+            </ul>
+            <!-- // .resok-table -->
+
+
+            <br/>
+            <div class="resok-comment ta-c">
+				※ [홍대 1,2호점] 가격표는 <strong>테마시작 전날까지 선입금시</strong> 할인적용되는 금액입니다.<br/>
+				※ [홍대 1,2호점] 테라포밍마스 테마는 테마시작 3일 전까지 선입금시 예약 확정됩니다.<br/>
+				※ 1호점과 2호점을 혼동하는 경우가 많습니다. <strong>매장 위치를 꼭 확인</strong>해주세요.<br/>
+                ※ 예약 시 발송되는 문자로 예약정보를 한번 더 확인해주시고, 예약 문자를 받지 못했다면 해당 매장으로 꼭 연락 부탁드립니다.
+            </div>
+        </div>
+        <!-- // .resok -->
+
+
+        <br/>
+        <br/>
+        <div class="ta-c">
+            <a class="btn bs-bb eventLink" href="http://www.escapers.co.kr/reservation/confirm">예약확인하기</a>
+        </div>
+        <!-- // .ta-c -->
+                </div>
+            </div>
+        </form>
+        <!-- // .swiper -->
+
+
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+    </div>
+    <br class="md-none sm-none"/>
+    <br class="md-none sm-none"/>
+    <br class="md-none sm-none"/>
+    <br class="md-none sm-none"/>
+    <div id="reservationHiddenData" class="d-n">{"after":[],"today":{"5":{"1792594800":true},"7":{"1792594800":true},"1":{"1792594800":true},"3":{"1792594800":true},"13":{"1792594800":true}},"other":{"5":{"1792586400":true},"7":{"1792586400":true},"1":{"1792587000":true},"20":{"1792636800":true,"1792642800":true},"16":{"1792639800":true,"1792645200":true},"22":{"1792641600":true},"10":{"1792642200":true},"14":{"1792643400":true},"6":{"1792831200":true}}}</div>
+    </article>
+    <!-- // .wrap -->
+
+
+    <footer class="footer ta-c" id="footer">
+        <div class="footer-link o-h">
+            <div class="container">
+                <a href="http://www.escapers.co.kr/policy/service">이용약관</a>
+                <a href="http://www.escapers.co.kr/policy/privacy">개인정보취급방침</a>
+                <a href="http://www.escapers.co.kr/about">회사소개</a>
+                <a href="http://www.escapers.co.kr/partner">제작문의</a>
+            </div>
+        </div>
+        <div class="footer-info">
+            <div class="container">
+                                    회사명: 이스케이퍼스(ESCAPERS) / 대표자명: 원영민 <br />
+1호점 : 010-0000-0000  /  2호점 : 010-0000-0000 / 대구점 : 053-710-5222 / 대전점 : 010-0000-0000<br />
+EMAIL: [메일 지움]
+                
+                
+
+                <br/><br/>
+                SITE PRODUCTION <a target="_blank" href="http://pf.kakao.com/_uWbZxj/chat" style="text-decoration: underline;">토니빌리</a>
+
+                <img src="/img/logo3.png">
+            </div>
+        </div>
+    </footer>
+    <!-- // .wrap -->
+
+
+        <script src="/js/reservation.js"></script>
+    
+
+
+</body>
+</html>
