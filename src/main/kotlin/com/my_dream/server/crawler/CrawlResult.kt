@@ -44,6 +44,14 @@ data class ThemeSchedule(
     val horrorLevel: Double?,
     val difficulty: Double?,
     val slots: List<Slot>,
+    /**
+     * **응답에 없는 이전 회차를 마감으로 본다** (기본 꺼짐 · 아키텍처 D45).
+     *
+     * 저장은 받아 온 회차만 고친다 — 그래서 매진된 날을 **회차 목록 없이 빈 응답**으로 주는 매장(딥띵커 · 쇼룸404)은
+     * 전에 "가능" 으로 저장한 회차가 그대로 남아 가짜 빈자리가 된다. 이 값을 켠 테마는 응답에 없는 그날 회차를 불가로 내린다.
+     * 틀려도 "가능 → 마감" 쪽이라 헛알림은 안 나간다. 지난 회차가 목록에서 빠지는 매장(프랭크 · 디코더)은 켤 필요가 없어 끈 채 둔다
+     */
+    val closeMissing: Boolean = false,
 )
 
 data class Slot(

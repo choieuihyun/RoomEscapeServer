@@ -71,6 +71,15 @@ class ScheduleSyncService(
                 }
             }
 
+            // 매진된 날을 빈 응답으로 주는 매장 — 응답에 없는 이전 회차를 마감으로 내린다 (D45). 지우지 않는다(감시가 그 행을 가리킨다)
+            if (incoming.closeMissing) {
+                val seen = incoming.slots.map { it.time }.toSet()
+                existing.values.filter { it.time !in seen }.forEach { row ->
+                    row.available = false
+                    row.lastCheckedAt = now
+                }
+            }
+
             if (emitTransitions) {
                 transitions += flipped.map {
                     // flipped 는 "이전에 매진이던" 회차라 existing 에 반드시 있다

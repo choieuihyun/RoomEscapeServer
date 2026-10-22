@@ -126,6 +126,30 @@ class ScheduleSyncServiceTest @Autowired constructor(
         assertEquals(6, slots.count().toInt(), "externalId 가 같으면 행이 갈라지지 않는다")
     }
 
+    @Test
+    fun `closeMissing 이면 응답에 없는 이전 회차를 마감으로 내린다 — 매진된 날을 빈 응답으로 주는 매장`() {
+        sync.sync(day(soldOut = listOf(1)))                      // 5개 가능
+        val emptyDay = day(soldOut = emptyList()).let { d ->
+            d.copy(themes = d.themes.map { it.copy(slots = emptyList(), closeMissing = true) })
+        }
+
+        val result = sync.sync(emptyDay)
+
+        assertTrue(result.transitions.isEmpty(), "가능 → 마감 은 전이가 아니다")
+        assertEquals(6, slots.count().toInt(), "지우지 않는다 — 감시가 그 행을 가리킨다")
+        assertTrue(slots.findAll().none { it.available }, "전에 가능이던 회차가 가짜 빈자리로 남았다")
+    }
+
+    @Test
+    fun `closeMissing 이 꺼져 있으면 응답에 없는 회차는 그대로다 — 다른 매장 동작은 안 바뀐다`() {
+        sync.sync(day(soldOut = listOf(1)))
+        val partial = day(soldOut = listOf(1)).let { d -> d.copy(themes = d.themes.map { it.copy(slots = it.slots.take(2)) }) }
+
+        sync.sync(partial)
+
+        assertEquals(5, slots.findAll().count { it.available })
+    }
+
     // --- 헬퍼 ---
 
     /** [soldOut] 은 [TIMES] 의 인덱스. 나머지는 예약 가능으로 만든다. */

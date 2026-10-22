@@ -87,6 +87,8 @@ object BranchRegions {
         "escapers-hongdae1" to "홍대",
         "escapers-hongdae2" to "홍대",
         "questionmark-hongdae" to "홍대",
+        "deepthinker-hongdae" to "홍대",
+        "showroom404-hongdae" to "홍대",
 
         "play33-konkuk" to "건대",
         "pointnine-konkuk" to "건대",
