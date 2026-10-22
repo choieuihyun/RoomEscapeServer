@@ -25,7 +25,7 @@ object BranchRegions {
 
     /**
      * 근거: 지점 이름 · 플레이방탈 지역 목록(강남 2026-10-21 · 홍대 2026-10-22) · 조사 문서 주소.
-     * null 은 주소를 확인하지 못한 지점이다 ([매장 정보.md] "그 밖").
+     * null 은 주소를 확인하지 못한 지점이다 ([매장 정보.md] "그 밖"). 2026-10-23 미스테리인을 채워 지금은 없다.
      */
     private val byKey: Map<String, String?> = mapOf(
         // 강남 — 키이스케이프 넷(LOG_IN·STATION·후즈데어·메모리컴퍼니)은 이름에 지역이 없다. 플레이방탈 강남 목록으로 확인
@@ -99,15 +99,14 @@ object BranchRegions {
         "playpointlab-tantan" to "부산",
         "playpointlab-haeundae" to "부산",
         "diaegg-seomyeon" to "부산",
+        // 다이아에그 위치 페이지 — 부산진구 중앙대로692번길 37 (서면역 500m · 2026-10-23 확인 · 전엔 몰라서 null)
+        "diaegg-mysteryin" to "부산",
 
         "jigubyeol-daegu" to "대구",
         "play33-daejeon" to "대전",
         "play33-suwon" to "수원",
         "zeroworld-gimpo" to "김포",
         "keyescape-everland" to "용인",
-
-        // 주소 미확인 — 같은 다이아에그 사이트지만 미스테리인이 서면에 있는지는 안 봤다
-        "diaegg-mysteryin" to null,
     )
 
     fun of(branchKey: String): String? = byKey[branchKey]
