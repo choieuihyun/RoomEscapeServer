@@ -35,6 +35,7 @@ class PlayPointLabParserTest {
     private val haeundae = fixture("playpointlab-haeundae-2026-09-11.html")
     private val gangnam = fixture("playpointlab-gangnam-2026-10-21.html")
     private val hongdae = fixture("playpointlab-hongdae-2026-10-22.html")
+    private val masterkeyKonkuk = fixture("playpointlab-masterkey-konkuk-2026-10-24.html")
 
     @Test
     fun `지점마다 테마가 다르다`() {
@@ -60,6 +61,7 @@ class PlayPointLabParserTest {
         assertEquals(setOf("201", "202", "203", "204", "206", "223"), parser.roomIds(haeundae))
         assertEquals(setOf("193", "194", "195", "196", "208", "209"), parser.roomIds(gangnam))
         assertEquals(setOf("71", "72", "73"), parser.roomIds(hongdae))
+        assertEquals(setOf("212", "154", "155"), parser.roomIds(masterkeyKonkuk))
 
         // 네 지점의 room-id 가 하나도 안 겹쳐야 이 대조가 성립한다
         val sets = PlayPointLabBranch.entries.map { it.roomIds }
@@ -73,6 +75,7 @@ class PlayPointLabParserTest {
                 PlayPointLabBranch.HAEUNDAE -> haeundae
                 PlayPointLabBranch.GANGNAM -> gangnam
                 PlayPointLabBranch.HONGDAE -> hongdae
+                PlayPointLabBranch.KONKUK -> masterkeyKonkuk
             }
             assertEquals(branch.roomIds, parser.roomIds(html), "${branch.branchName} room-id 불일치")
         }
@@ -84,6 +87,17 @@ class PlayPointLabParserTest {
         val themes = parser.parse(hongdae).themes
         assertEquals(listOf("71", "72", "73"), themes.map { it.externalId })
         assertEquals(33 to 31, themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+    }
+
+    @Test
+    fun `마스터키 건대 — 분 없는 소요시간 태그 · 지점별 브랜드`() {
+        // #75분 · #70 · #60 — "분" 이 없는 태그를 장르로 섞지 않는다
+        val themes = parser.parse(masterkeyKonkuk).themes
+        assertEquals(31 to 25, themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+        assertEquals(setOf(75, 70, 60), themes.mapNotNull { it.runningMinutes }.toSet())
+        assertTrue(themes.none { (it.genre ?: "").any(Char::isDigit) }, "숫자가 장르에 섞였다: ${themes.map { it.genre }}")
+        assertEquals("마스터키", PlayPointLabBranch.KONKUK.toStoreRef().brand)
+        assertEquals("플레이포인트랩", PlayPointLabBranch.GANGNAM.toStoreRef().brand)
     }
 
     @Test

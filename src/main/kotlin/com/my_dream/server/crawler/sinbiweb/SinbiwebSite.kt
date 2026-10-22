@@ -96,7 +96,7 @@ object SinbiwebSites {
     )
 
     /**
-     * 지점이 여섯이다(대구 둘 · 강남 둘 · 건대 · 천안). **강남 둘만 넣었다** — 이번 범위가 강남이다.
+     * 지점이 여섯이다(대구 둘 · 강남 둘 · 건대 · 천안). 강남 둘(2026-10-21)과 건대(7 · 2026-10-22)를 넣었다 — 대구 · 천안은 아직 범위 밖이다.
      * 번호가 띄엄띄엄(1·11·5·6·7·12)이라 차례로 돌리면 안 된다. **지점을 빼고 부르면 대구 본점이 답한다.**
      */
     val GOLDKEY = SinbiwebSite(
@@ -106,6 +106,8 @@ object SinbiwebSites {
         branches = listOf(
             SinbiwebBranch(5, "강남점(타임스퀘어)", "goldkey-gangnam-timesquare"),
             SinbiwebBranch(6, "강남점(플라워로드)", "goldkey-gangnam-flowerroad"),
+            // 사이트 표기 "황금열쇠 방탈출카페 건대점" · 플레이방탈은 "건대점 (유토피아호)" — 매장 인스타가 goldenkey_utopia 다
+            SinbiwebBranch(7, "건대점", "goldkey-konkuk"),
         ),
         branchReadback = BranchReadback.SELECT,
     )

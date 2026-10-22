@@ -19,6 +19,9 @@ import kotlin.test.assertTrue
  * | WOW 홍대점(S13) 10-23 | 3 | 27 · 26 | 이름 끝 "60분" 을 소요시간으로 옮기고 지점 꼬리표를 뗀다 |
  * | 없는 지점(S99) | 0 | — | hidden JIJEM 은 보낸 값을 돌려준다 — 테마 목록이 비어 끊긴다 |
  * | S9 2027-10-22 (1년 뒤) | 5 | 전부 가능 | 매장이 정말 다 연다 — 사용자가 사이트에서 확인. 묻는 범위는 우리가 정한다(+14) |
+ * | **건대 (2026-10-22 받음)** | | | |
+ * | 건대 1호점(S6) 10-24 | 6 | 57 · 52 | 꼬리표가 지점 이름과 다르다(`_건대점`) · 괄호 안 소요시간(`파커4(80분 Premium)`) |
+ * | 건대 2호점(S8) 10-24 | 3 | 26 · 17 | 공백이 든 꼬리표(`_건대 2호점`) |
  */
 class MurderParkerTest {
 
@@ -59,6 +62,27 @@ class MurderParkerTest {
         assertFailsWith<MurderParkerCrawlException> { crawler.parse(hongdae1, fri, fixture("murderparker-s13-2026-10-23.html")) }
         // 없는 지점: 200 · 테마 0개
         assertFailsWith<MurderParkerCrawlException> { crawler.parse(hongdae1, fri, fixture("murderparker-s99-2026-10-23-없는지점.html")) }
+    }
+
+    @Test
+    fun `건대 두 지점 — 꼬리표가 지점 이름과 달라도 읽고, 괄호 안 소요시간을 읽는다`() {
+        val sat = LocalDate.of(2026, 10, 24)
+        val one = MurderParker.BRANCHES.first { it.jijem == "S6" }
+        val two = MurderParker.BRANCHES.first { it.jijem == "S8" }
+
+        val d1 = crawler.parse(one, sat, fixture("murderparker-s6-2026-10-24.html"))
+        assertEquals(listOf("음대출신 김수학", "파커4(80분 Premium)", "우리 꼰대 진분홍", "여행(70분 Premium)", "꽁노리", "어은꿈이진루다"), d1.themes.map { it.themeName })
+        assertEquals(57 to 52, d1.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+        assertEquals(80, d1.themes.first { it.externalId == "B" }.runningMinutes, "괄호 안 80분")
+        assertEquals(null, d1.themes.first { it.externalId == "A" }.runningMinutes)
+
+        val d2 = crawler.parse(two, sat, fixture("murderparker-s8-2026-10-24.html"))
+        assertEquals(listOf("그림가문", "특수사건대응반", "미로(me路)"), d2.themes.map { it.themeName })
+        assertEquals(26 to 17, d2.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+
+        // 건대 두 지점이 서로 덮지 않는다
+        assertFailsWith<MurderParkerCrawlException> { crawler.parse(two, sat, fixture("murderparker-s6-2026-10-24.html")) }
+        assertFailsWith<MurderParkerCrawlException> { crawler.parse(one, sat, fixture("murderparker-s8-2026-10-24.html")) }
     }
 
     @Test

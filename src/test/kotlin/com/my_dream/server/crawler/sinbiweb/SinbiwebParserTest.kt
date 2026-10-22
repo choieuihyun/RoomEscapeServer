@@ -32,6 +32,7 @@ import kotlin.test.assertTrue
  * | 위욜 10-24 | 3 | 28 · 13 | 방화벽 매장 · 첫·끝 회차가 늘 마감 |
  * | 해피앤딩 10-24 | 4 | 45 · 38 | 괄호가 이름에 붙은 테마(`어?계인씨!(야외활동O)`)를 장르로 자르지 않는다 |
  * | 스피키지 10-28 휴무 | 0 | — | 날짜가 앞에 붙은 휴무 문구(`2026-10-28<br><br>지점휴무일 입니다`)도 정상 |
+ * | 황금열쇠 7번(건대) 10-24 | 2 | 20 · 4 | 같은 사이트 세 번째 지점 — select 되읽기로 강남 둘과 가른다 |
  * | 퀘스천마크 10-24 | 2 | 15 · 2 | **이름이 똑같은 별개 테마 둘** — 포스터 번호로 가른다(매장 기믹 · 사용자 확인). 휴대폰 · 메일은 지웠다 |
  */
 class SinbiwebParserTest {
@@ -152,6 +153,19 @@ class SinbiwebParserTest {
 
     private val goldkeyFlower = SinbiwebSites.GOLDKEY.branches.first { it.zizum == 6 }
     private val goldkeyTimes = SinbiwebSites.GOLDKEY.branches.first { it.zizum == 5 }
+
+    @Test
+    fun `황금열쇠 건대 — 같은 사이트 세 번째 지점`() {
+        val konkuk = SinbiwebSites.GOLDKEY.branches.first { it.zizum == 7 }
+        val html = fixture("sinbiweb-goldkey-7-2026-10-24.html")
+        val day = crawler.validate(SinbiwebSites.GOLDKEY, konkuk, LocalDate.of(2026, 10, 24), html)
+        assertEquals("goldkey-konkuk", day.store.key)
+        assertEquals(listOf("fl[ae]sh", "NOW HERE"), day.themes.map { it.themeName })
+        assertEquals(listOf("공포,스릴러", "잠입"), day.themes.map { it.genre })
+        assertEquals(20 to 4, counts(html, SinbiwebSites.GOLDKEY))
+        // 건대 응답을 강남으로 읽으면 끊는다
+        assertFailsWith<SinbiwebCrawlException> { crawler.validate(SinbiwebSites.GOLDKEY, goldkeyFlower, LocalDate.of(2026, 10, 24), html) }
+    }
 
     @Test
     fun `물어본 지점과 날짜면 통과한다`() {

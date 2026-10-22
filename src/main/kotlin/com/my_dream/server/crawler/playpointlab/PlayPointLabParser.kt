@@ -133,7 +133,11 @@ class PlayPointLabParser {
          *  상대경로가 섞여 나올 때를 대비해 base 를 준다 */
         private const val BASE_URI = "https://" + PlayPointLabBranch.HOST + "/"
 
-        private val RUNNING = Regex("^([0-9]+)\\s*분$")
+        /**
+         * `75분` · `70` · `:60분` — 마스터키 건대(2026-10-22)는 `#70` · `#60` 처럼 "분" 이 없고, 노바홍대는 `#:60분` 이었다.
+         * "분" 을 꼭 요구하면 시간이 비고 숫자가 장르에 섞인다. 두세 자리 숫자만 있는 태그를 시간으로 본다(한 자리 숫자는 장르에 남는다)
+         */
+        private val RUNNING = Regex("^:?\\s*([0-9]{2,3})\\s*분?$")
         private val DIFFICULTY = Regex("난이도\\s*([0-9]+(?:\\.[0-9]+)?)")
     }
 }

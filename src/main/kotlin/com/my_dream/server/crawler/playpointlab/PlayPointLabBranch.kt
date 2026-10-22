@@ -34,6 +34,11 @@ enum class PlayPointLabBranch(
      * 조용히 다른 지점 데이터를 먹는 것보다 낫다고 보고 그렇게 뒀다.
      */
     val roomIds: Set<String>,
+    /**
+     * 지점 카드에 붙은 브랜드(`[플레이포인트랩]` · `[마스터키]` · `[마스터키노바]`). **사용자에게 나가는 매장 이름**이라
+     * 디렉터리 이름으로 뭉개면 그 매장을 못 찾는다 (조사 문서 ⓒ). 2026-10-22 건대(마스터키)를 넣으며 지점별로 내렸다
+     */
+    val brand: String = BRAND,
 ) {
     SEOMYEON_ORIGIN(44, "부산서면오리진점", "playpointlab-seomyeon-origin", setOf("220", "222", "224", "234")),
     TANTAN_STREET(43, "서면탄탄스트리트점", "playpointlab-tantan", setOf("217", "218", "219")),
@@ -43,11 +48,13 @@ enum class PlayPointLabBranch(
     // 2026-10-22 실측. 플레이방탈은 홍대에 bid 11·12·13 을 걸지만 12 는 없는 지점(302), 13 은 안양점이다.
     // 41 노바홍대점(마스터키노바)은 넣지 않았다 — teraspace.co.kr 과 같은 매장이라 어느 경로가 진짜인지 정한 뒤에 (조사 문서 "2026-10-22 홍대 조사")
     HONGDAE(11, "홍대점", "playpointlab-hongdae", setOf("71", "72", "73")),
+    // 2026-10-22 실측. 카드 브랜드가 [마스터키]다 — 사용자에게 "마스터키 건대점" 으로 나가야 찾는다
+    KONKUK(26, "건대점", "masterkey-konkuk", setOf("212", "154", "155"), brand = "마스터키"),
     ;
 
     val host: String get() = HOST
 
-    fun toStoreRef() = StoreRef(key = key, brand = BRAND, branchName = branchName)
+    fun toStoreRef() = StoreRef(key = key, brand = brand, branchName = branchName)
 
     val openDays: Int get() = OPEN_DAYS
 

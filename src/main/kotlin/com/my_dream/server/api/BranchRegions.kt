@@ -91,6 +91,11 @@ object BranchRegions {
         "showroom404-hongdae" to "홍대",
 
         "play33-konkuk" to "건대",
+        "playtheworld-konkuk" to "건대",
+        "murderparker-konkuk1" to "건대",
+        "murderparker-konkuk2" to "건대",
+        "goldkey-konkuk" to "건대",
+        "masterkey-konkuk" to "건대",
         "pointnine-konkuk" to "건대",
         "zeroworld-dive-konkuk" to "건대",
 

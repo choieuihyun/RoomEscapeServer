@@ -55,6 +55,9 @@ object MurderParker {
     val BRANCHES = listOf(
         MurderParkerBranch("S9", "홍대 1호점", "murderparker-hongdae1", "_홍대1호점"),
         MurderParkerBranch("S13", "WOW 홍대점", "murderparker-wow-hongdae", "_WOW홍대점"),
+        // 건대 (2026-10-22) — 꼬리표가 지점 이름과 다르다: 드롭다운은 "건대1호점" 인데 테마 꼬리표는 "_건대점", 2호점은 공백이 든 "_건대 2호점"
+        MurderParkerBranch("S6", "건대 1호점", "murderparker-konkuk1", "_건대점"),
+        MurderParkerBranch("S8", "건대 2호점", "murderparker-konkuk2", "_건대 2호점"),
     )
 }
 
@@ -125,16 +128,18 @@ class MurderParkerCrawler(private val rateLimiter: HostRateLimiter) {
             Slot(time, available)
         }.toList()
 
-        // 이름에서 지점 꼬리표를 떼고, 끝에 붙은 "60분" 은 소요시간으로 옮긴다 — "홈그라운드(Home Ground) 60분_WOW홍대점" → "홈그라운드(Home Ground)"
+        // 이름에서 지점 꼬리표를 떼고, 끝에 붙은 "60분" 은 소요시간으로 옮긴다 — "홈그라운드(Home Ground) 60분_WOW홍대점" → "홈그라운드(Home Ground)".
+        // 괄호 안 표기("파커4(80분 Premium)" · 건대)는 이름에 남기고 소요시간만 읽는다 — 괄호째가 매장이 부르는 이름이다
         val base = fullName.removeSuffix(branch.suffix).trim()
         val minutes = TRAILING_MINUTES.find(base)
+        val inParens = if (minutes == null) PAREN_MINUTES.find(base) else null
         return ThemeSchedule(
             externalId = code,
             themeName = minutes?.let { base.removeRange(it.range).trim() } ?: base,
             posterUrl = POSTER.find(block)?.groupValues?.get(1)?.let { "http://${MurderParker.HOST}$it" },
             genre = null,
             capacity = CAPACITY.find(block)?.groupValues?.get(1),
-            runningMinutes = minutes?.groupValues?.get(1)?.toInt(),
+            runningMinutes = (minutes ?: inParens)?.groupValues?.get(1)?.toInt(),
             horrorLevel = null,
             difficulty = null,
             slots = slots.sortedBy { it.time },
@@ -149,6 +154,7 @@ class MurderParkerCrawler(private val rateLimiter: HostRateLimiter) {
         private val TITLE = Regex("""<h3[^>]*>\s*([^<]*?)\s*</h3>""")
         private val SLOT = Regex("""<a href="([^"]*)"\s*/>\s*<li[^>]*>\s*<span class="time"[^>]*>\s*([0-9]{1,2}:[0-9]{2})\s*</span>""")
         private val TRAILING_MINUTES = Regex("""\s*([0-9]{2,3})분$""")
+        private val PAREN_MINUTES = Regex("""\(([0-9]{2,3})분[^)]*\)""")
         private val CAPACITY = Regex("""적정인원\s*:\s*<b[^>]*>\s*([0-9]+\s*~\s*[0-9]+명)""")
         private val POSTER = Regex("""<img src="(/upload_file/room/[^"]+)"""")
     }

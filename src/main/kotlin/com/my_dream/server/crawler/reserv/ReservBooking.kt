@@ -21,7 +21,9 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -75,7 +77,21 @@ object ReservSites {
         skipThemes = setOf(342L),
     )
 
-    val ALL = listOf(ROOMSA_GANGNAM, PAGETODAY)
+    /**
+     * 플레이더월드 건대점 (2026-10-22). 같은 회사의 강남점 · 대전은행점은 `naver_only:true`(네이버 전용)라 안 붙고, 건대점은 `false` 다.
+     * 테마마다 네이버 상품 정보(`booking_url`)도 붙어 있다 — 네이버와 재고를 나눠 쓰는 것으로 보이지만(추정) 자체 예약 폼이 있다.
+     * 창 14일(start_date~end_date · 14:23 실측). robots `Allow:/` · 금지 문구 없음(JS 11조각 확인)
+     */
+    val PLAYTHEWORLD_KONKUK = ReservSite(
+        brand = "플레이더월드",
+        host = "reservation.playthe.world",
+        branchName = "건대점",
+        key = "playtheworld-konkuk",
+        keycode = "mtNDxcCKEJKFB1p7",
+        openDays = 14,
+    )
+
+    val ALL = listOf(ROOMSA_GANGNAM, PAGETODAY, PLAYTHEWORLD_KONKUK)
 }
 
 class ReservCrawlException(message: String) : RuntimeException(message)
@@ -88,7 +104,8 @@ class ReservCrawler(private val rateLimiter: HostRateLimiter) {
 
     /** 지점별 마지막 응답. 같은 바퀴의 날짜 작업들이 나눠 쓴다 */
     private val cache = ConcurrentHashMap<String, Pair<Instant, String>>()
-    internal var clock: Clock = Clock.systemDefaultZone()
+    /** 매장 시각이다 — "오늘 지난 회차" 를 가린다. 서버 시간대에 기대지 않는다 */
+    internal var clock: Clock = Clock.system(ZoneId.of("Asia/Seoul"))
 
     fun fetch(site: ReservSite, date: LocalDate): DaySchedule = parse(site, date, body(site))
 
@@ -131,7 +148,7 @@ class ReservCrawler(private val rateLimiter: HostRateLimiter) {
 
         val themes = data.path("themes").toList()
             .filterNot { it.path("is_deleted").asBoolean(false) || it.path("id").asLong(0) in site.skipThemes }
-            .map { theme(it, date) }
+            .map { theme(it, date, LocalDateTime.now(clock)) }
         if (themes.isEmpty()) throw ReservCrawlException("테마가 0개 — 지점이 비었거나 응답 모양이 바뀌었다: ${site.brand}")
 
         return DaySchedule(
@@ -147,14 +164,17 @@ class ReservCrawler(private val rateLimiter: HostRateLimiter) {
      * 판정은 `can_book`. 488회차에서 `left_stock`(1/0)과 늘 같이 움직였다(2026-10-21 룸즈에이 실측).
      * ⚠️ 창 마지막 날은 진짜 테마의 회차가 0개일 수 있다(아직 안 연 날) — 0개 테마도 그대로 넘긴다(D22)
      */
-    private fun theme(node: JsonNode, date: LocalDate): ThemeSchedule {
+    private fun theme(node: JsonNode, date: LocalDate, now: LocalDateTime): ThemeSchedule {
         val day = date.toString()
         val slots = node.path("slots").toList()
             .filter { it.path("day_string").asString("") == day }
             .map { s ->
                 val time = runCatching { LocalTime.parse(s.path("integer_to_time").asString("")) }.getOrNull()
                     ?: throw ReservCrawlException("시각을 못 읽었다: ${node.path("title").asString("")} $day ${s.path("integer_to_time")}")
-                Slot(time, available = s.path("can_book").asBoolean(false))
+                // 🕳️ 오늘 이미 지난 회차가 can_book:true 로 온다(도어이스케이프 · 플레이더월드 · 2026-10-22). 화면은 스스로 걸러 낸다 —
+                // 그대로 두면 지난 회차가 "가능" 으로 저장되고, 다음 날 아침엔 그 자리가 빈자리처럼 남는다
+                val past = date == now.toLocalDate() && !time.isAfter(now.toLocalTime())
+                Slot(time, available = s.path("can_book").asBoolean(false) && !past)
             }
             .sortedBy { it.time }
         return ThemeSchedule(
