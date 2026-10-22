@@ -76,6 +76,12 @@ object BranchRegions {
         "signescape-sangsu" to "홍대",
         "smurf-hongdae" to "홍대",
         "playpointlab-hongdae" to "홍대",
+        "seoulescape-hongdae" to "홍대",
+        // 합정(독막로)이지만 플레이방탈이 홍대로 묶는다
+        "secretgarden-midnight" to "홍대",
+        "xcape-hongdae" to "홍대",
+        "roomle-hongdae1" to "홍대",
+        "decoder-hongdae" to "홍대",
 
         "play33-konkuk" to "건대",
         "pointnine-konkuk" to "건대",

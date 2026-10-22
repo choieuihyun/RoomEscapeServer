@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="Expires" content="-1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+    <meta http-equiv="Content-Language" content="ko" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Style-Type" content="text/css" />
+    <meta http-equiv="Content-Script-Type" content="text/javascript" />
+    <meta http-equiv="imagetoolbar" content="no" />
+    <meta name="referrer" content="always" />
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1" />
+    <meta name="csrf-token" id="csrf" content="g64ZsRm8OQl4GkwdnsNoxR7PSFyuXYvPDdHWZu08">
+    <meta name="locale" id="locale" content="ko">
+    <meta name="format-detection" content="address=no, email=no" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="author" contents="토니빌리" />
+    <meta name="publisher" content="토니빌리" />
+    <meta name="reply-to(email)" content="[메일 지움]" />
+    <meta name="title" content=" 서울이스케이프룸 : 예약하기 " />
+    <meta name="description" content=" 예약에 오신걸 환영합니다. " />
+    <meta name="keywords" content="서울이스케이프룸, 서울, 이스케이프 룸, 이스케이프, 방탈출, 방탈출 카페, 서울 방탈출" />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.seoul-escape.com/reservation" />
+    <meta property="og:site_name" content="서울이스케이프룸" />
+    <meta property="og:title" content=" 서울이스케이프룸 : 예약하기 " />
+    <meta property="og:description" content=" 예약에 오신걸 환영합니다. " />
+    <meta property="og:image" content="https://www.seoul-escape.com/images/symbol.jpg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content=" 서울이스케이프룸 : 예약하기 " />
+    <meta name="twitter:image" content="https://www.seoul-escape.com/images/symbol.jpg" />
+    <meta name="twitter:domain" content="https://www.seoul-escape.com/reservation" />
+    <meta name="twitter:description" content=" 예약에 오신걸 환영합니다. " />
+    <link rel="canonical" href="https://www.seoul-escape.com/reservation" />
+    <link rel="shortcut icon" href="https://www.seoul-escape.com/favicon.ico" type="image/x-icon" />
+        <link rel="stylesheet" href="/css/common.css?id=782431d58bb337ff49f9b51812cd94f6">
+        <link rel="stylesheet" href="/css/reservation.css?id=10636d65a72a6231c73dfa1f057856e4">
+    <title>
+                    서울이스케이프룸 : 예약하기            </title>
+</head>
+<body>
+
+
+    <header class="header" id="header">
+        <div class="container clear-b">
+            <a class="header-logo" href="https://www.seoul-escape.com">
+                <img src="https://www.seoul-escape.com/images/logo.png" alt="서울이스케이프룸">
+            </a>
+        </div>
+    </header>
+
+
+    <button class="header-btn" id="eveLayerToggleBtn" type="button"><em></em></button>
+
+
+    <nav class="nav bs-bb" id="nav">
+        <div class="container clear-b">
+            <ul class="nav-list clear-b ff-bhs size1">
+                <li class="lang">
+                                                                <a href="https://www.seoul-escape.com/reservation?locale=en">ENGLISH</a>
+                                    </li>
+                <li><a href="https://www.seoul-escape.com/about">서이룸</a></li>
+                <li><a href="https://www.seoul-escape.com/room">테마</a></li>
+                <li><a href="https://www.seoul-escape.com/reservation">예약</a></li>
+                <li><a href="https://www.seoul-escape.com/map">찾아오는길</a></li>
+                <li><a href="https://www.seoul-escape.com/notice">공지</a></li>
+            </ul>
+        </div>
+    </nav>
+
+
+    <article class="wrap" id="wrap">
+            
+
+    <div class="reservation-list o-h">
+
+
+        <div class="subtitle">
+    <img class="at1" src="https://www.seoul-escape.com/images/header.png" />
+    <img class="at2" src="https://www.seoul-escape.com/images/header_text1.png" />
+    <img class="at3" src="https://www.seoul-escape.com/images/header_text2.png" />
+    <div class="container p-r">
+        <h1 class="ff-bhs size1">
+                            RESERVATION
+                    </h1>
+    </div>
+</div>
+        <br class="sm-none" />
+        <br id="list" />
+
+
+        <div class="container">
+            <div class="clear-b pax3">
+                <a class="reservation-list-button ff-bhs" href="https://www.seoul-escape.com/reservation/confirm">예약취소/확인</a>
+            </div>
+
+            <h2 class="ff-bhs pax3"><span>예약일/테마 선택</span></h2>
+            <br class="sm-none" />
+            <br />
+
+            <form class="search ta-c clear-b" action="https://www.seoul-escape.com/reservation#list">
+                <div class="search-select clear-b pax3 ">
+                    <span class="ff-bhs bs-bb">지점</span>
+                    <label class="bs-bb arrow-before">
+                        <select class="bs-bb" name="branch" value="1" onChange="location.href='/reservation?branch='+this.value+'#list'">
+                                                            <option value="1">
+                                                                            홍대점
+                                                                    </option>
+                                                            <option value="4">
+                                                                            대구 동성로점
+                                                                    </option>
+                                                            <option value="6">
+                                                                            부산 서면점
+                                                                    </option>
+                                                    </select>
+                    </label>
+                </div>
+                <div class="search-select clear-b pax3 ">
+                    <span class="ff-bhs bs-bb">테마</span>
+                    <label class="bs-bb arrow-before">
+                        <select class="bs-bb" name="theme" value="" onChange="this.form.submit()">
+                            <option value="">전체</option>
+                                                            <option value="48">
+                                                                            오시리스
+                                                                    </option>
+                                                    </select>
+                    </label>
+                </div>
+                <div class="search-date clear-b pax3 ">
+                    <span class="ff-bhs bs-bb">예약날짜</span>
+                    <label class="bs-bb arrow-before">
+                        <input class="bs-bb mask-date" type="text" readonly name="date" value="2026-10-23" onChange="this.form.submit()">
+                    </label>
+                </div>
+            </form>
+            <br />
+        </div>
+
+
+        <div>
+                            <section class="res-item clear-b active pax3">
+                    <div class="container">
+                        <figure class="res-item-img pax3">
+                            <img src="https://www.seoul-escape.com/storage/theme/2026_02/24/cOC4Q16XkGyxJTpxRTfrA5C7C2MMUMpgHTMKUHnA.png" alt="오시리스">
+                        </figure>
+                        <div class="res-item-content">
+                            <small class="ff-bhs">
+                                                                    시즌4 에피소드4
+                                                            </small>
+                            <h3 class="ff-bhs pax3">
+                                                                    오시리스
+                                                            </h3>
+                            <table>
+                                                                                                    <tr class="pax3">
+                                        <th class="ff-bhs">지점</th>
+                                        <td>
+                                                                                            홍대점
+                                                                                    </td>
+                                    </tr>
+                                                                                                    <tr class="pax3">
+                                        <th class="ff-bhs">장르</th>
+                                        <td>
+                                                                                            SF/스릴러
+                                                                                    </td>
+                                    </tr>
+                                                                                                    <tr class="pax3">
+                                        <th class="ff-bhs">소요시간</th>
+                                        <td>
+                                                                                            65분
+                                                                                    </td>
+                                    </tr>
+                                                                                                    <tr class="pax3">
+                                        <th class="ff-bhs">참여인원</th>
+                                        <td>
+                                                                                            3~5
+                                                                                    </td>
+                                    </tr>
+                                                                                                    <tr class="pax3">
+                                        <th class="ff-bhs">공포</th>
+                                        <td>
+                                                                                            <div class="res-item-step size25 clear-b"> <span></span> <span></span> <span></span> <span></span> <span></span> </div>
+                                                                                    </td>
+                                    </tr>
+                                                                                                    <tr class="pax3">
+                                        <th class="ff-bhs">난이도</th>
+                                        <td>
+                                                                                            <div class="res-item-step size2 clear-b"> <span></span> <span></span> <span></span> <span></span> <span></span> </div>
+                                                                                        
+                                        </td>
+                                    </tr>
+                                                            </table>
+
+                            <ul class="res-times kit">
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">11:10</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">12:20</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">13:30</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">14:40</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">15:50</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">17:00</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">18:10</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">19:20</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">20:30</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">21:40</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                                    <li class="pax3">
+                                        <div class="res-times-btn">
+                                                                                            <button type="button">
+                                                    <label>예약불가</label>
+                                                    <span class="ff-bhs">22:50</span>
+                                                </button>
+                                                                                    </div>
+                                    </li>
+                                                            </ul>
+
+                        </div>
+                    </div>
+                </section>
+            
+        </div>
+
+        
+    </div>
+
+
+    <form çlass="d-n" method="post" action="https://www.seoul-escape.com/reservation/create#list" id="eveSubmitForm">
+        <input type="hidden" name="branch" />
+        <input type="hidden" name="theme" />
+        <input type="hidden" name="date" />
+        <input type="hidden" name="time" />
+        <input type="hidden" name="_token" value="g64ZsRm8OQl4GkwdnsNoxR7PSFyuXYvPDdHWZu08">    </form>
+
+
+    
+    </article>
+
+
+    <footer class="footer" id="footer">
+        <div class="container">
+            <ul class="footer-group">
+                <li>
+                    <dl class="footer-info">
+                                                    <dt class="ff-bhs pax3">서울이스케이프룸</dt>
+                            <dd class="pax3"><b>사업자등록번호</b> : 810-88-00083</dd>
+                            <dd class="pax3"><b>주소</b> : 서울 마포구 와우산로 17길 11 3층</dd>
+                            
+                            <dd class="pax3"><b>이메일</b> : <a href="mailto:seoulescape1@gmail.com">seoulescape1@gmail.com</a></dd>
+                            <dd class="pax3"><br/><a href="https://www.seoul-escape.com/policy.pdf"><b>개인정보처리방침</b></a></dd>
+                                            </dl>
+                    <div class="footer-social pax3">
+                        <a class="insta" target="_blank" href="https://www.instagram.com/seoulescaperoom/"><img src="https://www.seoul-escape.com/images/social_instagram.png" alt="인스타그램"></a>
+                    </div>
+                </li>
+                <li>
+                    <div class="footer-message ff-bhs">
+                        <img class="img1 pax3" src="https://www.seoul-escape.com/images/logo_symbol.png"/>
+                        <div class="pax3">
+                            welcome!<br/>
+                            to the seoul escape room.
+                        </div>
+                        <img class="img2 pax3" src="https://www.seoul-escape.com/images/logo_text.png"/>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div class="footer-copyright ff-bhs">
+            <div class="container">
+                                    COPYRIGHT 2015. 서울이스케이프룸 ALL RIGHTS RESERVED.
+                    &nbsp; 사이트 제작 <a target="_blank" href="http://pf.kakao.com/_uWbZxj/chat"><u>토니빌리</u></a>
+                            </div>
+        </div>
+    </footer>
+
+
+    <script src="/js/manifest.js?id=81cf86f3c6dcc0082a67b8be92a01b31"></script>
+    <script src="/js/vendor.js?id=88ed6f1bb604caee5aff7f5915037d09"></script>
+        <script src="/js/common.js?id=629efa4b0c48d7451de2cd81de53b699"></script>
+        <script src="/js/reservation.js?id=738ca6b05e510a2c81c0566a45a1e57f"></script>
+    
+
+</body>
+</html>
