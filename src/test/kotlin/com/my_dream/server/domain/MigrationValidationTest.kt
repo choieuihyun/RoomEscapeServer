@@ -14,6 +14,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.postgresql.PostgreSQLContainer
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -62,6 +63,7 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM club_notice")
         jdbc.update("DELETE FROM settlement_transfer")
         jdbc.update("DELETE FROM settlement_share")
         jdbc.update("DELETE FROM settlement_item")
@@ -83,7 +85,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V15 까지 돌고 엔티티와 맞는다`() {
+    fun `V16 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -248,6 +250,18 @@ class MigrationValidationTest @Autowired constructor(
         assertFailsWith<DataIntegrityViolationException> {
             jdbc.update("UPDATE member_profile SET residence = ? WHERE user_id = 'old'", "🙂".repeat(21))
         }
+    }
+
+    @Test
+    fun `V16 공지 — 이모지 500자는 들어가고 501자는 안 되고, 지우고 넣으면 id 가 커진다`() {
+        val insert = "INSERT INTO club_notice (text, updated_at, updated_by) VALUES (?, now(), 'a')"
+        jdbc.update(insert, "🙂".repeat(500))
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "🙂".repeat(501)) }
+        val first = jdbc.queryForObject("SELECT max(id) FROM club_notice", Long::class.java)!!
+        jdbc.update("DELETE FROM club_notice")
+        jdbc.update(insert, "새 공지")
+        // 앱이 닫은 공지를 id 로 기억한다 — 다 지운 뒤에도 id 가 되돌아가면 새 공지가 "닫힌 것" 으로 숨는다
+        assertTrue(jdbc.queryForObject("SELECT max(id) FROM club_notice", Long::class.java)!! > first)
     }
 
     @Test

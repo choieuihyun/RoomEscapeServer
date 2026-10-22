@@ -10,8 +10,8 @@ import kotlin.test.assertEquals
 /** 알림 문구 — 계약 §4.10 의 예시가 그대로 나오는지 */
 class ClubPushTextTest {
 
-    private fun event(title: String = "보드게임처럼", date: LocalDate? = LocalDate.of(2026, 10, 24), start: Int? = null, booked: Boolean = true) =
-        ClubEvent(title, date, start, null, null, 4, booked, null, "u", Instant.EPOCH, Instant.EPOCH)
+    private fun event(title: String = "보드게임처럼", date: LocalDate? = LocalDate.of(2026, 10, 24), start: Int? = null, booked: Boolean = true, end: Int? = null) =
+        ClubEvent(title, date, start, end, null, 4, booked, null, "u", Instant.EPOCH, Instant.EPOCH)
 
     private fun segs(e: ClubEvent, vararg s: Pair<Int, String>) = s.mapIndexed { i, (t, n) -> ClubEventSegment(e, i, n, null, null, t, null) }
 
@@ -46,5 +46,20 @@ class ClubPushTextTest {
         assertEquals("일정 자리가 다 찼어요" to "심야 · 10/24(토) · 4/4명", ClubPushText.full(e, s, 4))
         assertEquals("예약이 끝났어요" to "심야 · 10/24(토) 다음날 00:30", ClubPushText.booked(e, s))
         assertEquals("보드게임처럼 · 날짜 미정", ClubPushText.booked(event(date = null), emptyList()).second, "첫 시각이 없으면 뺀다")
+    }
+
+    @Test
+    fun `오전·오후 일정 — 정확히 0~719 · 720~1439 이고 구간이 없을 때만`() {
+        val am = event(title = "모임", start = 0, end = 719)
+        val pm = event(title = "모임", start = 720, end = 1439)
+        assertEquals("모임 · 오전", ClubPushText.reminder(am, emptyList()).second)
+        assertEquals("모임 · 10/24(토) 오전", ClubPushText.booked(am, emptyList()).second)
+        assertEquals("모임 · 10/24(토) 오후", ClubPushText.booked(pm, emptyList()).second)
+        assertEquals("오후 (아직 예약 전이에요)", ClubPushText.reminder(event(title = "", start = 720, end = 1439, booked = false), emptyList()).second)
+        // 끝이 조금이라도 다르면 시각이다 — 사람이 고른 "12:00~22:00" 을 "오후" 로 뭉개면 시각이 사라진다
+        assertEquals("모임 · 12:00", ClubPushText.reminder(event(title = "모임", start = 720, end = 1320), emptyList()).second)
+        assertEquals("모임 · 00:00", ClubPushText.reminder(event(title = "모임", start = 0), emptyList()).second)
+        // 구간이 있으면 구간이 먼저다
+        assertEquals("모임 · 10/24(토) 13:40", ClubPushText.booked(am, segs(am, 820 to "A")).second)
     }
 }

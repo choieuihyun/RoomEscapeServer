@@ -411,3 +411,9 @@ interface SettlementTransferRepository : JpaRepository<SettlementTransfer, Long>
 }
 
 interface PayInfoRepository : JpaRepository<PayInfo, String>
+
+interface ClubNoticeRepository : JpaRepository<ClubNotice, Long> {
+
+    /** 걸린 공지. 같은 순간 둘이 쓰면 잠깐 두 행일 수 있어 가장 나중 것 하나만 본다 (D46) */
+    fun findTopByOrderByIdDesc(): ClubNotice?
+}

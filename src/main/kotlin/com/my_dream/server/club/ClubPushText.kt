@@ -29,8 +29,7 @@ object ClubPushText {
     fun reminder(event: ClubEvent, segs: List<ClubEventSegment>): Pair<String, String> {
         val schedule = when {
             segs.isNotEmpty() -> joined(segs) { "${time(it.startMin)} ${it.themeName}" }
-            event.startMin != null -> time(event.startMin!!)
-            else -> "하루 종일"
+            else -> halfDay(event) ?: event.startMin?.let(::time) ?: "하루 종일"
         }
         val body = listOfNotNull(event.title.ifEmpty { null }, schedule).joinToString(" · ") +
             if (event.booked) "" else " (아직 예약 전이에요)"
@@ -41,10 +40,21 @@ object ClubPushText {
     fun full(event: ClubEvent, segs: List<ClubEventSegment>, capacity: Int): Pair<String, String> =
         "일정 자리가 다 찼어요" to "${what(event, segs)} · ${day(event.date)} · $capacity/${capacity}명"
 
-    /** 예약 완료: `{제목 또는 구간} · {날짜} {첫 시각}` — 첫 시각은 첫 구간 → 일정 시작 → 없으면 뺀다 */
+    /** 예약 완료: `{제목 또는 구간} · {날짜} {첫 시각}` — 첫 시각은 첫 구간 → 오전·오후 → 일정 시작 → 없으면 뺀다 */
     fun booked(event: ClubEvent, segs: List<ClubEventSegment>): Pair<String, String> {
-        val first = segs.firstOrNull()?.startMin ?: event.startMin
-        return "예약이 끝났어요" to listOfNotNull("${what(event, segs)} · ${day(event.date)}", first?.let(::time)).joinToString(" ")
+        val first = segs.firstOrNull()?.let { time(it.startMin) } ?: halfDay(event) ?: event.startMin?.let(::time)
+        return "예약이 끝났어요" to listOfNotNull("${what(event, segs)} · ${day(event.date)}", first).joinToString(" ")
+    }
+
+    /**
+     * 구간 없는 일정의 `오전`·`오후` (§4.10 · 2026-10-22). 앱이 "오전/오후" 체크를 **정확히** `0~719`·`720~1439` 로 저장한다 —
+     * 서버에 칸을 따로 두지 않았다. 이 값이 아니면 null(시각으로 보인다). 손으로 `00:00~11:59` 를 고른 일정도 `오전` 이 되지만,
+     * 그 둘은 같은 뜻이라 받아들였다
+     */
+    private fun halfDay(event: ClubEvent): String? = when (event.startMin to event.endMin) {
+        0 to 719 -> "오전"
+        720 to 1439 -> "오후"
+        else -> null
     }
 
     private fun what(event: ClubEvent, segs: List<ClubEventSegment>) = event.title.ifEmpty { joined(segs) { it.themeName } }

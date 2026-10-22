@@ -84,5 +84,8 @@ class ClubError(
         fun notTransferParty() = ClubError(HttpStatus.FORBIDDEN, "NOT_PARTICIPANT", "보내는 사람, 받는 사람, 만든 사람, 운영진만 체크할 수 있어요.")
         /** 코드는 하나, 문구는 칸마다 ([badProfile] 과 같다) — 계좌 글이 길어서 막혔는데 링크를 고치라고 하면 엉뚱한 칸을 고친다 */
         fun badPayInfo(message: String = "송금 정보를 다시 확인해 주세요.") = ClubError(HttpStatus.BAD_REQUEST, "BAD_PAYINFO", message)
+
+        // --- 홈 공지 (§4.14) ---
+        fun badNotice() = ClubError(HttpStatus.BAD_REQUEST, "BAD_NOTICE", "공지는 1~500자, 10줄까지 적을 수 있어요.")
     }
 }

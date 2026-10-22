@@ -214,13 +214,14 @@ GET    /api/club/wishes                  같은 테마를 원하는 사람끼리
 GET    /api/club/events/{id}/settlement  · PUT { version, items }    정산 — 송금 계산은 서버 (7단계 · §4.13)
 POST   /api/club/events/{id}/settlement/transfers  { fromUid, toUid, paid }   보냈어요 체크
 GET    /api/me/payinfo · PUT { bankText, kakaopayUrl }              내 송금 정보
+GET    /api/club/notice  · PUT { text, notify } · DELETE           홈 공지 — 하나만 · 쓰기는 운영진 · 없으면 null (§4.14)
 GET    /api/me/played                     내 해 본 테마      POST { themeName, themeKey?, … }   DELETE /api/me/played/{id}
 GET    /api/club/members/{uid}/played     멤버의 해 본 테마
 GET    /api/me/events?before=&beforeId=&limit=  내가 참여한 지난 일정 { events, total } — (date, id) 커서
 GET    /api/themes                        해 본 테마 고르기용 테마 목록 (로그인 없이)
 POST   /api/me/push-test                  테스트 알림 (로그인만 · 1분에 한 번)
 POST   /api/devices/status  { token }     이 기기가 내 알림 기기로 등록돼 있나
-       서버가 보내는 동호회 알림: 전날(20~22시 KST) · 마감 · 예약 완료 (5단계)
+       서버가 보내는 동호회 알림: 전날(20~22시 KST) · 마감 · 예약 완료 (5단계) · 새 공지(운영진이 체크할 때만)
 ```
 카카오는 서버가 확인한 뒤 Firebase 커스텀 토큰을 **직접 서명**해 돌려준다 — Admin SDK 없이 ([아키텍처.md](아키텍처.md) D29).
 관리자인지는 토큰이 아니라 **DB(`club_member`)** 로 본다 (D28).

@@ -92,7 +92,7 @@ class ClubAlerts(
  * 전역 설정은 앱 전체의 동작을 바꾼다
  */
 @Component
-class ClubAlertListener(private val alerts: ClubAlerts) {
+class ClubAlertListener(private val alerts: ClubAlerts, private val notices: NoticeService) {
 
     private val log = LoggerFactory.getLogger(javaClass)
     private val pool = Executors.newSingleThreadExecutor { Thread(it, "club-alerts").apply { isDaemon = true } }
@@ -102,6 +102,14 @@ class ClubAlertListener(private val alerts: ClubAlerts) {
         pool.execute {
             // 알림이 실패해도 그 요청은 이미 성공했다. 로그만 남긴다
             runCatching { alerts.send(change) }.onFailure { log.error("동호회 알림 실패 — {}", change, it) }
+        }
+    }
+
+    /** 공지 알림(D46)도 같은 스레드로 — 저장이 롤백되면 알림도 없고, "공지 올리기" 를 누른 사람은 FCM 을 기다리지 않는다 */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun on(posted: NoticePosted) {
+        pool.execute {
+            runCatching { notices.notifyMembers(posted) }.onFailure { log.error("공지 알림 실패 — 쓴 사람 {}", posted.author, it) }
         }
     }
 

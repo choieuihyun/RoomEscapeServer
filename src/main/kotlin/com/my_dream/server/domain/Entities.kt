@@ -412,6 +412,22 @@ class ClubWish(
 }
 
 /**
+ * 홈 공지 (D46). **늘 많아야 한 행**이다 — 쓸 때마다 지우고 새로 넣어 [id] 가 바뀐다(앱이 닫은 공지를 id 로 기억한다).
+ * [updatedBy] 는 uid 다. 닉네임은 읽을 때 멤버 행에서 가져온다 — 내보낸 운영진도 멤버 행은 남는다
+ */
+@Entity
+@Table(name = "club_notice")
+class ClubNotice(
+    @Column(nullable = false, length = 500) val text: String,
+    @Column(name = "updated_at", nullable = false) val updatedAt: Instant,
+    @Column(name = "updated_by", nullable = false) val updatedBy: String,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/**
  * 정산 머리 (D37). **[version] 은 손으로 올린다** — `@Version` 이 아니다. 계약은 "없으면 0, 첫 저장이 1" 인데
  * `@Version` 은 새 행이 0 에서 시작하고 flush 때 올라 응답에 옛 번호가 나간다(D31 의 함정).
  * 항목을 다 비워도 이 행은 남는다 — 지우면 version 이 0 으로 돌아가 낡은 화면이 덮어쓸 수 있다
