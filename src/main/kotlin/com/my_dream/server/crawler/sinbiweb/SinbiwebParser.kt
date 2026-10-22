@@ -51,18 +51,32 @@ class SinbiwebParser {
     /**
      * 드롭다운의 **사이트 테마 번호**. 이름이 바뀌어도 이력이 안 끊기게 이걸 키로 쓴다.
      * 황금열쇠처럼 드롭다운이 없는 매장은 빈 지도다 — 그때는 이름이 키가 된다 (ScheduleSyncService).
+     *
+     * **이름 하나에 번호가 여럿일 수 있다** — 퀘스천마크는 이름이 똑같은 별개 테마 둘(1 · 3)을 돌린다. 매장 기믹이다(사용자 확인 2026-10-22 ·
+     * 시간표가 서로 다르다). 그래서 이름 → 번호 **목록**으로 들고, 여럿이면 포스터 번호로 가른다 ([themeId]).
      */
-    private fun Document.themeIdsByName(): Map<String, String> =
+    private fun Document.themeIdsByName(): Map<String, List<String>> =
         select("select[name=s_theme_num] option[value~=^[0-9]+$]")
-            .associate { squash(it.text()) to it.attr("value").trim() }
+            .groupBy({ squash(it.text()) }, { it.attr("value").trim() })
 
-    private fun Element.toThemeSchedule(themeIds: Map<String, String>): ThemeSchedule {
+    /**
+     * 이름이 하나뿐이면 그 번호. 이름이 겹치면 **포스터 파일 번호**(`/file/theme/{번호}_a.jpg`)가 그 이름의 번호 중 하나일 때만 그것.
+     * 못 가르면 null — 그러면 두 테마가 같은 이름 키로 겹치고, [SinbiwebCrawler.validate] 가 저장 전에 끊는다
+     */
+    private fun Element.themeId(name: String, themeIds: Map<String, List<String>>): String? {
+        val candidates = themeIds[squash(name)].orEmpty()
+        if (candidates.size <= 1) return candidates.firstOrNull()
+        val poster = selectFirst(".theme_pic img")?.attr("src")?.let { POSTER_ID.find(it)?.groupValues?.get(1) }
+        return poster?.takeIf { it in candidates }
+    }
+
+    private fun Element.toThemeSchedule(themeIds: Map<String, List<String>>): ThemeSchedule {
         // wholeText — text() 는 공백을 하나로 합쳐서 장르를 가르는 "공백 두 칸" 이 사라진다
         val (name, genre) = splitNameAndGenre(selectFirst("h3.h3_theme")?.wholeText().orEmpty())
         val meta = select(".theme_div span").joinToString(" ") { it.text() }
         return ThemeSchedule(
             // 드롭다운이 있는데 못 맞추면 이름이 키가 된다. 그 경우는 SinbiwebParserTest 가 매장마다 막는다
-            externalId = themeIds[squash(name)],
+            externalId = themeId(name, themeIds),
             themeName = name,
             posterUrl = selectFirst(".theme_pic img")?.absUrl("src")?.ifBlank { null },
             genre = genre,
@@ -99,6 +113,9 @@ class SinbiwebParser {
          * - `지점휴무일 입니다` — 정기 휴무. **배포 첫날 Studio ESC 월요일에 실패로 잡혀 알았다** — 조사한 날이 수요일이었다
          */
         val NOT_OPEN = listOf("예약가능일이 아닙니다", "휴무일")
+
+        /** `../../file/theme/3_a.jpg` 의 3 — 드롭다운 번호와 같다 (퀘스천마크 1 · 3 에서 확인) */
+        private val POSTER_ID = Regex("/file/theme/([0-9]+)_")
 
         /** `인원 : 2~6명` · `인원 : 1~6명` */
         private val CAPACITY = Regex("인원\\s*:\\s*([0-9]+\\s*~\\s*[0-9]+\\s*명?)")

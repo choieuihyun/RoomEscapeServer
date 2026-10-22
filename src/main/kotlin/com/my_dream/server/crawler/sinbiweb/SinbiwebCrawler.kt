@@ -71,6 +71,13 @@ class SinbiwebCrawler(
             )
         }
 
+        // 저장 키(번호, 없으면 이름)가 겹치면 두 테마의 회차가 한 테마로 섞인다 — 같은 시각이면 한쪽이 다른 쪽을 덮는다.
+        // 이름이 같은 별개 테마(퀘스천마크)를 번호로 못 가른 날 이렇게 된다. 조용히 섞느니 끊는다
+        val keys = parsed.page.themes.map { it.externalId ?: it.themeName }
+        if (keys.size != keys.toSet().size) {
+            throw SinbiwebCrawlException("테마 키가 겹친다(이름이 같은 테마를 번호로 못 갈랐다): ${site.brand} ${branch.branchName} $date — $keys")
+        }
+
         if (parsed.page.themes.isEmpty() && !parsed.saysNotOpen) {
             throw SinbiwebCrawlException(
                 "테마가 0개인데 '범위 밖' 표시도 없다 — 없는 지점이거나 마크업이 바뀌었다: ${site.brand} ${branch.branchName} $date",

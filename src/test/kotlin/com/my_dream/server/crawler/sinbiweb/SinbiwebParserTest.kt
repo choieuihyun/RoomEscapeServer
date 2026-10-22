@@ -32,6 +32,7 @@ import kotlin.test.assertTrue
  * | 위욜 10-24 | 3 | 28 · 13 | 방화벽 매장 · 첫·끝 회차가 늘 마감 |
  * | 해피앤딩 10-24 | 4 | 45 · 38 | 괄호가 이름에 붙은 테마(`어?계인씨!(야외활동O)`)를 장르로 자르지 않는다 |
  * | 스피키지 10-28 휴무 | 0 | — | 날짜가 앞에 붙은 휴무 문구(`2026-10-28<br><br>지점휴무일 입니다`)도 정상 |
+ * | 퀘스천마크 10-24 | 2 | 15 · 2 | **이름이 똑같은 별개 테마 둘** — 포스터 번호로 가른다(매장 기믹 · 사용자 확인). 휴대폰 · 메일은 지웠다 |
  */
 class SinbiwebParserTest {
 
@@ -50,6 +51,7 @@ class SinbiwebParserTest {
     private val speakeasy = fixture("sinbiweb-speakeasy-2026-10-24.html")
     private val weyol = fixture("sinbiweb-weyol-2026-10-24.html")
     private val happyanding = fixture("sinbiweb-happyanding-2026-10-24.html")
+    private val questionmark = fixture("sinbiweb-questionmark-2026-10-24.html")
 
     private fun themes(html: String, site: SinbiwebSite) = parser.parse(html, site).page.themes
 
@@ -66,6 +68,28 @@ class SinbiwebParserTest {
         assertEquals(18 to 10, counts(speakeasy, SinbiwebSites.SPEAKEASY))
         assertEquals(28 to 13, counts(weyol, SinbiwebSites.WEYOL))
         assertEquals(45 to 38, counts(happyanding, SinbiwebSites.HAPPYANDING))
+        assertEquals(15 to 2, counts(questionmark, SinbiwebSites.QUESTION_MARK))
+    }
+
+    @Test
+    fun `이름이 똑같은 별개 테마는 포스터 번호로 가른다 — 퀘스천마크`() {
+        // 매장 기믹이다 — 같은 이름 · 다른 시간표(8칸 / 7칸). 이름으로 맞추면 둘 다 3번이 돼 한 테마로 섞인다
+        val q = themes(questionmark, SinbiwebSites.QUESTION_MARK)
+        assertEquals(listOf("퀘스천마크 ?", "퀘스천마크 ?"), q.map { it.themeName })
+        assertEquals(listOf("1", "3"), q.map { it.externalId })
+        assertEquals(listOf(8, 7), q.map { it.slots.size })
+        val day = crawler.validate(SinbiwebSites.QUESTION_MARK, SinbiwebSites.QUESTION_MARK.branches.single(), LocalDate.of(2026, 10, 24), questionmark)
+        assertEquals(2, day.themes.size)
+    }
+
+    @Test
+    fun `테마 키가 겹치면 저장 전에 끊는다 — 같은 이름을 번호로 못 가른 날`() {
+        // 포스터가 바뀌어 번호를 못 얻으면 두 테마가 같은 이름 키가 된다 — 조용히 섞지 않는다
+        val noPoster = questionmark.replace("file/theme/1_a.jpg", "file/theme/x_a.jpg").replace("file/theme/3_a.jpg", "file/theme/y_a.jpg")
+        assertTrue("x_a.jpg" in noPoster && "y_a.jpg" in noPoster, "픽스처 모양이 바뀌었다 — 이 테스트가 아무것도 안 본다")
+        assertFailsWith<SinbiwebCrawlException> {
+            crawler.validate(SinbiwebSites.QUESTION_MARK, SinbiwebSites.QUESTION_MARK.branches.single(), LocalDate.of(2026, 10, 24), noPoster)
+        }
     }
 
     @Test
@@ -203,7 +227,7 @@ class SinbiwebParserTest {
         // 공통 파서는 한 매장을 고치다 다른 매장을 깨뜨린다. 픽스처 없는 매장은 그걸 못 잡는다
         val tested = setOf(
             "studioesc.co.kr", "doloescape.co.kr", "eroom8.co.kr", "xn--jj0b998aq3cptw.com",
-            "speakeasyescape.co.kr", "weyol.com", "happyanding.co.kr",
+            "speakeasyescape.co.kr", "weyol.com", "happyanding.co.kr", "question-mark.co.kr",
         )
         assertEquals(tested, SinbiwebSites.ALL.map { it.host }.toSet(), "픽스처 없이 더한 매장이 있다 — 이 파일에 한 장 더한다")
     }

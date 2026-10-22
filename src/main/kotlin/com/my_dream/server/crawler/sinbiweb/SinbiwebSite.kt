@@ -33,7 +33,7 @@ data class SinbiwebSite(
     /** 사람이 읽는 매장 이름 (`/api/branches` 의 store) */
     val brand: String,
     val host: String,
-    /** 황금열쇠는 `http://` 로만 확인했다. 위욜은 https 인증서 고리가 깨져 있다(매장 설정 오류) — 둘 다 http */
+    /** 황금열쇠는 `http://` 로만 확인했다. 위욜 · 퀘스천마크는 https 인증서 고리가 깨져 있다(매장 설정 오류) — 셋 다 http */
     val scheme: String = "https",
     val branches: List<SinbiwebBranch>,
     /** 응답이 어느 지점인지 되읽는 자리. 단일 지점 매장은 [BranchReadback.NONE] */
@@ -141,7 +141,20 @@ object SinbiwebSites {
         openDays = 14,
     )
 
-    val ALL = listOf(STUDIO_ESC, DOLO, EROOM8, GOLDKEY, SPEAKEASY, WEYOL, HAPPYANDING)
+    /**
+     * **이름이 똑같은 별개 테마 둘**(`퀘스천마크 ?` · 드롭다운 1 · 3)을 돌린다 — 매장 기믹이다(사용자 확인 2026-10-22 · 시간표가 다르다).
+     * 공통 파서가 이름 대신 포스터 번호로 가른다. 창 오늘~+6 · +7 은 테마는 있고 회차 0 + "예약가능시간이 아닙니다"(그날 어느 시각에 연다).
+     * 🔒 **http 로 묻는다** — 위욜 · 프랭크와 **똑같은 Sectigo 중간 인증서 실수**다(붙이기 전 실사이트 확인 ⓕ 에서 걸렸다). 셋 다 신비웹 사이트라
+     * 신비웹 호스팅이 인증서를 같은 방식으로 까는 것으로 보인다(추정). 검증을 끄지 않는다
+     */
+    val QUESTION_MARK = SinbiwebSite(
+        brand = "퀘스천마크",
+        host = "question-mark.co.kr",
+        scheme = "http",
+        branches = listOf(SinbiwebBranch(null, "홍대점", "questionmark-hongdae")),
+    )
+
+    val ALL = listOf(STUDIO_ESC, DOLO, EROOM8, GOLDKEY, SPEAKEASY, WEYOL, HAPPYANDING, QUESTION_MARK)
 }
 
 fun SinbiwebBranch.toStoreRef(site: SinbiwebSite) = StoreRef(key = key, brand = site.brand, branchName = branchName)
