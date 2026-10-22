@@ -79,7 +79,8 @@ object Decoder {
     val storeRef = StoreRef(key = KEY, brand = BRAND, branchName = BRANCH_NAME)
 }
 
-class DecoderCrawlException(message: String) : RuntimeException(message)
+/** [sessionBroken] — 세션이 끊긴 모양(`has_slots:false` · `success:false`)이라 세션을 버려야 하는 실패 */
+class DecoderCrawlException(message: String, val sessionBroken: Boolean = false) : RuntimeException(message)
 
 @Component
 class DecoderCrawler(private val rateLimiter: HostRateLimiter) {
@@ -93,14 +94,17 @@ class DecoderCrawler(private val rateLimiter: HostRateLimiter) {
     private val months = ConcurrentHashMap<Pair<String, YearMonth>, Pair<Instant, String>>()
     internal var clock: Clock = Clock.systemDefaultZone()
 
+    /**
+     * 실패해도 **그 달 응답은 버리지 않는다** — 버리면 같은 바퀴의 남은 날짜 작업이 전부 페이지 + 회차를 다시 물어,
+     * 이미 고장 난 사이트에 요청이 곱절로 간다(D39 의 뜻과 반대). 그 달 응답은 [FRESH] 동안 그대로 두어 남은 작업이 요청 없이 실패하게 하고,
+     * **세션이 끊긴 모양일 때만 세션을 버린다** — 다음 바퀴가 새 세션으로 시작한다. 날짜 하나의 문제(날짜·방 어긋남)는 아무것도 안 버린다
+     */
     fun fetch(theme: DecoderTheme, date: LocalDate): DaySchedule {
         val body = month(theme, date)
         return try {
             parse(theme, date, body, LocalDate.now(clock))
         } catch (e: DecoderCrawlException) {
-            // 세션이 끊긴 모양일 수 있다 — 세션과 그 달 응답을 버려 다음 바퀴가 새로 받게 한다
-            sessions.remove(theme.serviceId)
-            months.remove(theme.serviceId to YearMonth.from(date))
+            if (e.sessionBroken) sessions.remove(theme.serviceId)
             throw e
         }
     }
@@ -139,20 +143,23 @@ class DecoderCrawler(private val rateLimiter: HostRateLimiter) {
     fun parse(theme: DecoderTheme, date: LocalDate, body: String, today: LocalDate = LocalDate.now()): DaySchedule {
         val root = runCatching { json.readTree(body) }.getOrNull()
             ?: throw DecoderCrawlException("JSON 이 아닌 응답: ${theme.name} $date")
-        if (!root.path("success").asBoolean(false)) throw DecoderCrawlException("거절됨: ${theme.name} $date ${body.take(120)}")
+        if (!root.path("success").asBoolean(false)) throw DecoderCrawlException("거절됨: ${theme.name} $date ${body.take(120)}", sessionBroken = true)
         if (!root.path("has_slots").asBoolean(false)) {
-            throw DecoderCrawlException("has_slots:false — form_id 나 세션이 틀렸을 때와 같은 모양이라 '빈 달' 로 믿지 않는다: ${theme.name} $date")
+            throw DecoderCrawlException("has_slots:false — form_id 나 세션이 틀렸을 때와 같은 모양이라 '빈 달' 로 믿지 않는다: ${theme.name} $date", sessionBroken = true)
         }
 
         val min = day(root.path("date_min")) ?: throw DecoderCrawlException("date_min 이 없다: ${theme.name}")
         val max = day(root.path("date_max")) ?: throw DecoderCrawlException("date_max 가 없다: ${theme.name}")
-        if (date.isBefore(min) || date.isAfter(max)) throw DecoderCrawlException("응답 창($min~$max) 밖 날짜: ${theme.name} $date")
+        // 오늘은 예외 — 지난 회차가 목록에서 **빠지는** 매장이라, 밤늦게 마지막 회차가 지나면 오늘이 응답에서 사라지거나
+        // date_min 이 내일로 넘어갈 수 있다(아직 못 본 모양 · 추정). 그때 매 바퀴 실패로 남기지 않고 "오늘 회차 0개" 로 받는다.
+        // 세션 고장은 위 has_slots 검사가 따로 잡는다
+        if (date.isAfter(max) || (date.isBefore(min) && date != today)) throw DecoderCrawlException("응답 창($min~$max) 밖 날짜: ${theme.name} $date")
         val disabled = root.path("disabled_days").toList().mapNotNull(::day).toSet()
 
         val html = root.path("slots").path(date.toString())
         val slots = if (html.isMissingNode || html.isNull) {
-            if (date !in disabled) throw DecoderCrawlException("물은 날짜가 응답에 없다(휴무 표시도 없음): ${theme.name} $date")
-            emptyList()   // 휴무 — 테마는 남기고 회차만 비운다 (D22)
+            if (date !in disabled && date != today) throw DecoderCrawlException("물은 날짜가 응답에 없다(휴무 표시도 없음): ${theme.name} $date")
+            emptyList()   // 휴무 · 다 지난 오늘 — 테마는 남기고 회차만 비운다 (D22)
         } else {
             slots(theme, date, html.asString(""), today)
         }
@@ -160,7 +167,8 @@ class DecoderCrawler(private val rateLimiter: HostRateLimiter) {
         return DaySchedule(
             store = Decoder.storeRef,
             date = date,
-            reservationRangeDays = (max.toEpochDay() - min.toEpochDay() + 1).toInt(),
+            // date_min 이 아니라 오늘부터 센다 — 밤늦게 date_min 이 내일로 넘어가도 61 로 맞아 "범위가 바뀌었다" 경고가 안 뜬다
+            reservationRangeDays = (max.toEpochDay() - today.toEpochDay() + 1).toInt(),
             openDays = Decoder.OPEN_DAYS,
             themes = listOf(
                 ThemeSchedule(

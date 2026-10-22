@@ -60,6 +60,25 @@ class DecoderTest {
     }
 
     @Test
+    fun `다 지난 오늘은 응답에서 사라져도 회차 0개로 받는다`() {
+        // 밤늦게 마지막 회차가 지나면 오늘 키가 빠질 수 있다 — 매 바퀴 실패로 남기면 안 된다
+        val lateNight = fixture("decoder-room1-2026-10.json").replace("\"2026-10-22\":", "\"2026-10-22-gone\":")
+        assertTrue("2026-10-22-gone" in lateNight, "픽스처 모양이 바뀌었다 — 이 테스트가 아무것도 안 본다")
+        val day = crawler.parse(room1, today, lateNight, today)
+        assertTrue(day.themes.single().slots.isEmpty())
+        // 오늘이 아닌 날짜가 빠진 건 여전히 실패다
+        assertFailsWith<DecoderCrawlException> { crawler.parse(room1, today, lateNight, today.minusDays(1)) }
+    }
+
+    @Test
+    fun `세션 고장만 세션을 버리라고 표시한다`() {
+        val broken = assertFailsWith<DecoderCrawlException> { crawler.parse(room1, LocalDate.of(2026, 10, 24), fixture("decoder-틀린formid.json"), today) }
+        assertTrue(broken.sessionBroken)
+        val wrongRoom = assertFailsWith<DecoderCrawlException> { crawler.parse(room1, LocalDate.of(2026, 10, 24), fixture("decoder-room2-2026-10.json"), today) }
+        assertEquals(false, wrongRoom.sessionBroken, "날짜 하나의 문제로 세션을 버리면 남은 작업이 페이지부터 다시 묻는다")
+    }
+
+    @Test
     fun `물은 날짜가 slots 에도 휴무에도 없으면 실패다`() {
         // 10월 응답에 11월 날짜를 물으면 — 한 달 캐시 키가 어긋나는 날 이렇게 된다
         assertFailsWith<DecoderCrawlException> { crawler.parse(room1, LocalDate.of(2026, 11, 3), fixture("decoder-room1-2026-10.json"), today) }
