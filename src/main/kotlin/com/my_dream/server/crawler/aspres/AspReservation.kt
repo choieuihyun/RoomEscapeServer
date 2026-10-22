@@ -172,6 +172,14 @@ class AspCrawler(private val rateLimiter: HostRateLimiter) {
 
     /** 코드케이 — 지점 한 페이지에 테마가 `<li class="thema1">이름</li>` 로 줄줄이 온다 (숫자는 지점마다 다르다 — [THEME_HEAD]) */
     private fun branchPage(site: AspSite, html: String): List<ThemeSchedule> {
+        // hidden R_JIJEM 은 **보낸 값을 그대로 돌려준다**(없는 지점 S4 도 S4 로 온다) — 지점 증명이 못 된다.
+        // 테마 머리 숫자는 서버가 실제로 그린 지점을 따라간다(S1→thema1 · S2→thema2 · S3→thema3, 픽스처 넷 확인).
+        // 같은 호스트에 지점이 둘이라, R_JIJEM 이 무시되고 기본 지점이 답하는 날 한 지점 테마가 다른 지점 키로 조용히 저장되는 걸 여기서 막는다
+        val wanted = site.jijem.removePrefix("S")
+        val drawn = THEME_HEAD.findAll(html).map { it.groupValues[1] }.toSet()
+        if (drawn.isNotEmpty() && drawn != setOf(wanted)) {
+            throw AspCrawlException("응답이 그린 지점(thema$drawn)이 요청한 지점(${site.jijem})과 다르다: ${site.brand} ${site.branchName}")
+        }
         val chunks = html.split(THEME_HEAD)
         return chunks.drop(1).mapIndexed { i, chunk ->
             val name = chunk.substringBefore("</li>").trim()
@@ -221,7 +229,7 @@ class AspCrawler(private val rateLimiter: HostRateLimiter) {
          * 클래스 숫자가 **지점을 따라간다** — 강남 `thema1` · 구월 `thema2` · 홍대 `thema3` (2026-10-22).
          * `thema1` 로 고정했을 때는 홍대 페이지가 테마 0개로 읽혀 "회차가 하나도 없다" 로 끊겼을 것이다
          */
-        private val THEME_HEAD = Regex("""<li class="thema[0-9]+">""")
+        private val THEME_HEAD = Regex("""<li class="thema([0-9]+)">""")
         private const val THEME_END = "<div style=\"clear: both\"></div>"
         private val THEME_CODE = Regex("""R_THEMA=([A-Za-z0-9_]+)&""")
         private val ROOM_CODE = Regex("""room_code=([A-Za-z0-9_]+)&""")

@@ -126,6 +126,22 @@ class AspReservationTest {
     }
 
     @Test
+    fun `코드케이 — hidden 지점값이 맞아도 그린 지점이 다르면 끊는다`() {
+        // hidden R_JIJEM 은 보낸 값을 돌려줄 뿐이다(없는 지점 S4 도 S4). R_JIJEM 이 무시되고 기본 지점(S1)이 답했는데
+        // hidden 만 S3 으로 왔다고 치자 — 테마 머리 숫자(thema1)로 잡는다. 안 잡으면 강남 15테마가 홍대 키로 저장된다
+        val today = LocalDate.of(2026, 10, 21)
+        val gangnamWithEcho = fixture("aspres-codek-s1-2026-10-21.html").replace("R_JIJEM\" value=\"S1\"", "R_JIJEM\" value=\"S3\"")
+        assertTrue("R_JIJEM\" value=\"S3\"" in gangnamWithEcho, "픽스처 모양이 바뀌었다 — 이 테스트가 아무것도 안 본다")
+        val e = assertFailsWith<AspCrawlException> { crawler.parse(AspSites.CODEK_HONGDAE, today, null, gangnamWithEcho, today) }
+        assertTrue("그린 지점" in e.message!!, "다른 검사에 걸렸다 — 이 테스트가 보려는 건 테마 머리 대조다: ${e.message}")
+
+        val hongdaeWithEcho = fixture("aspres-codek-s3-2026-10-22.html").replace("R_JIJEM\" value=\"S3\"", "R_JIJEM\" value=\"S1\"")
+        assertFailsWith<AspCrawlException> {
+            crawler.parse(codek, LocalDate.of(2026, 10, 22), null, hongdaeWithEcho, LocalDate.of(2026, 10, 22))
+        }
+    }
+
+    @Test
     fun `싸인 홍대 · 상수 — 지점을 되읽고 창은 오늘~+7 이다`() {
         val today = LocalDate.of(2026, 10, 22)
         val s5 = crawler.parse(AspSites.SIGN_HONGDAE, today, "A", fixture("aspres-sign-s5-A-2026-10-22.html"), today)
