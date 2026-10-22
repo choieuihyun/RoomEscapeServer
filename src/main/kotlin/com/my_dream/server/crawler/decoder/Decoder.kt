@@ -219,7 +219,9 @@ class DecoderCrawler(private val rateLimiter: HostRateLimiter) {
 }
 
 /** 테마 × 날짜 = 작업 하나. 실제 요청은 세션 · 한 달치 캐시 때문에 그보다 적다 — 위 예외 설명 */
-@Component
+// ⛔ 수집 목록에서 뺐다 (2026-10-22 14:49 · 배포 첫 바퀴) — 운영 서버(오라클 · 일본 IP)에 매장 호스팅이 봇 확인 화면(cupid.js · 403)을 보냈다.
+//    사무실 PC 에서는 진짜 페이지였다. 확인 화면을 풀어 지나가면 우회라 하지 않는다 (CLAUDE.md 수집 윤리 · 매장 정보.md 장애 기록).
+//    설정 · 파서 · 픽스처 테스트는 남긴다 — 풀리면 아래에 @Component 한 줄을 되살린다.
 class DecoderAdapter(private val crawler: DecoderCrawler) : StoreAdapter {
 
     override val host = Decoder.HOST
