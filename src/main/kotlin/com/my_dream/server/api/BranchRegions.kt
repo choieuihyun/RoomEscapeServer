@@ -24,7 +24,7 @@ object BranchRegions {
     val ALLOWED = setOf("강남", "홍대", "건대", "부산", "대구", "대전", "수원", "김포", "용인")
 
     /**
-     * 근거: 지점 이름 · 플레이방탈 지역 목록(2026-10-21) · 조사 문서 주소.
+     * 근거: 지점 이름 · 플레이방탈 지역 목록(강남 2026-10-21 · 홍대 2026-10-22) · 조사 문서 주소.
      * null 은 주소를 확인하지 못한 지점이다 ([매장 정보.md] "그 밖").
      */
     private val byKey: Map<String, String?> = mapOf(
@@ -66,6 +66,8 @@ object BranchRegions {
         "pointnine-hongdae" to "홍대",
         "zeroworld-hongdae" to "홍대",
         "rabbithole-hongdae" to "홍대",
+        // 플레이방탈 홍대 목록(2026-10-22)에 있다 — 그 전엔 지역을 몰라 null 이었다
+        "bitphobia-dungeon101" to "홍대",
 
         "play33-konkuk" to "건대",
         "pointnine-konkuk" to "건대",
@@ -87,7 +89,6 @@ object BranchRegions {
 
         // 주소 미확인 — 같은 다이아에그 사이트지만 미스테리인이 서면에 있는지는 안 봤다
         "diaegg-mysteryin" to null,
-        "bitphobia-dungeon101" to null,
     )
 
     fun of(branchKey: String): String? = byKey[branchKey]
