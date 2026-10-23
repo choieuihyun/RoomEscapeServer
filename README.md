@@ -215,6 +215,9 @@ GET    /api/club/events/{id}/settlement  · PUT { version, items }    정산 —
 POST   /api/club/events/{id}/settlement/transfers  { fromUid, toUid, paid }   보냈어요 체크
 GET    /api/me/payinfo · PUT { bankText, kakaopayUrl }              내 송금 정보
 GET    /api/club/notice  · PUT { text, notify } · DELETE           홈 공지 — 하나만 · 쓰기는 운영진 · 없으면 null (§4.14)
+GET    /api/club/feedback · POST { text } · PUT|DELETE /{id}          의견 게시판 — 멤버 모두 보기 (§4.15)
+POST   /api/club/feedback/{id}/like { liked } · PUT …/{id}/status { status }(운영진)   공감 · 처리 상태
+GET|POST /api/club/feedback/{id}/comments · DELETE /api/club/feedback/comments/{commentId}   댓글
 GET    /api/me/played                     내 해 본 테마      POST { themeName, themeKey?, … }   DELETE /api/me/played/{id}
 GET    /api/club/members/{uid}/played     멤버의 해 본 테마
 GET    /api/me/events?before=&beforeId=&limit=  내가 참여한 지난 일정 { events, total } — (date, id) 커서

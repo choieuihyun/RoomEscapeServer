@@ -37,3 +37,13 @@ fun wholeNumber(raw: Any?): Long? = when (raw) {
     is java.math.BigInteger -> if (raw.bitLength() < 63) raw.toLong() else null
     else -> null
 }
+
+/**
+ * 여러 줄 글(공지 · 의견 · 댓글)의 칸 검사. 앞뒤 공백을 걷고 **코드 포인트**로 센다 (D28). 줄은 `\r\n`·`\n`·`\r` 어느 것이든 하나로 센다
+ * (Kotlin `lines()` 가 셋 다 끊는다 — 계약 §4.14 · §4.15). 비거나 넘치면 [bad] 를 던진다
+ */
+fun boundedText(raw: String?, maxLetters: Int, maxLines: Int, bad: () -> ClubError): String {
+    val s = raw?.trim()?.ifEmpty { null } ?: throw bad()
+    if (s.codePointCount(0, s.length) > maxLetters || s.lines().size > maxLines) throw bad()
+    return s
+}

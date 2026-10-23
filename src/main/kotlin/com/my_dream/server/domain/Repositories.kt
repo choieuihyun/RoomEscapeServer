@@ -412,6 +412,39 @@ interface SettlementTransferRepository : JpaRepository<SettlementTransfer, Long>
 
 interface PayInfoRepository : JpaRepository<PayInfo, String>
 
+interface ClubFeedbackRepository : JpaRepository<ClubFeedback, Long> {
+
+    /** 목록 — 최근 글 200개. id 가 늘어나는 순서라 만든 때 순서와 같다 */
+    fun findTop200ByOrderByIdDesc(): List<ClubFeedback>
+
+    /** 공감을 차례로 받으려고 글 행을 잠근다 — 같은 사람이 동시에 두 번 누르면 UNIQUE 위반 500 이 난다 */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select f from ClubFeedback f where f.id = :id")
+    fun findForUpdateById(id: Long): ClubFeedback?
+}
+
+interface ClubFeedbackLikeRepository : JpaRepository<ClubFeedbackLike, Long> {
+
+    fun findByFeedbackIdIn(feedbackIds: Collection<Long>): List<ClubFeedbackLike>
+
+    fun findByFeedbackIdAndUserId(feedbackId: Long, userId: String): ClubFeedbackLike?
+
+    @Modifying
+    @Query("delete from ClubFeedbackLike l where l.feedbackId = :feedbackId")
+    fun deleteByFeedback(feedbackId: Long): Int
+}
+
+interface ClubFeedbackCommentRepository : JpaRepository<ClubFeedbackComment, Long> {
+
+    fun findByFeedbackIdOrderById(feedbackId: Long): List<ClubFeedbackComment>
+
+    fun findByFeedbackIdIn(feedbackIds: Collection<Long>): List<ClubFeedbackComment>
+
+    @Modifying
+    @Query("delete from ClubFeedbackComment c where c.feedbackId = :feedbackId")
+    fun deleteByFeedback(feedbackId: Long): Int
+}
+
 interface ClubNoticeRepository : JpaRepository<ClubNotice, Long> {
 
     /** 걸린 공지. 같은 순간 둘이 쓰면 잠깐 두 행일 수 있어 가장 나중 것 하나만 본다 (D46) */

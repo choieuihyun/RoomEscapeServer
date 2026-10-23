@@ -87,5 +87,13 @@ class ClubError(
 
         // --- 홈 공지 (§4.14) ---
         fun badNotice() = ClubError(HttpStatus.BAD_REQUEST, "BAD_NOTICE", "공지는 1~500자, 10줄까지 적을 수 있어요.")
+
+        // --- 의견 게시판 (§4.15) ---
+        fun badFeedback() = ClubError(HttpStatus.BAD_REQUEST, "BAD_FEEDBACK", "의견은 1~1000자, 20줄까지 적을 수 있어요.")
+        fun badComment() = ClubError(HttpStatus.BAD_REQUEST, "BAD_COMMENT", "댓글은 1~300자까지 적을 수 있어요.")
+        fun badStatus() = ClubError(HttpStatus.BAD_REQUEST, "BAD_STATUS", "처리 상태를 다시 골라 주세요.")
+        fun notAuthor() = ClubError(HttpStatus.FORBIDDEN, "NOT_AUTHOR", "쓴 사람만 할 수 있어요.")
+        fun noSuchFeedback() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_FEEDBACK", "지워졌거나 없는 의견이에요.")
+        fun noSuchComment() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_COMMENT", "지워졌거나 없는 댓글이에요.")
     }
 }

@@ -63,6 +63,9 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM club_feedback_like")
+        jdbc.update("DELETE FROM club_feedback_comment")
+        jdbc.update("DELETE FROM club_feedback")
         jdbc.update("DELETE FROM club_notice")
         jdbc.update("DELETE FROM settlement_transfer")
         jdbc.update("DELETE FROM settlement_share")
@@ -85,7 +88,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V16 까지 돌고 엔티티와 맞는다`() {
+    fun `V17 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -262,6 +265,23 @@ class MigrationValidationTest @Autowired constructor(
         jdbc.update(insert, "새 공지")
         // 앱이 닫은 공지를 id 로 기억한다 — 다 지운 뒤에도 id 가 되돌아가면 새 공지가 "닫힌 것" 으로 숨는다
         assertTrue(jdbc.queryForObject("SELECT max(id) FROM club_notice", Long::class.java)!! > first)
+    }
+
+    @Test
+    fun `V17 의견 — 상태는 넷만, 공감은 사람마다 하나, 글을 손으로 지워도 공감·댓글이 따라간다`() {
+        val insert = "INSERT INTO club_feedback (user_id, text, status, created_at, updated_at) VALUES ('a', ?, ?, now(), now())"
+        jdbc.update(insert, "🙂".repeat(1000), "OPEN")
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "🙂".repeat(1001), "OPEN") }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, "x", "CLOSED") }
+        val id = jdbc.queryForObject("SELECT max(id) FROM club_feedback", Long::class.java)!!
+        val like = "INSERT INTO club_feedback_like (feedback_id, user_id, created_at) VALUES (?, 'b', now())"
+        jdbc.update(like, id)
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(like, id) }
+        jdbc.update("INSERT INTO club_feedback_comment (feedback_id, user_id, text, admin, created_at) VALUES (?, 'b', ?, false, now())", id, "🙂".repeat(300))
+        // 운영 DB 를 손으로 정리할 때 — 서비스는 먼저 지우지만, 사람은 잊는다
+        jdbc.update("DELETE FROM club_feedback WHERE id = ?", id)
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM club_feedback_like", Int::class.java))
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM club_feedback_comment", Int::class.java))
     }
 
     @Test

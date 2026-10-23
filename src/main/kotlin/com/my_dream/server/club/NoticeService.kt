@@ -113,12 +113,7 @@ class NoticeService(
         const val TITLE = "새 공지가 있어요"
         val GAP: Duration = Duration.ofMinutes(1)
 
-        /** 앞뒤 공백을 걷고 **코드 포인트**로 센다 (D28). 줄은 `\r\n`·`\n`·`\r` 어느 것이든 하나로 센다 */
-        fun clean(raw: String?): String {
-            val s = raw?.trim()?.ifEmpty { null } ?: throw ClubError.badNotice()
-            if (s.codePointCount(0, s.length) > MAX_LETTERS || s.lines().size > MAX_LINES) throw ClubError.badNotice()
-            return s
-        }
+        fun clean(raw: String?): String = boundedText(raw, MAX_LETTERS, MAX_LINES, ClubError::badNotice)
 
         /** 알림 본문 — 첫 줄 앞 60자, 넘으면 `…`. 코드 포인트로 자른다 — UTF-16 으로 자르면 이모지가 반쪽 난다 */
         fun preview(text: String): String {

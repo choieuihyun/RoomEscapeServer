@@ -427,6 +427,56 @@ class ClubNotice(
     var id: Long? = null
 }
 
+enum class FeedbackStatus { OPEN, REVIEW, DONE, HOLD }
+
+/**
+ * 의견 게시판의 글 (D47). [updatedAt] 은 **글을 고친 때만** 바뀐다 — 상태·공감·댓글로 바꾸면 "고쳐짐" 이 거짓말이 된다.
+ * [statusAt]·[statusBy] 는 OPEN 이면 둘 다 null
+ */
+@Entity
+@Table(name = "club_feedback")
+class ClubFeedback(
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(nullable = false, length = 1000) var text: String,
+    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 8) var status: FeedbackStatus,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
+    @Column(name = "updated_at", nullable = false) var updatedAt: Instant,
+    @Column(name = "status_at") var statusAt: Instant? = null,
+    @Column(name = "status_by") var statusBy: String? = null,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** 공감 한 개. (글, 사람) 하나 — UNIQUE (D47) */
+@Entity
+@Table(name = "club_feedback_like", uniqueConstraints = [UniqueConstraint(columnNames = ["feedback_id", "user_id"])])
+class ClubFeedbackLike(
+    @Column(name = "feedback_id", nullable = false) val feedbackId: Long,
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
+/** 댓글 (D47). [admin] 은 쓸 때 운영진이었나 — 저장 값이라 나중에 역할이 바뀌어도 그대로다(계약) */
+@Entity
+@Table(name = "club_feedback_comment")
+class ClubFeedbackComment(
+    @Column(name = "feedback_id", nullable = false) val feedbackId: Long,
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(nullable = false, length = 300) val text: String,
+    @Column(nullable = false) val admin: Boolean,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
 /**
  * 정산 머리 (D37). **[version] 은 손으로 올린다** — `@Version` 이 아니다. 계약은 "없으면 0, 첫 저장이 1" 인데
  * `@Version` 은 새 행이 0 에서 시작하고 flush 때 올라 응답에 옛 번호가 나간다(D31 의 함정).
