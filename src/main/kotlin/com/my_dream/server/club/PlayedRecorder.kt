@@ -30,8 +30,15 @@ class PlayedRecorder(
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    /** 04:30 KST — 백업(04:15)이 끝난 뒤. **zone 을 못 박는다** — VM 은 UTC 다 */
+    /**
+     * 04:30 KST — 백업(04:15)이 끝난 뒤. **zone 을 못 박는다** — VM 은 UTC 다
+     *
+     * **여기에도 `@Transactional` 을 단다.** 같은 클래스 안에서 `record()` 를 부르면 스프링 프록시를 거치지 않아
+     * `record()` 의 `@Transactional` 이 무시된다. 그러면 `save` 는 한 줄씩 커밋되고 벌크 `markPlayedRecorded` 만
+     * "트랜잭션 없음" 으로 터져, 일정이 표시되지 않은 채 매일 밤 다시 잡힌다 (2026-10-24 · 25 운영에서 실제로 났다)
+     */
     @Scheduled(cron = "0 30 4 * * *", zone = "Asia/Seoul")
+    @Transactional
     fun nightly() {
         val (eventCount, added) = record(todayKst())
         if (eventCount > 0) log.info("해 본 테마 자동 기록 — 일정 {}개, 새 기록 {}개", eventCount, added)
