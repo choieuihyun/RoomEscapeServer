@@ -1,8 +1,8 @@
 plugins {
-    kotlin("jvm") version "2.3.21"
-    kotlin("plugin.spring") version "2.3.21"
-    kotlin("plugin.jpa") version "2.3.21"
-    id("org.springframework.boot") version "4.1.1"
+    kotlin("jvm") version "2.4.21"
+    kotlin("plugin.spring") version "2.4.21"
+    kotlin("plugin.jpa") version "2.4.21"
+    id("org.springframework.boot") version "4.1.2"
     id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -25,7 +25,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
-    implementation("org.jsoup:jsoup:1.21.1")
+    implementation("org.jsoup:jsoup:1.23.2")
     // Spring Boot 4 는 Flyway 자동설정이 starter 로 분리돼 있다 (flyway-core 만으로는 안 돈다)
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     // 알림 신청은 "누가" 를 알아야 한다. Floduler 가 이미 쓰는 Firebase Auth 의
@@ -34,7 +34,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     // FCM 발송용 액세스 토큰만 여기서 얻는다. firebase-admin 이 아니라 이 작은 라이브러리를 쓰는 이유는
     // 아키텍처 D16 — admin 은 gRPC·netty·Firestore 까지 끌고 오는데 우리가 쓰는 건 POST 하나다
-    implementation("com.google.auth:google-auth-library-oauth2-http:1.51.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.54.0")
     runtimeOnly("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
