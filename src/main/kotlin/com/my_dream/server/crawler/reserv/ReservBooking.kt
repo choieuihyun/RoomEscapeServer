@@ -57,13 +57,27 @@ data class ReservSite(
 
 object ReservSites {
 
-    /** 룸즈에이는 지점이 21곳이다(대학로는 창이 31일 — 지점마다 다르다). 강남만 넣었다 */
+    /** 룸즈에이는 지점이 21곳이다(대학로는 창이 31일 — 지점마다 다르다). 강남 · 대학로를 넣었다 */
     val ROOMSA_GANGNAM = ReservSite(
         brand = "룸즈에이",
         host = "roomsa.co.kr",
         branchName = "강남점",
         key = "roomsa-gangnam",
         keycode = "DDZfLJDVcss3dP7Q",
+    )
+
+    /**
+     * 룸즈에이 대학로점 (2026-10-27 · 서울 확장). 같은 사이트라 robots · 푸터는 강남 때 본 것과 같다.
+     * keycode 는 플레이방탈 링크 값인데, 응답의 `shop.name` 이 "대학로점" 인 것을 보고 넣었다 (ⓖ — 목록 사이트 번호를 믿지 않는다).
+     * 창 31일(10-27~11-26 실측) — 한 번 받으면 31일치가 온다. 1분 캐시라 날짜마다 다시 묻지 않는다
+     */
+    val ROOMSA_DAEHAKRO = ReservSite(
+        brand = "룸즈에이",
+        host = "roomsa.co.kr",
+        branchName = "대학로점",
+        key = "roomsa-daehakro",
+        keycode = "hSTN9LCRcn9AuiAX",
+        openDays = 31,
     )
 
     val PAGETODAY = ReservSite(
@@ -91,7 +105,7 @@ object ReservSites {
         openDays = 14,
     )
 
-    val ALL = listOf(ROOMSA_GANGNAM, PAGETODAY, PLAYTHEWORLD_KONKUK)
+    val ALL = listOf(ROOMSA_GANGNAM, ROOMSA_DAEHAKRO, PAGETODAY, PLAYTHEWORLD_KONKUK)
 }
 
 class ReservCrawlException(message: String) : RuntimeException(message)

@@ -58,6 +58,10 @@ object MurderParker {
         // 건대 (2026-10-22) — 꼬리표가 지점 이름과 다르다: 드롭다운은 "건대1호점" 인데 테마 꼬리표는 "_건대점", 2호점은 공백이 든 "_건대 2호점"
         MurderParkerBranch("S6", "건대 1호점", "murderparker-konkuk1", "_건대점"),
         MurderParkerBranch("S8", "건대 2호점", "murderparker-konkuk2", "_건대 2호점"),
+        // 잠실 (2026-10-27) — 번호는 사이트 드롭다운에서 읽었다. 플레이방탈 링크는 테마마다 S11~S17 을 걸었지만
+        // S12 는 부산점 · S13 은 WOW 홍대점 · S15 는 익산점이다 (정리 문서 ⓖ — 목록 사이트 번호를 믿지 않는다)
+        MurderParkerBranch("S11", "잠실점", "murderparker-jamsil", "_잠실점"),
+        MurderParkerBranch("S14", "WOW 잠실점", "murderparker-wow-jamsil", "_WOW잠실점"),
     )
 }
 

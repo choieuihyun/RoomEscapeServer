@@ -21,7 +21,7 @@ object BranchRegions {
      * 목록 밖 값은 앱이 null 처럼 다루므로, 지역을 새로 만들려면 **앱 목록에 먼저 더하고** 여기에 더한다.
      * 앱의 '기타' 는 보내지 않는다 — 모르면 null 이고, null 을 '기타' 로 보일지는 앱이 정한다.
      */
-    val ALLOWED = setOf("강남", "홍대", "건대", "부산", "대구", "대전", "수원", "김포", "용인")
+    val ALLOWED = setOf("강남", "홍대", "건대", "대학로", "잠실", "노원", "신사", "신촌", "성수", "영등포", "성신여대", "부산", "대구", "대전", "수원", "김포", "용인")
 
     /**
      * 근거: 지점 이름 · 플레이방탈 지역 목록(강남 2026-10-21 · 홍대 2026-10-22) · 조사 문서 주소.
@@ -91,6 +91,25 @@ object BranchRegions {
         "masterkey-konkuk" to "건대",
         "pointnine-konkuk" to "건대",
         "zeroworld-dive-konkuk" to "건대",
+
+        "roomsa-daehakro" to "대학로",
+
+        "playpointlab-nowon" to "노원",
+
+        "codeescape-garosu" to "신사",
+
+        "sangsang-daehakro" to "대학로",
+        "epilogue-daehakro" to "대학로",
+        "letoh-seongsu" to "성수",
+        "sinbang-sinchon" to "신촌",
+        "clevertown-sinchon" to "신촌",
+        "escapebro-yeongdeungpo" to "영등포",
+        "escapecity-yeongdeungpo" to "영등포",
+        "escapecity-sungshin" to "성신여대",
+        "escapecity-sinchon" to "신촌",
+
+        "murderparker-jamsil" to "잠실",
+        "murderparker-wow-jamsil" to "잠실",
 
         "keyescape-busan" to "부산",
         "bitphobia-seomyeon" to "부산",

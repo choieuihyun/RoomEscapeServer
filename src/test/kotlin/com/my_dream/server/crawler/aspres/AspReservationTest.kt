@@ -24,6 +24,12 @@ import kotlin.test.assertTrue
  * | 코드케이 S3 10-22 | 2 | 15 · 2 | 테마 머리 클래스가 `thema3` — 지점마다 숫자가 다르다 |
  * | 싸인 S5 A · S7 A 10-22 | 1씩 | 7 · 5 / 7 · 6 | 최대일수 7 지점 (강남시티는 6) |
  * | 싸인 S5 A 10-30 | — | — | +8 은 링크 없는 timeOn — 받지 않는다 |
+ * | **서울 (2026-10-27 받음)** | | | |
+ * | 이스케이프시티 S1 10-29 · 10-31(토) | 6 | 42 · 41 / 54 · 52 | 테마 머리가 늘 `thema1` — 지점은 켜진 탭으로 본다 · `S P Y` 공백이 요일마다 다르다 |
+ * | 이스케이프시티 s2 · S4 10-29 | 5 · 3 | 35 · 35 / 22 · 19 | 소문자 `s2` · 최대일수 14 지점 |
+ * | 이스케이프시티 S2(대문자) · S99 · S1 11-28 | — | — | 탭이 안 켜진 응답 · 없는 지점 · 창(+31) 밖 전부 `timeOff` |
+ *
+ * 이스케이프시티 픽스처는 푸터 전화 · 계좌 · 대표자 · 메일 · 사업자번호를 지웠다.
  */
 class AspReservationTest {
 
@@ -162,6 +168,82 @@ class AspReservationTest {
         }
     }
 
+    private val escapeToday = LocalDate.of(2026, 10, 27)
+    private val yeongdeungpo = AspSites.ESCAPECITY_YEONGDEUNGPO
+
+    @Test
+    fun `이스케이프시티 영등포 — 테마 머리 숫자가 아니라 켜진 지점 탭으로 지점을 본다`() {
+        val day = crawler.parse(yeongdeungpo, LocalDate.of(2026, 10, 29), null, fixture("aspres-escapecity-S1-2026-10-29.html"), escapeToday)
+        assertEquals(listOf("좀비바이러스", "마법학교", "기억의 조각", "S P Y", "카지노의 전설", "다시만날수있을까?"), day.themes.map { it.themeName })
+        assertEquals(listOf("A", "B", "C", "D", "E", "F"), day.themes.map { it.externalId })
+        assertEquals(42 to 41, day.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+        assertEquals(32, day.reservationRangeDays, "최대일수 31 = 오늘~+31 = 32일")
+        assertEquals(yeongdeungpo.openDays, day.reservationRangeDays)
+    }
+
+    @Test
+    fun `이스케이프시티 — 주말은 공백 칸 수가 달라도 같은 이름이다`() {
+        val sat = crawler.parse(yeongdeungpo, LocalDate.of(2026, 10, 31), null, fixture("aspres-escapecity-S1-2026-10-31-주말.html"), escapeToday)
+        assertTrue("S    P    Y" in fixture("aspres-escapecity-S1-2026-10-31-주말.html"), "픽스처 모양이 바뀌었다 — 이 테스트가 아무것도 안 본다")
+        assertEquals("S P Y", sat.themes.first { it.externalId == "D" }.themeName)
+        assertEquals(54 to 52, sat.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+    }
+
+    @Test
+    fun `이스케이프시티 성신여대 · 신촌 — 소문자 s2 · 최대일수 14`() {
+        val s2 = crawler.parse(AspSites.ESCAPECITY_SUNGSHIN, LocalDate.of(2026, 10, 29), null, fixture("aspres-escapecity-s2-2026-10-29.html"), escapeToday)
+        assertEquals(listOf("알고보면", "그녀를 찾아서", "킬러VS", "VS경찰", "시험지 유출사건"), s2.themes.map { it.themeName })
+        assertEquals(35 to 35, s2.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+
+        val s4 = crawler.parse(AspSites.ESCAPECITY_SINCHON, LocalDate.of(2026, 10, 29), null, fixture("aspres-escapecity-S4-2026-10-29.html"), escapeToday)
+        assertEquals(listOf("연(80분)", "신의실수(80분)", "컨티뉴얼(70분)"), s4.themes.map { it.themeName })
+        assertEquals(22 to 19, s4.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+        assertEquals(15, s4.reservationRangeDays, "최대일수 14 = 오늘~+14 = 15일")
+        assertEquals(AspSites.ESCAPECITY_SINCHON.openDays, s4.reservationRangeDays)
+    }
+
+    @Test
+    fun `이스케이프시티 — 다른 지점 · 대문자 S2 · 없는 지점 · 창 밖은 끊는다`() {
+        val d = LocalDate.of(2026, 10, 29)
+        // 셋 다 테마 머리가 thema1 이다 — 숫자로 봤다면 영등포 응답이 성신여대 키로 저장됐다
+        assertFailsWith<AspCrawlException> { crawler.parse(AspSites.ESCAPECITY_SUNGSHIN, d, null, fixture("aspres-escapecity-S1-2026-10-29.html"), escapeToday) }
+        assertFailsWith<AspCrawlException> { crawler.parse(yeongdeungpo, d, null, fixture("aspres-escapecity-S4-2026-10-29.html"), escapeToday) }
+        // 대문자 S2 는 회차가 똑같이 오는데 탭이 안 켜진다 — 설정을 사이트 표기(s2)로 둔 이유
+        val upper = assertFailsWith<AspCrawlException> {
+            crawler.parse(AspSites.ESCAPECITY_SUNGSHIN.copy(jijem = "S2"), d, null, fixture("aspres-escapecity-S2대문자-탭꺼짐-2026-10-29.html"), escapeToday)
+        }
+        assertTrue("탭" in upper.message!!, "다른 검사에 걸렸다: ${upper.message}")
+        // 없는 지점 — 테마 0 · 최대일수 빈 값
+        assertFailsWith<AspCrawlException> { crawler.parse(yeongdeungpo, d, null, fixture("aspres-escapecity-S99-없는지점.html"), escapeToday) }
+        // +32 는 창 밖 — 200 에 전 회차 timeOff 로 온다
+        assertFailsWith<AspCrawlException> {
+            crawler.parse(yeongdeungpo, LocalDate.of(2026, 11, 28), null, fixture("aspres-escapecity-S1-2026-11-28-창밖.html"), escapeToday)
+        }
+    }
+
+    @Test
+    fun `이스케이프시티 — 전 회차 매진 테마도 설정 표로 번호를 잇는다`() {
+        // 좀비바이러스(A)의 예약 링크를 전부 걷어 낸다 = 그날 매진. room_code 를 얻을 자리가 사라진다
+        val html = fixture("aspres-escapecity-S1-2026-10-29.html")
+        val soldOut = html.replace(Regex("""<a href="sub03_2\.html\?[^"]*room_code=A&[^"]*">"""), "")
+        assertTrue(soldOut != html && "room_code=A&" !in soldOut, "픽스처 모양이 바뀌었다 — 이 테스트가 아무것도 안 본다")
+        val zombie = crawler.parse(yeongdeungpo, LocalDate.of(2026, 10, 29), null, soldOut, escapeToday).themes.first()
+        assertTrue(zombie.slots.isNotEmpty() && zombie.slots.none { it.available })
+        assertEquals("A", zombie.externalId, "번호를 못 얻으면 이름이 키가 되어 같은 테마가 다른 행으로 갈린다")
+    }
+
+    @Test
+    fun `이스케이프시티 — 설정 표가 링크의 room_code 와 맞다`() {
+        listOf(
+            yeongdeungpo to "aspres-escapecity-S1-2026-10-29.html",
+            AspSites.ESCAPECITY_SUNGSHIN to "aspres-escapecity-s2-2026-10-29.html",
+            AspSites.ESCAPECITY_SINCHON to "aspres-escapecity-S4-2026-10-29.html",
+        ).forEach { (site, name) ->
+            val themes = crawler.parse(site, LocalDate.of(2026, 10, 29), null, fixture(name), escapeToday).themes
+            assertEquals(site.themeCodes, themes.associate { it.themeName to it.externalId }, site.branchName)
+        }
+    }
+
     @Test
     fun `지점 키가 겹치지 않는다`() {
         val keys = AspSites.ALL.map { it.key }
@@ -170,6 +252,6 @@ class AspReservationTest {
 
     @Test
     fun `매장마다 픽스처 테스트가 있다`() {
-        assertEquals(setOf("code-k.co.kr", "www.signescape.com"), AspSites.ALL.map { it.host }.toSet(), "픽스처 없이 더한 매장이 있다")
+        assertEquals(setOf("code-k.co.kr", "www.signescape.com", "escapecity.kr"), AspSites.ALL.map { it.host }.toSet(), "픽스처 없이 더한 매장이 있다")
     }
 }

@@ -1,0 +1,550 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko">
+<head>
+
+<meta name='viewport' content='width=1240px, user-scalable=yes, target-densitydpi=medium-dpi'/>
+
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+
+	<title>코드이스케이프 가로수길</title>
+	<meta name="description" content="방탈출 카페 대표 브랜드 코드이스케이프 가로수길"> 
+	<meta name="naver-site-verification" content="df4c3aa0305d014b04058af26b9e9210fcf24c5e"/>
+
+
+    <link href="common.css" rel="stylesheet" type="text/css"/>
+
+    <script src='common.js' language='JavaScript'></script>
+	<script src="../cheditor/cheditor.js"></script>
+
+	<script src="../js/jquery.js"  language='JavaScript'></script>
+    <script src='../js/jquery.cycle2.js' type='text/javascript'></script>
+
+
+	<!-- 달력 -->
+    <div id=popCal  style='position:absolute; left:0px; top:0px; width:0; height=0; z-index:1; VISIBILITY:hidden;'>
+    <iframe name='pop_frame_cal' src='' frameborder='0' scrolling='no' width='200' height='250'></iframe>
+    </div>
+
+	<!-- submit 사용시 -->
+	<div style='position:absolute'>
+	<iframe src='' name='ifr_ok'  width=100% height=0 frameborder=0 scrolling=no></iframe>
+	</div>
+
+
+     <script language="javascript">
+		<!-- //링크점선없애는스크립트
+		function bluring() { 
+		if(event.srcElement.tagName=="A"||event.srcElement.tagName=="IMG") { 
+		document.body.focus(); 
+		} 
+		} 
+		document.onfocusin=bluring; 
+		//-->
+	</script> 
+
+
+
+<script>
+
+
+$(function(){
+
+
+
+});
+
+</script>
+
+
+<div class=top_menu_back>
+	<div class=top_logo><a href=home.php?go=main><img src="../img/main/logo.png"></a></div>
+	<div class=top_title><img src="../img/main/t_title.png"></div>
+
+<!-------------------
+	<div class=top_s_menu>
+		<a href=home.php?mid=9&go=member_login>Login</a> <img src="../img/main/top_v_line.png" align=absmiddle>
+		<a href=home.php?mid=9&go=member_join>Join</a>  <img src="../img/main/top_v_line.png" align=absmiddle>
+		<a href=home.php?mid=9&go=member_mypage>Mypage</a>
+	</div>
+---------------------->
+
+	<div class=top_menu>
+	<ul>
+		<a href=home.php?mid=1&go=code_escape><li class=top_menu_off_first>Code Escape</li></a>
+		<a href=home.php?mid=2&go=rev_make><li class=top_menu_off>Booking(예약하기)</li></a>
+		<a href=home.php?mid=3&go=rooms><li class=top_menu_off>Rooms</li></a>
+		<a href=home.php?mid=4&go=pds_list&pds_type=2><li class=top_menu_off>FAQ</li></a>
+		<a href=home.php?mid=5&go=pds_list&pds_type=3><li class=top_menu_off>Q&A</li></a>
+	</ul>
+	</div>
+</div>
+
+<div class=body>
+<script>
+
+focus();
+
+
+
+function fun_rev_change() {
+
+    f = eval('document.register'); 
+	f.submit();
+}
+
+
+function fun_submit() {
+    f = eval('document.register'); 
+
+	if(f.zizum_num.value=='') { alert('지점을 선택하세요'); f.zizum_num.focus(); return; }
+
+	if(f.rev_days.value=='') { alert('날짜를 선택하세요'); f.rev_days.focus(); return; }
+
+	if(f.person.value=='') { alert('인원을 선택하세요'); f.person.focus(); return; }
+
+	f.submit();
+}
+
+
+function fun_rev_next(theme_time_num,id,theme_num) {
+
+	f = eval('document.f_rev'); 
+
+	if(theme_num=='1' || theme_num=='2') {
+		alert('프리즌 브레이크 A와 프리즌 브레이크 B는 완전히 동일한 테마입니다.');
+	}
+
+	f.theme_time_num.value = theme_time_num;
+
+	f.submit();
+}
+
+
+$(document).ready(function() {
+	$('#url').change(function(){
+		url = $("#url option:selected").val();
+		location.href = url ;
+	});
+});
+
+</script>
+
+
+
+
+<div class=body_title_back>
+	<div class=body_title>Booking <span class=body_title_doc>예매</span></div>
+	<div class=body_titile_navi><img src='../img/sub/icon_navi.png' align=absmiddle> Home <span class=navi_arrow>&gt;</span> <b>Booking</b></div>
+</div>
+
+<!--
+<div class=code_escape_text3 style='padding-top:0;'>
+	<ul>
+		<li>17:00-22:00 테마는 네이버 페이 (http://booking.naver.com/11/booking/svc/15316) 를 통해 이용 부탁 드립니다.</li>
+		<li>단, 당일 예약은 저희 코드이스케이프 홈페이지를 이용해 주십시오. </li>
+	</ul>
+</div>
+-->
+
+<div class=code_escape_text3>
+
+	</div>
+    <form name=register method=get action=home.php>
+	<table class=post>
+	<colgroup>
+		<col width=18%>
+		<col width=32%>
+		<col width=18%>
+		<col width=32%>
+	</colgroup>
+	<tr>
+		<th>지점선택 (Location) </th>
+        <td>
+			<select name=url id=url class=select style='width:200px;'>
+			<option value=''>가로수길(Garosu)
+			<option value='https://www.code-escape-dg.com/web/home.php?mid=2&go=rev_make'>대구점(DaeGu)
+			<option value='http://www.code-escape-ms.com/web/home.php?mid=2&go=rev_make'>마산점(MaSan)
+			</select>
+		</td>
+		<th>날짜선택 (Date)</th>
+        <td>
+			<input name=rev_days value='2026-10-29' size=20 maxlength=10 readonly class=input style='width:180px;' onclick=fun_calendar('register.rev_days','B','img_001');  onChange=fun_rev_change()>
+			<a href=javascript:fun_calendar('register.rev_days','B','img_001')><img src='../img/common/icon_calendar.gif' name=img_001 align=absmiddle></a>
+		</td>
+    </tr>
+	<tr>
+		<th>인원선택 (Players) </th>
+        <td>
+			<select name=person class=select style='width:200px;' onchange=fun_rev_change()> 
+			<option value='1'  >1 명 (Players)</option><option value='2'  >2 명 (Players)</option><option value='3' selected >3 명 (Players)</option><option value='4'  >4 명 (Players)</option><option value='5'  >5 명 (Players)</option>
+			</select>
+		</td>
+		<th>테마선택 (Room)</th>
+        <td>
+			<select name=theme_num class=select style='width:200px;' onchange=fun_rev_change()> 
+			<option value=''>전체테마 (All Room)</option>
+			<option value='14'  >(수)산업스파이</option><option value='15'  >아는사이</option><option value='8'  >재즈인더레인 (Jazz in the Rain)</option>	</select>
+		</td>
+    </tr>
+    </table>
+		<input type=hidden name=zizum_num	value='1'>
+		<input type=hidden name=mid			value='7'>
+		<input type=hidden name=go			value='rev_make'>
+	</form>	
+	
+	<div class=height_30>&nbsp; </div>
+	<table class=list>
+	<tr>
+		<th>시간 (Time)</th>
+		<th>테마 (Room)</th>
+		<th>금액 (Price)</th>
+		<th>예약 (Booking)</th>
+    </tr>
+	
+					<tr>
+						<td>11:00 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('149','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>11:15 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('103','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>11:30 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('158','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>12:20 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('150','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>12:30 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('104','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>12:40 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('159','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>13:40 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('151','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>13:45 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><img src='../img/sub/rev_n.png'> </td>
+					</tr>
+					
+					<tr>
+						<td>13:50 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('160','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>15:00 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('152','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>15:10 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('106','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>15:20 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('161','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>16:20 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('153','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>16:25 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><img src='../img/sub/rev_n.png'> </td>
+					</tr>
+					
+					<tr>
+						<td>16:30 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('162','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>17:40 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><img src='../img/sub/rev_n.png'> </td>
+					</tr>
+					
+					<tr>
+						<td>17:45 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('108','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>17:50 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('163','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>19:00 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><img src='../img/sub/rev_n.png'> </td>
+					</tr>
+					
+					<tr>
+						<td>19:10 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('109','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>19:20 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('164','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>20:30 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('156','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>20:35 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('110','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>20:40 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><img src='../img/sub/rev_n.png'> </td>
+					</tr>
+					
+					<tr>
+						<td>21:50 </td>
+						<td class=left>(수)산업스파이</td>
+						<td>84,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('157','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>21:55 </td>
+						<td class=left>재즈인더레인 (Jazz in the Rain)</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('133','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+					<tr>
+						<td>22:00 </td>
+						<td class=left>아는사이</td>
+						<td>66,000원 (KRW)</td>
+						<td><a href=javascript:fun_rev_next('166','')><img src='../img/sub/rev_y.png'></a> </td>
+					</tr>
+					
+    </table>
+	<br>
+	<br>
+	<br>
+
+    <form name=f_rev method=post action=home.php>
+		<input type=hidden name=person			value='3'>	
+		<input type=hidden name=rev_days		value='2026-10-29'>	
+		<input type=hidden name=theme_time_num	value=''>	
+
+		<input type=hidden name=mid		value='7'>
+		<input type=hidden name=go		value='rev_make2'>
+	</form>
+	
+</div><script>
+
+$(document).ready(function() {
+	$('#bottom_url').change(function(){
+		url = $("#bottom_url option:selected").val();
+		if(url!="") {
+			location.href = url ;
+		}
+	});
+});
+
+</script>
+
+<div class=bottom_menu_back>
+	<div class=bottom_menu_lay>
+		<a href=home.php?mid=1&go=company>회사소개</a> &nbsp; / &nbsp; 
+		<a href=home.php?mid=1&go=pds_list&pds_type=4>제휴문의</a> &nbsp; / &nbsp; 
+		<a href=home.php?mid=1&go=pds_list&pds_type=1>공지사항</a> &nbsp; / &nbsp; 
+		<a href=home.php?mid=1&go=zizum>지점소개</a> &nbsp; / &nbsp; 
+		<a href=home.php?mid=2&go=rev_login>예약확인 및 취소 (Cancellation)</a>  &nbsp;  &nbsp;
+
+		<select name=bottom_url id=bottom_url class=select style='width:180px;'>
+		<option value=''>다른지점으로 이동
+		<option value='https://www.code-escape-dg.com/web/home.php'>대구점(Daegu)
+		<option value='http://www.code-escape-ms.com/web/home.php'>마산(MaSan)
+		</select>
+	</div>
+</div>
+
+<div class=bottom_back>
+<div class=bottom_lay>
+	<div class=bottom_location>Locations( 가로수길 )</div>
+	<div class=bottom_map>
+		<!-- * 카카오맵 - 지도퍼가기 -->
+		<!-- 1. 지도 노드 -->
+		<div id="daumRoughmapContainer1677048980455" class="root_daum_roughmap root_daum_roughmap_landing"></div>
+
+		<!--
+			2. 설치 스크립트
+			* 지도 퍼가기 서비스를 2개 이상 넣을 경우, 설치 스크립트는 하나만 삽입합니다.
+		-->
+		<script charset="UTF-8" class="daum_roughmap_loader_script" src="https://ssl.daumcdn.net/dmaps/map_js_init/roughmapLoader.js"></script>
+
+		<!-- 3. 실행 스크립트 -->
+		<script charset="UTF-8">
+			new daum.roughmap.Lander({
+				"timestamp" : "1677048980455",
+				"key" : "2dtse",
+				"mapWidth" : "355",
+				"mapHeight" : "200"
+			}).render();
+		</script>
+	</div>
+
+
+	<div class=bottom_contact>Contact Us</div>
+	<div class=bottom_phone>
+		<style type="text/css">
+			div.bottom_phone { margin-left:-50px; margin-top:10px; }
+			div.bottom_phone table th { color:#ffffff; font-size:16px; padding-left:5px; padding-top:5px; padding-right:5px; }
+			div.bottom_phone table td { color:#ffffff; font-size:16px; padding-top:5px; }
+		</style>
+		<table>
+			<tr>
+				<th colspan="2">서울</th>
+				<th colspan="2">서울 외 지역</th>
+			</tr>
+			<tr>
+				<th>
+					<img src="../img/main/icon_phone.png" align=absmiddle>				
+					가로수길
+				</th>
+				<td>000-0000-0000</td>
+				<th>대구점</th>
+				<td>000-0000-0000</td>
+			</tr>
+			<tr>
+				<th></th>
+				<td></td>
+				<th>마산점</th>
+				<td>000-0000-0000</td>
+			</tr>
+			<tr>
+				<th colspan="4" style="padding-top:30px;">
+					<img src="../img/main/icon_memo.png" align=absmiddle>xxx@example.com
+				</th>
+			</tr>
+		</table>
+		<!--
+		<ul>
+			<li>
+				<img src="../img/main/icon_phone.png" align=absmiddle>  강남점 : 000-0000-0000<br>
+				&nbsp; &nbsp; &nbsp;홍대점 : 000-0000-0000<br>
+				&nbsp; 가로수길 : <br>
+				&nbsp;&nbsp;신논현점 : 000-0000-0000<br>
+				&nbsp; &nbsp; &nbsp;대구점 : 000-0000-0000<br>
+				&nbsp; &nbsp; &nbsp;마산점 : 000-0000-0000<br>
+			</li>
+			<li><img src="../img/main/icon_memo.png" align=absmiddle>xxx@example.com</li>
+		</ul>
+		-->
+	</div>
+
+	<div class=bottom_info>
+		회사명 : 코드이스케이프 가로수길<br>
+		대표자 : (지움)<br>
+		이메일 : xxx@example.com<br>
+		서울시 강남구 신사동 가로수길 14 다모빌딩 5층<br>
+		사업자등록번호 : 000-00-00000<br>
+		통신판매업 신고번호: 제 2017-서울강남-00046호<br>
+		Copyright(c) Code Escape All right reserved<br>
+		create by <a href=http://sinbiweb.com?s_url=code_escape4><font color=#ffffff>sinbiweb.com</font></a><br>
+	</div>
+
+	<div class=bottom_follow_us>Follow Us</div>
+	<div class=bottom_follow>
+		<a href='https://www.facebook.com/CodeEscape' target=_blank><img src="../img/main/facebook.png"></a> &nbsp; 
+		<a href='https://www.instagram.com/codeescape' target=_blank><img src="../img/main/instagram.png"></a> &nbsp;
+		<a href='http://blog.naver.com/code_escape' target=_blank><img src="../img/main/blog.png"></a>
+	</div>
+
+	<div class=bottom_ascro>
+		<!--<a href=javascript:fun_kcp_ascro('A7F4L')>-->
+			<img src='../img/main/kcp_ascro.jpg'>
+		<!--</a>-->
+	</div>
+
+</div>
+</div>
+
+
+
+
+<!--
+<script type="text/javascript">
+if (location.protocol == "https:")
+{
+	location.href = "http://www.code-escape-garosu.com/web/home.php?rev_days=2026-10-29&person=3&theme_num=&zizum_num=1&mid=7&go=rev_make";
+}
+</script>
+-->

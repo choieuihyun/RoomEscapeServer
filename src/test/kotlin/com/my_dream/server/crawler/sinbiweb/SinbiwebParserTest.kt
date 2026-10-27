@@ -34,6 +34,18 @@ import kotlin.test.assertTrue
  * | 스피키지 10-28 휴무 | 0 | — | 날짜가 앞에 붙은 휴무 문구(`2026-10-28<br><br>지점휴무일 입니다`)도 정상 |
  * | 황금열쇠 7번(건대) 10-24 | 2 | 20 · 4 | 같은 사이트 세 번째 지점 — select 되읽기로 강남 둘과 가른다 |
  * | 퀘스천마크 10-24 | 2 | 15 · 2 | **이름이 똑같은 별개 테마 둘** — 포스터 번호로 가른다(매장 기믹 · 사용자 확인). 휴대폰 · 메일은 지웠다 |
+ * | **서울 (2026-10-27 받음 · 대표자 · 휴대폰 · 계좌 · 메일 · 사업자번호는 주석 안까지 지웠다)** | | | |
+ * | 상상의문 1번(대학로) 10-31 | 3 | 25 · 20 | select 지점 · 이름이 키 |
+ * | 상상의문 2번(분당서현) 10-29 | 6 | 46 · 42 | 같은 사이트 다른 지점 — 대학로로 읽으면 끊는다 |
+ * | 상상의문 99번 | — | — | 없는 지점은 alert 페이지 → 예외 |
+ * | 에필로그 10-29 | 5 | 38 · 25 | 꺾쇠 이름(`<탐정게임>`)도 드롭다운 번호와 맞는다 |
+ * | 호텔 레토 10-29 | 1 | 8 · 3 | |
+ * | 나의신방 10-29 | 4 | 22 · 9 | |
+ * | 나의신방 11-03 (화) | 4 | 22 · 0 | 휴무가 문구 없이 매진 모양 — 정상으로 통과(안전한 쪽) |
+ * | 클레버타운 10-29 | 7 | 19 · 13 | 이벤트 테마 넷은 회차 0 |
+ * | 클레버타운 11-03 | 7 | 6 · 4 | 테마마다 창이 다르다 — 창 밖 테마는 회차 0 으로 지나간다 |
+ * | 탈출브라더스 10-29 | 6 | 42 · 41 | |
+ * | 탈출브라더스 11-26 범위 밖 | 0 | — | 창 30일 — +30 은 "예약가능일이 아닙니다" |
  */
 class SinbiwebParserTest {
 
@@ -70,6 +82,12 @@ class SinbiwebParserTest {
         assertEquals(28 to 13, counts(weyol, SinbiwebSites.WEYOL))
         assertEquals(45 to 38, counts(happyanding, SinbiwebSites.HAPPYANDING))
         assertEquals(15 to 2, counts(questionmark, SinbiwebSites.QUESTION_MARK))
+        assertEquals(25 to 20, counts(fixture("sinbiweb-sangsang-1-2026-10-31.html"), SinbiwebSites.SANGSANG))
+        assertEquals(38 to 25, counts(fixture("sinbiweb-epilogue-2026-10-29.html"), SinbiwebSites.EPILOGUE))
+        assertEquals(8 to 3, counts(fixture("sinbiweb-letoh-2026-10-29.html"), SinbiwebSites.HOTEL_LETOH))
+        assertEquals(22 to 9, counts(fixture("sinbiweb-sinbang-2026-10-29.html"), SinbiwebSites.NAUI_SINBANG))
+        assertEquals(19 to 13, counts(fixture("sinbiweb-clevertown-2026-10-29.html"), SinbiwebSites.CLEVERTOWN))
+        assertEquals(42 to 41, counts(fixture("sinbiweb-escapebro-2026-10-29.html"), SinbiwebSites.ESCAPEBRO))
     }
 
     @Test
@@ -228,6 +246,33 @@ class SinbiwebParserTest {
         }
     }
 
+    @Test
+    fun `서울 — 상상의문은 select 로 지점을 가르고 없는 지점은 끊는다`() {
+        val daehakro = SinbiwebSites.SANGSANG.branches.single()
+        val day = crawler.validate(SinbiwebSites.SANGSANG, daehakro, LocalDate.of(2026, 10, 31), fixture("sinbiweb-sangsang-1-2026-10-31.html"))
+        assertEquals(3, day.themes.size)
+        assertTrue(day.themes.all { it.externalId == null }, "드롭다운이 없다 — 이름이 키")
+        // 분당서현(2) 응답을 대학로로 읽으면 끊는다
+        assertFailsWith<SinbiwebCrawlException> {
+            crawler.validate(SinbiwebSites.SANGSANG, daehakro, LocalDate.of(2026, 10, 29), fixture("sinbiweb-sangsang-2-2026-10-29.html"))
+        }
+        assertFailsWith<SinbiwebCrawlException> {
+            crawler.validate(SinbiwebSites.SANGSANG, SinbiwebBranch(99, "없는 지점", "sangsang-ghost"), LocalDate.of(2026, 10, 29), fixture("sinbiweb-sangsang-99-2026-10-29-없는지점.html"))
+        }
+    }
+
+    @Test
+    fun `서울 — 문구 없이 전부 마감인 휴무 · 테마별 창 · 30일 창 밖`() {
+        val tue = crawler.validate(SinbiwebSites.NAUI_SINBANG, SinbiwebSites.NAUI_SINBANG.branches.single(), LocalDate.of(2026, 11, 3), fixture("sinbiweb-sinbang-2026-11-03-화요일전부마감.html"))
+        assertEquals(22 to 0, tue.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+
+        val clever = crawler.validate(SinbiwebSites.CLEVERTOWN, SinbiwebSites.CLEVERTOWN.branches.single(), LocalDate.of(2026, 11, 3), fixture("sinbiweb-clevertown-2026-11-03-테마별창.html"))
+        assertEquals(6 to 4, clever.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+
+        val far = crawler.validate(SinbiwebSites.ESCAPEBRO, SinbiwebSites.ESCAPEBRO.branches.single(), LocalDate.of(2026, 11, 26), fixture("sinbiweb-escapebro-2026-11-26-범위밖.html"))
+        assertTrue(far.themes.isEmpty())
+    }
+
     // ── 설정 ───────────────────────────────────────────────────────────
 
     @Test
@@ -242,6 +287,7 @@ class SinbiwebParserTest {
         val tested = setOf(
             "studioesc.co.kr", "doloescape.co.kr", "eroom8.co.kr", "xn--jj0b998aq3cptw.com",
             "speakeasyescape.co.kr", "weyol.com", "happyanding.co.kr", "question-mark.co.kr",
+            "xn--z92b74ha268d.com", "epilogueescape.com", "hotelletoh.co.kr", "xn--910bj3tlmfz4e.com", "clevertown.co.kr", "escapebro.co.kr",
         )
         assertEquals(tested, SinbiwebSites.ALL.map { it.host }.toSet(), "픽스처 없이 더한 매장이 있다 — 이 파일에 한 장 더한다")
     }

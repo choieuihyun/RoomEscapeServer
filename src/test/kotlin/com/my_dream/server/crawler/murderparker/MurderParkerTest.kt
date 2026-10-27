@@ -22,6 +22,9 @@ import kotlin.test.assertTrue
  * | **건대 (2026-10-22 받음)** | | | |
  * | 건대 1호점(S6) 10-24 | 6 | 57 · 52 | 꼬리표가 지점 이름과 다르다(`_건대점`) · 괄호 안 소요시간(`파커4(80분 Premium)`) |
  * | 건대 2호점(S8) 10-24 | 3 | 26 · 17 | 공백이 든 꼬리표(`_건대 2호점`) |
+ * | **잠실 (2026-10-27 받음)** | | | |
+ * | 잠실점(S11) 10-29 | 3 | 27 · 25 | 지점 번호를 드롭다운에서 읽었다 — 플레이방탈 링크의 S12·S13·S15 는 다른 지점이다 |
+ * | WOW 잠실점(S14) 10-29 | 4 | 40 · 32 | 이름 끝 "70분" · 꼬리표 `_WOW잠실점` |
  */
 class MurderParkerTest {
 
@@ -83,6 +86,25 @@ class MurderParkerTest {
         // 건대 두 지점이 서로 덮지 않는다
         assertFailsWith<MurderParkerCrawlException> { crawler.parse(two, sat, fixture("murderparker-s6-2026-10-24.html")) }
         assertFailsWith<MurderParkerCrawlException> { crawler.parse(one, sat, fixture("murderparker-s8-2026-10-24.html")) }
+    }
+
+    @Test
+    fun `잠실 두 지점 — 드롭다운 번호 S11 · S14`() {
+        val thu = LocalDate.of(2026, 10, 29)
+        val jamsil = MurderParker.BRANCHES.first { it.jijem == "S11" }
+        val wowJamsil = MurderParker.BRANCHES.first { it.jijem == "S14" }
+
+        val d1 = crawler.parse(jamsil, thu, fixture("murderparker-s11-2026-10-29.html"))
+        assertEquals(listOf("집으로 가자 야호!(70분 Premium)", "두목 이스케이프(70분 Premium)", "정육각형(80분 Premium)"), d1.themes.map { it.themeName })
+        assertEquals(27 to 25, d1.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+
+        val d2 = crawler.parse(wowJamsil, thu, fixture("murderparker-s14-2026-10-29.html"))
+        assertEquals(listOf("난 그저 여행만 했을 뿐인데..", "G.A.S.A.", "파커랜드", "아틀라스(ATLAS)"), d2.themes.map { it.themeName })
+        assertTrue(d2.themes.all { it.runningMinutes == 70 })
+        assertEquals(40 to 32, d2.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+
+        assertFailsWith<MurderParkerCrawlException> { crawler.parse(wowJamsil, thu, fixture("murderparker-s11-2026-10-29.html")) }
+        assertFailsWith<MurderParkerCrawlException> { crawler.parse(jamsil, thu, fixture("murderparker-s14-2026-10-29.html")) }
     }
 
     @Test

@@ -36,6 +36,7 @@ class PlayPointLabParserTest {
     private val gangnam = fixture("playpointlab-gangnam-2026-10-21.html")
     private val hongdae = fixture("playpointlab-hongdae-2026-10-22.html")
     private val masterkeyKonkuk = fixture("playpointlab-masterkey-konkuk-2026-10-24.html")
+    private val nowon = fixture("playpointlab-nowon-2026-10-29.html")
 
     @Test
     fun `지점마다 테마가 다르다`() {
@@ -62,6 +63,7 @@ class PlayPointLabParserTest {
         assertEquals(setOf("193", "194", "195", "196", "208", "209"), parser.roomIds(gangnam))
         assertEquals(setOf("71", "72", "73"), parser.roomIds(hongdae))
         assertEquals(setOf("212", "154", "155"), parser.roomIds(masterkeyKonkuk))
+        assertEquals(setOf("183", "184", "185", "186"), parser.roomIds(nowon))
 
         // 네 지점의 room-id 가 하나도 안 겹쳐야 이 대조가 성립한다
         val sets = PlayPointLabBranch.entries.map { it.roomIds }
@@ -76,6 +78,7 @@ class PlayPointLabParserTest {
                 PlayPointLabBranch.GANGNAM -> gangnam
                 PlayPointLabBranch.HONGDAE -> hongdae
                 PlayPointLabBranch.KONKUK -> masterkeyKonkuk
+                PlayPointLabBranch.NOWON -> nowon
             }
             assertEquals(branch.roomIds, parser.roomIds(html), "${branch.branchName} room-id 불일치")
         }
@@ -87,6 +90,14 @@ class PlayPointLabParserTest {
         val themes = parser.parse(hongdae).themes
         assertEquals(listOf("71", "72", "73"), themes.map { it.externalId })
         assertEquals(33 to 31, themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+    }
+
+    @Test
+    fun `노원점 — 네 테마 · 2026-10-29`() {
+        // 2026-10-27 받음(서울 확장). 28회차 중 27 가능
+        val themes = parser.parse(nowon).themes
+        assertEquals(listOf("184", "185", "183", "186"), themes.map { it.externalId }, "사이트가 보여 주는 순서 그대로")
+        assertEquals(28 to 27, themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
     }
 
     @Test

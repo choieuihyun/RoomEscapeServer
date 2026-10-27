@@ -156,7 +156,78 @@ object SinbiwebSites {
         branches = listOf(SinbiwebBranch(null, "홍대점", "questionmark-hongdae")),
     )
 
-    val ALL = listOf(STUDIO_ESC, DOLO, EROOM8, GOLDKEY, SPEAKEASY, WEYOL, HAPPYANDING, QUESTION_MARK)
+    // ── 서울 확장 (2026-10-27 조사) — 여섯 다 GET 세대 · 파서를 고치지 않고 읽혔다 ──
+    // 🔒 http 로 묻는 셋(상상의문 · 나의신방 · 탈출브라더스)은 위욜 · 프랭크와 같은 Sectigo 중간 인증서 실수, 클레버타운은 잎 인증서만 보낸다.
+    // 넷 다 http 가 리다이렉트 없이 같은 페이지를 준다(오늘+2 를 https 와 비교). 검증을 끄지 않는다. 오라클에서도 http 로 200 · 진짜 페이지(10-27)
+
+    /**
+     * 지점이 여섯이다(1 대학로 · 2 분당서현 · 4 광주 · 5 수원 · 6 부평 · 7 수원2호점). 서울인 대학로만 넣었다.
+     * s_zizum=2 를 보내면 테마가 달라 지점이 정말 갈린다(ⓐ). 드롭다운이 없어 황금열쇠처럼 이름이 키다.
+     * 플레이방탈이 건 다른 도메인 셋(…272d · 273d · 274d)은 DNS 가 안 풀린다 — 이 도메인 하나다
+     */
+    val SANGSANG = SinbiwebSite(
+        brand = "상상의문",
+        host = "xn--z92b74ha268d.com",
+        scheme = "http",
+        branches = listOf(SinbiwebBranch(1, "대학로점", "sangsang-daehakro")),
+        branchReadback = BranchReadback.SELECT,
+    )
+
+    /**
+     * 창 오늘~+6. 테마 이름에 꺾쇠(`<탐정게임>`)가 있어도 드롭다운 번호와 맞는다.
+     * `MY LAST MEMORY  (예약가능한 테마가 아닙니다)` 는 늘 전부 마감인 자리 채움 테마다 — 가능으로 바뀌지 않아 알림은 안 난다. 그대로 둔다
+     */
+    val EPILOGUE = SinbiwebSite(
+        brand = "에필로그",
+        host = "epilogueescape.com",
+        branches = listOf(SinbiwebBranch(null, "대학로점", "epilogue-daehakro")),
+    )
+
+    /** 테마 하나 · 창 오늘~+6 · 장르 자리에 "성수" 가 들어온다(매장 표기) */
+    val HOTEL_LETOH = SinbiwebSite(
+        brand = "호텔 레토",
+        host = "hotelletoh.co.kr",
+        branches = listOf(SinbiwebBranch(null, "성수점", "letoh-seongsu")),
+    )
+
+    /**
+     * 창 2주(+13). 🕳️ **화요일(10-27 · 11-03)은 휴무 문구 없이 전 회차 "예약마감"** 으로 온다 — 11-04(+8)가 열려 있어 창 끝이 아니라
+     * 정기 휴무를 매진 모양으로 보여 주는 것으로 본다(두 번 보고 짐작). 틀려도 매진으로 저장될 뿐이라 안전한 쪽이다
+     */
+    val NAUI_SINBANG = SinbiwebSite(
+        brand = "나의신방",
+        host = "xn--910bj3tlmfz4e.com",
+        scheme = "http",
+        branches = listOf(SinbiwebBranch(null, "신촌점", "sinbang-sinchon")),
+        openDays = 14,
+    )
+
+    /**
+     * 🕳️ **테마마다 창이 다르다** — 가암성당은 +13 까지, 나머지는 +6 까지. 범위 밖 문구가 `.reserve_info` 가 아니라 테마 상자 안에 있어
+     * 그 테마는 회차 0개로 조용히 지나간다(헛알림 쪽 고장은 아니다). 가암성당이 일주일 내내 매진인 인기 테마라 2주를 본다.
+     * `3주년 축제한마당(NN시 타임 전용)` 넷은 이벤트 테마다(10-30 하루만 회차 · 전부 마감) — 가능으로 바뀌지 않아 그대로 둔다
+     */
+    val CLEVERTOWN = SinbiwebSite(
+        brand = "클레버타운",
+        host = "clevertown.co.kr",
+        scheme = "http",
+        branches = listOf(SinbiwebBranch(null, "신촌점", "clevertown-sinchon")),
+        openDays = 14,
+    )
+
+    /** 창 30일(+29 · +30 부터 서버가 "예약가능일이 아닙니다") — 수집기 상한 때문에 실제로는 +14 까지만 묻는다 */
+    val ESCAPEBRO = SinbiwebSite(
+        brand = "탈출브라더스",
+        host = "escapebro.co.kr",
+        scheme = "http",
+        branches = listOf(SinbiwebBranch(null, "영등포점", "escapebro-yeongdeungpo")),
+        openDays = 30,
+    )
+
+    val ALL = listOf(
+        STUDIO_ESC, DOLO, EROOM8, GOLDKEY, SPEAKEASY, WEYOL, HAPPYANDING, QUESTION_MARK,
+        SANGSANG, EPILOGUE, HOTEL_LETOH, NAUI_SINBANG, CLEVERTOWN, ESCAPEBRO,
+    )
 }
 
 fun SinbiwebBranch.toStoreRef(site: SinbiwebSite) = StoreRef(key = key, brand = site.brand, branchName = branchName)

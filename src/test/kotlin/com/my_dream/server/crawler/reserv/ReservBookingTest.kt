@@ -101,6 +101,17 @@ class ReservBookingTest {
     }
 
     @Test
+    fun `룸즈에이 대학로 — 창 31일 · 같은 호스트의 강남과 서로 덮지 않는다`() {
+        val dh = fixture("reserv-roomsa-daehakro-2026-10-27.json")
+        val day = crawler.parse(ReservSites.ROOMSA_DAEHAKRO, LocalDate.of(2026, 10, 29), dh)
+        assertEquals(listOf("Secret Agent", "안개꽃", "낭랑카페", "행방불냥", "Gain Time"), day.themes.map { it.themeName })
+        assertEquals(50 to 47, day.themes.flatMap { it.slots }.let { it.size to it.count { s -> s.available } })
+        assertEquals(ReservSites.ROOMSA_DAEHAKRO.openDays, day.reservationRangeDays, "다르면 매 요청 '범위가 바뀌었다' 경고가 뜬다")
+        assertFailsWith<ReservCrawlException> { crawler.parse(ReservSites.ROOMSA_GANGNAM, LocalDate.of(2026, 10, 29), dh) }
+        assertFailsWith<ReservCrawlException> { crawler.parse(ReservSites.ROOMSA_DAEHAKRO, LocalDate.of(2026, 10, 22), roomsa) }
+    }
+
+    @Test
     fun `오늘 지난 회차는 can_book 이 true 여도 불가다`() {
         val world = fixture("reserv-playtheworld-konkuk-2026-10-22.json")
         // 14:00 기준 — 10-22 가능 42 중 14:00 까지의 10개는 이미 지났다
@@ -115,5 +126,6 @@ class ReservBookingTest {
     @Test
     fun `매장마다 픽스처 테스트가 있다`() {
         assertEquals(setOf("roomsa.co.kr", "page-today.co.kr", "reservation.playthe.world"), ReservSites.ALL.map { it.host }.toSet())
+        assertEquals(4, ReservSites.ALL.size, "지점을 더하면 그 지점 픽스처 테스트도 더한다")
     }
 }

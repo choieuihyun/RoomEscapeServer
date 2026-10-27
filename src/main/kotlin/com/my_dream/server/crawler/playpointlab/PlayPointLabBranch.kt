@@ -50,6 +50,8 @@ enum class PlayPointLabBranch(
     HONGDAE(11, "홍대점", "playpointlab-hongdae", setOf("71", "72", "73")),
     // 2026-10-22 실측. 카드 브랜드가 [마스터키]다 — 사용자에게 "마스터키 건대점" 으로 나가야 찾는다
     KONKUK(26, "건대점", "masterkey-konkuk", setOf("212", "154", "155"), brand = "마스터키"),
+    // 2026-10-27 실측. 카드 브랜드 [플레이포인트랩] · 상계로3길 21 B1. 4테마 모두 해시태그에 소요시간이 없다
+    NOWON(31, "노원점", "playpointlab-nowon", setOf("183", "184", "185", "186")),
     ;
 
     val host: String get() = HOST

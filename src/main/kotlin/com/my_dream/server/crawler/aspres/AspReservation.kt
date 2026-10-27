@@ -31,8 +31,9 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * **매장마다 갈리는 것은 요청 단위 하나다** (2026-10-21 조사):
  * ```
- * 코드케이   지점 × 날짜 — R_THEMA 를 빼면 15테마가 한 페이지에 온다 (접혀 있을 뿐)
- * 싸인       테마 × 날짜 — R_THEMA 를 빼면 **첫 테마만** 온다. 테마마다 묻는다
+ * 코드케이        지점 × 날짜 — R_THEMA 를 빼면 15테마가 한 페이지에 온다 (접혀 있을 뿐)
+ * 싸인            테마 × 날짜 — R_THEMA 를 빼면 **첫 테마만** 온다. 테마마다 묻는다
+ * 이스케이프시티   지점 × 날짜 — 코드케이와 같다. 다만 지점 증명은 테마 머리 숫자가 아니라 선택된 지점 탭이다 ([AspSite.branchTab] · 2026-10-27)
  * ```
  *
  * 매장을 더하려면 [AspSites.ALL] 에 한 줄을 더하고, 응답을 픽스처로 넣어 `AspReservationTest` 에 한 줄을 더한다.
@@ -55,6 +56,16 @@ data class AspSite(
      */
     val themesPerRequest: Map<String, String> = emptyMap(),
     val openDays: Int = 7,
+    /**
+     * 사이트 지점 탭 이름 — 있으면 지점을 **선택된 탭**(`<li class='tabon3'> 성신여대점 </li>`)과 그 탭 링크의 `R_JIJEM` 으로 증명한다.
+     * 이스케이프시티는 테마 머리가 지점과 무관하게 늘 `thema1` 이라 코드케이식 숫자 대조가 매번 틀린다(2026-10-27).
+     */
+    val branchTab: String? = null,
+    /**
+     * 테마 이름 → `room_code`. 블록 앞 주석(코드케이)도 없는 매장에서 **전 회차 매진인 테마**의 번호를 잇는 표다 —
+     * 코드가 가능 회차 링크에만 있어서, 없으면 그날만 이름이 키가 되어 같은 테마가 다른 행으로 갈린다
+     */
+    val themeCodes: Map<String, String> = emptyMap(),
 ) {
     val baseUrl: String get() = "http://$host"
 }
@@ -108,7 +119,42 @@ object AspSites {
         themesPerRequest = linkedMapOf("A" to "원티드"), openDays = 8,
     )
 
-    val ALL = listOf(CODEK_GANGNAM, SIGN_GANGNAM_CITY, CODEK_HONGDAE, SIGN_HONGDAE, SIGN_SANGSU)
+    // ── 서울 (2026-10-27 조사) ──
+
+    /**
+     * 영등포본점. 코드케이처럼 지점 한 번에 전 테마가 온다. 최대일수 31 → 오늘~+31, 창 밖은 전 회차 `timeOff`(코드케이 모양).
+     * ⚠️ 플레이방탈이 건 `s7`~`s11` 은 지점이 아니다(테마 0 · 최대일수 빈 값) — 지점 번호는 사이트 탭에서 읽었다
+     */
+    val ESCAPECITY_YEONGDEUNGPO = AspSite(
+        brand = "이스케이프시티",
+        host = "escapecity.kr",
+        branchName = "영등포본점",
+        key = "escapecity-yeongdeungpo",
+        jijem = "S1",
+        listPath = "/sub/sub03_1.html",
+        bookPage = "sub03_2.html",
+        openDays = 32,
+        branchTab = "영등포본점",
+        // D 의 이름은 사이트가 글자 사이를 공백으로 벌린다(평일 5칸 · 주말 4칸) — 한 칸으로 접은 값이다
+        themeCodes = linkedMapOf("좀비바이러스" to "A", "마법학교" to "B", "기억의 조각" to "C", "S P Y" to "D", "카지노의 전설" to "E", "다시만날수있을까?" to "F"),
+    )
+
+    /** 사이트가 **소문자 `s2`** 로 건다. `S2` 로 물어도 회차는 같게 오는데 탭이 안 켜진다 — 탭 대조가 끊으므로 사이트 표기 그대로 둔다 */
+    val ESCAPECITY_SUNGSHIN = ESCAPECITY_YEONGDEUNGPO.copy(
+        branchName = "성신여대점", key = "escapecity-sungshin", jijem = "s2", branchTab = "성신여대점",
+        themeCodes = linkedMapOf("알고보면" to "A", "그녀를 찾아서" to "B", "킬러VS" to "C", "VS경찰" to "D", "시험지 유출사건" to "E"),
+    )
+
+    /** 사이트 이름은 "그랜드 시티 신촌점". 최대일수 14 */
+    val ESCAPECITY_SINCHON = ESCAPECITY_YEONGDEUNGPO.copy(
+        branchName = "그랜드 시티 신촌점", key = "escapecity-sinchon", jijem = "S4", openDays = 15, branchTab = "그랜드 시티 신촌점",
+        themeCodes = linkedMapOf("연(80분)" to "A", "신의실수(80분)" to "B", "컨티뉴얼(70분)" to "C"),
+    )
+
+    val ALL = listOf(
+        CODEK_GANGNAM, SIGN_GANGNAM_CITY, CODEK_HONGDAE, SIGN_HONGDAE, SIGN_SANGSU,
+        ESCAPECITY_YEONGDEUNGPO, ESCAPECITY_SUNGSHIN, ESCAPECITY_SINCHON,
+    )
 }
 
 class AspCrawlException(message: String) : RuntimeException(message)
@@ -173,21 +219,31 @@ class AspCrawler(private val rateLimiter: HostRateLimiter) {
     /** 코드케이 — 지점 한 페이지에 테마가 `<li class="thema1">이름</li>` 로 줄줄이 온다 (숫자는 지점마다 다르다 — [THEME_HEAD]) */
     private fun branchPage(site: AspSite, html: String): List<ThemeSchedule> {
         // hidden R_JIJEM 은 **보낸 값을 그대로 돌려준다**(없는 지점 S4 도 S4 로 온다) — 지점 증명이 못 된다.
-        // 테마 머리 숫자는 서버가 실제로 그린 지점을 따라간다(S1→thema1 · S2→thema2 · S3→thema3, 픽스처 넷 확인).
-        // 같은 호스트에 지점이 둘이라, R_JIJEM 이 무시되고 기본 지점이 답하는 날 한 지점 테마가 다른 지점 키로 조용히 저장되는 걸 여기서 막는다
-        val wanted = site.jijem.removePrefix("S")
-        val drawn = THEME_HEAD.findAll(html).map { it.groupValues[1] }.toSet()
-        if (drawn.isNotEmpty() && drawn != setOf(wanted)) {
-            throw AspCrawlException("응답이 그린 지점(thema$drawn)이 요청한 지점(${site.jijem})과 다르다: ${site.brand} ${site.branchName}")
+        // 같은 호스트에 지점이 둘 이상이라, R_JIJEM 이 무시되고 기본 지점이 답하는 날 한 지점 테마가 다른 지점 키로 조용히 저장되는 걸 여기서 막는다
+        if (site.branchTab != null) {
+            // 이스케이프시티 — 켜진 탭 하나가 물은 지점이어야 한다. 없는 지점(S99)은 탭이 하나도 안 켜지고, 대문자 S2 도 안 켜진다
+            val on = SELECTED_BRANCH_TAB.findAll(html).map { it.groupValues[1] to it.groupValues[2].trim() }.toList()
+            if (on != listOf(site.jijem to site.branchTab)) {
+                throw AspCrawlException("선택된 지점 탭이 요청한 지점이 아니다: ${site.brand} 요청=${site.jijem}(${site.branchTab}) 응답=$on")
+            }
+        } else {
+            // 코드케이 — 테마 머리 숫자는 서버가 실제로 그린 지점을 따라간다(S1→thema1 · S2→thema2 · S3→thema3, 픽스처 넷 확인)
+            val wanted = site.jijem.removePrefix("S")
+            val drawn = THEME_HEAD.findAll(html).map { it.groupValues[1] }.toSet()
+            if (drawn.isNotEmpty() && drawn != setOf(wanted)) {
+                throw AspCrawlException("응답이 그린 지점(thema$drawn)이 요청한 지점(${site.jijem})과 다르다: ${site.brand} ${site.branchName}")
+            }
         }
         val chunks = html.split(THEME_HEAD)
         return chunks.drop(1).mapIndexed { i, chunk ->
-            val name = chunk.substringBefore("</li>").trim()
+            // 공백을 한 칸으로 접는다 — 이스케이프시티 "S     P     Y" 가 평일 5칸 · 주말 4칸이라 그대로 두면 한 테마가 요일마다 두 이름이 된다
+            val name = chunk.substringBefore("</li>").trim().replace(SPACES, " ")
             val body = chunk.substringBefore(THEME_END)
             // 테마 번호는 블록 바로 앞에 주석으로 남은 옛 링크(R_THEMA=codek_s1)에 늘 있다.
-            // 회차 링크의 room_code 에도 있지만, 전 회차가 매진인 테마는 링크가 하나도 없어서 거기선 못 얻는다
+            // 회차 링크의 room_code 에도 있지만, 전 회차가 매진인 테마는 링크가 하나도 없어서 거기선 못 얻는다 — 주석도 없는 매장은 설정 표로 잇는다
             val id = THEME_CODE.findAll(chunks[i].takeLast(800)).lastOrNull()?.groupValues?.get(1)
                 ?: ROOM_CODE.find(body)?.groupValues?.get(1)
+                ?: site.themeCodes[name]
             theme(id, name, slots(site, body))
         }
     }
@@ -233,6 +289,9 @@ class AspCrawler(private val rateLimiter: HostRateLimiter) {
         private const val THEME_END = "<div style=\"clear: both\"></div>"
         private val THEME_CODE = Regex("""R_THEMA=([A-Za-z0-9_]+)&""")
         private val ROOM_CODE = Regex("""room_code=([A-Za-z0-9_]+)&""")
+        /** 이스케이프시티 지점 탭 — 켜진 것만 `tabon` 이고 숫자는 지점과 무관하게 바뀐다(S1→1 · s2·S4→3) */
+        private val SELECTED_BRANCH_TAB = Regex("""R_JIJEM=([A-Za-z0-9]+)&DIS_T=A">\s*<li class='tabon[0-9]*'>([^<]*)</li>""")
+        private val SPACES = Regex("""\s+""")
         private val SELECTED_TAB = Regex("""R_THEMA=([A-Za-z0-9_]+)[^"]*">\s*<li class='tabon'[^>]*>([^<]*)</li>""")
     }
 }
