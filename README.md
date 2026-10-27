@@ -218,6 +218,7 @@ GET    /api/club/notice  · PUT { text, notify } · DELETE           홈 공지 
 GET    /api/club/feedback · POST { text } · PUT|DELETE /{id}          의견 게시판 — 멤버 모두 보기 (§4.15)
 POST   /api/club/feedback/{id}/like { liked } · PUT …/{id}/status { status }(운영진)   공감 · 처리 상태
 GET|POST /api/club/feedback/{id}/comments · DELETE /api/club/feedback/comments/{commentId}   댓글
+GET|POST /api/club/events/{id}/comments · DELETE /api/club/events/comments/{commentId}     일정 댓글 — 알림 감 (§4.16)
 GET    /api/me/played                     내 해 본 테마      POST { themeName, themeKey?, … }   DELETE /api/me/played/{id}
 GET    /api/club/members/{uid}/played     멤버의 해 본 테마
 GET    /api/me/events?before=&beforeId=&limit=  내가 참여한 지난 일정 { events, total } — (date, id) 커서

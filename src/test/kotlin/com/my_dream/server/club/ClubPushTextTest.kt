@@ -62,4 +62,14 @@ class ClubPushTextTest {
         // 구간이 있으면 구간이 먼저다
         assertEquals("모임 · 10/24(토) 13:40", ClubPushText.booked(am, segs(am, 820 to "A")).second)
     }
+
+    @Test
+    fun `일정 댓글 — 쓴 사람 닉네임, 제목 또는 구간 · 첫 줄 앞 60자, 둘 다 없으면 댓글만`() {
+        val (title, body) = ClubPushText.comment(event(title = "모임"), emptyList(), "닉나", "좋아요\n둘째 줄")
+        assertEquals("닉나 님이 댓글을 남겼어요", title)
+        assertEquals("모임 · 좋아요", body)
+        val untitled = event(title = "")
+        assertEquals("A → B · ${"🙂".repeat(60)}…", ClubPushText.comment(untitled, segs(untitled, 600 to "A", 700 to "B"), "닉", "🙂".repeat(61)).second, "코드 포인트로 자른다")
+        assertEquals("안녕", ClubPushText.comment(untitled, emptyList(), "닉", "안녕").second, "앞에 ' · ' 가 홀로 남지 않는다")
+    }
 }

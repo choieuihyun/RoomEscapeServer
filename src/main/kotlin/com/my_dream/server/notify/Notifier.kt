@@ -59,9 +59,11 @@ interface Notifier {
 /**
  * 동호회 알림 한 건 (아키텍처 D34). 빈자리 알림([Notification])과 달리 **제목·본문이 정해져 온다** —
  * 알림 종류가 셋(전날 · 마감 · 예약 완료)에 테스트까지라, 문구를 발송 쪽에 두면 발송 쪽이 동호회를 알아야 한다.
- * [linkFragment] 는 앱 주소 뒤에 붙는다 (`#e=12` → 그 일정)
+ * [linkFragment] 는 앱 주소 뒤에 붙는다 (`#e=12` → 그 일정).
+ * [tag] 가 있으면 **같은 tag 의 알림이 기기에서 하나로 겹친다**(웹 푸시 `tag` + `renotify`) — 일정 댓글(§4.16)이 쓴다.
+ * 없으면 알림마다 따로 뜬다(지금까지의 알림 그대로)
  */
-data class Push(val userId: String, val title: String, val body: String, val linkFragment: String = "")
+data class Push(val userId: String, val title: String, val body: String, val linkFragment: String = "", val tag: String? = null)
 
 /** 기기 수 · 전해진 수 · 다시 시도할 실패 수. 테스트 알림은 이 셋을 그대로 화면에 보여 준다 */
 data class PushResult(val devices: Int, val delivered: Int, val failed: Int) {

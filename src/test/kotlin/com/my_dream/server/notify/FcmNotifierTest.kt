@@ -112,12 +112,30 @@ class FcmNotifierTest {
             .andExpect(jsonPath("$.message.webpush.fcm_options.link").value("https://example.test/#e=12"))
             .andExpect(jsonPath("$.message.data.link").value("https://example.test/#e=12"))
             .andExpect(jsonPath("$.message.webpush.notification.icon").value("https://example.test/icon-192.png"))
+            // tag 가 없으면 싣지 않는다 — 지금까지의 알림은 겹치지 않고 따로 뜬다
+            .andExpect(jsonPath("$.message.webpush.notification.tag").doesNotExist())
+            .andExpect(jsonPath("$.message.data.tag").doesNotExist())
             .andRespond(withSuccess(fixture("fcm-ok.json"), MediaType.APPLICATION_JSON))
 
         val r = notifier.push(Push("나", "내일 일정이 있어요", "모임 · 19:00", "#e=12"))
         assertEquals(PushResult(devices = 2, delivered = 1, failed = 0), r)
         assertEquals(Delivery.DELIVERED, r.delivery)
         assertEquals(listOf("산토큰"), devices.stored)
+        server.verify()
+    }
+
+    @Test
+    fun `tag 가 있으면 웹 푸시 tag 와 renotify 를 싣고 data 에도 tag 를 넣는다 — 같은 일정 댓글 알림이 기기에서 겹친다`() {
+        val (notifier, server) = setup(FakeDevices("산토큰"))
+        server.expect(requestTo("https://fcm.test/v1/projects/roomescapescheduler/messages:send"))
+            .andExpect(jsonPath("$.message.webpush.notification.tag").value("ev-cmt-12"))
+            .andExpect(jsonPath("$.message.webpush.notification.renotify").value(true))
+            .andExpect(jsonPath("$.message.webpush.notification.icon").value("https://example.test/icon-192.png"))
+            .andExpect(jsonPath("$.message.data.tag").value("ev-cmt-12"))
+            .andExpect(jsonPath("$.message.data.link").value("https://example.test/#e=12"))
+            .andRespond(withSuccess(fixture("fcm-ok.json"), MediaType.APPLICATION_JSON))
+
+        assertEquals(Delivery.DELIVERED, notifier.push(Push("나", "닉 님이 댓글을 남겼어요", "모임 · 좋아요", "#e=12", "ev-cmt-12")).delivery)
         server.verify()
     }
 

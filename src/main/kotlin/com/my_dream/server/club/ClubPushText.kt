@@ -47,6 +47,22 @@ object ClubPushText {
     }
 
     /**
+     * 일정 댓글 (§4.16): 제목 `{쓴 사람} 님이 댓글을 남겼어요`, 본문 `{제목 또는 구간} · {댓글 첫 줄 앞 60자}…`.
+     * 제목도 구간도 없는 일정이면 댓글만 — 앞에 ` · ` 가 홀로 남지 않게
+     */
+    fun comment(event: ClubEvent, segs: List<ClubEventSegment>, author: String, text: String): Pair<String, String> =
+        "$author 님이 댓글을 남겼어요" to listOf(what(event, segs), preview(text)).filter { it.isNotEmpty() }.joinToString(" · ")
+
+    /** 첫 줄 앞 60자, 넘으면 `…`. **코드 포인트로** 자른다 — UTF-16 으로 자르면 이모지가 반쪽 난다. 공지 알림(D46)도 이걸 쓴다 */
+    fun preview(text: String): String {
+        val line = text.lines().first().trimEnd()
+        if (line.codePointCount(0, line.length) <= PREVIEW_LETTERS) return line
+        return line.substring(0, line.offsetByCodePoints(0, PREVIEW_LETTERS)) + "…"
+    }
+
+    private const val PREVIEW_LETTERS = 60
+
+    /**
      * 구간 없는 일정의 `오전`·`오후` (§4.10 · 2026-10-22). 앱이 "오전/오후" 체크를 **정확히** `0~719`·`720~1439` 로 저장한다 —
      * 서버에 칸을 따로 두지 않았다. 이 값이 아니면 null(시각으로 보인다). 손으로 `00:00~11:59` 를 고른 일정도 `오전` 이 되지만,
      * 그 둘은 같은 뜻이라 받아들였다

@@ -92,7 +92,11 @@ class ClubAlerts(
  * 전역 설정은 앱 전체의 동작을 바꾼다
  */
 @Component
-class ClubAlertListener(private val alerts: ClubAlerts, private val notices: NoticeService) {
+class ClubAlertListener(
+    private val alerts: ClubAlerts,
+    private val notices: NoticeService,
+    private val eventComments: EventCommentService,
+) {
 
     private val log = LoggerFactory.getLogger(javaClass)
     private val pool = Executors.newSingleThreadExecutor { Thread(it, "club-alerts").apply { isDaemon = true } }
@@ -110,6 +114,14 @@ class ClubAlertListener(private val alerts: ClubAlerts, private val notices: Not
     fun on(posted: NoticePosted) {
         pool.execute {
             runCatching { notices.notifyMembers(posted) }.onFailure { log.error("공지 알림 실패 — 쓴 사람 {}", posted.author, it) }
+        }
+    }
+
+    /** 일정 댓글 알림(D49)도 같은 스레드로 — 알림이 실패해도 댓글은 이미 저장됐다(계약 "실패해도 POST 는 성공") */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun on(posted: EventCommentPosted) {
+        pool.execute {
+            runCatching { eventComments.notifyOthers(posted) }.onFailure { log.error("일정 댓글 알림 실패 — 일정 {}", posted.eventId, it) }
         }
     }
 

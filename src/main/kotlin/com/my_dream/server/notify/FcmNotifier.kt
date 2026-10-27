@@ -117,13 +117,13 @@ class FcmNotifier(
     override fun send(notification: Notification): Delivery = deliverAll(notification.userId, message(notification), link).delivery
 
     /** 동호회 알림 (D34). 발송 고리는 빈자리 알림과 같은 [deliverAll] 이다 */
-    override fun push(push: Push): PushResult = deliverAll(push.userId, MessageText(push.title, push.body), link + push.linkFragment)
+    override fun push(push: Push): PushResult = deliverAll(push.userId, MessageText(push.title, push.body), link + push.linkFragment, push.tag)
 
     /**
      * 이 사람의 기기 전부에 하나씩. 빈자리 알림과 동호회 알림이 **같은 고리**를 쓴다 —
      * 죽은 토큰 정리 · 세 갈래 결과(D17)가 두 벌로 갈라지지 않게 (D34)
      */
-    private fun deliverAll(userId: String, text: MessageText, link: String): PushResult {
+    private fun deliverAll(userId: String, text: MessageText, link: String, tag: String? = null): PushResult {
         val tokens = devices.of(userId)
         if (tokens.isEmpty()) {
             // 실패가 아니다. 감시만 걸고 알림 권한은 안 준 상태다
@@ -135,7 +135,7 @@ class FcmNotifier(
         var retryable = 0
 
         for (token in tokens) {
-            when (deliver(token, text, link)) {
+            when (deliver(token, text, link, tag)) {
                 Outcome.OK -> delivered++
                 Outcome.RETRY -> retryable++
                 // 지운 건 재시도 대상이 아니다. 다음 바퀴에는 목록에서 아예 빠진다
@@ -146,7 +146,7 @@ class FcmNotifier(
         return PushResult(tokens.size, delivered, retryable)
     }
 
-    private fun deliver(token: String, text: MessageText, link: String): Outcome {
+    private fun deliver(token: String, text: MessageText, link: String, tag: String?): Outcome {
         val bearer = runCatching { accessToken.value() }.getOrElse {
             // 키 파일이 잘못됐거나 구글이 안 붙는 상황. 토큰 잘못이 아니므로 **지우지 않는다**
             log.error("FCM 액세스 토큰을 못 받았다 — {}", it.message)
@@ -157,7 +157,7 @@ class FcmNotifier(
             .uri("/v1/projects/{project}/messages:send", projectId)
             .header("Authorization", "Bearer $bearer")
             .contentType(MediaType.APPLICATION_JSON)
-            .body(payload(token, text, link))
+            .body(payload(token, text, link, tag))
             .exchange { _, response ->
                 if (response.statusCode.is2xxSuccessful) {
                     Outcome.OK
@@ -221,7 +221,7 @@ class FcmNotifier(
      * `notification` 으로 보내면 브라우저가 알아서 띄운다 — `data` 만 보내면 서비스 워커가
      * 직접 그려야 하고, 워커가 잠들어 있으면 아무것도 안 뜬다.
      */
-    private fun payload(token: String, text: MessageText, link: String): String =
+    private fun payload(token: String, text: MessageText, link: String, tag: String?): String =
         json.writeValueAsString(
             mapOf(
                 "message" to mapOf(
@@ -230,11 +230,14 @@ class FcmNotifier(
                     // 알림을 누르면 Floduler 로 간다. 없으면 눌러도 아무 일도 안 일어난다
                     "webpush" to mapOf(
                         "fcm_options" to mapOf("link" to link),
-                        "notification" to mapOf("icon" to icon, "badge" to icon),
+                        // tag 가 같으면 브라우저가 앞 알림을 바꿔 끼운다. renotify 가 없으면 바꿔 끼울 때 소리·진동이 안 난다
+                        "notification" to mapOf("icon" to icon, "badge" to icon) +
+                            (tag?.let { mapOf("tag" to it, "renotify" to true) } ?: emptyMap()),
                     ),
                     // 같은 주소를 data 에도 싣는다 — 앱의 서비스 워커가 알림을 직접 다룰 때 읽는 자리다
                     // (`fcmOptions` 는 SDK 버전마다 꺼내는 이름이 달라 믿기 어렵다는 Floduler 쪽 요청, 2026-10-19)
-                    "data" to mapOf("link" to link),
+                    // tag 도 싣는다 — 앱이 열려 있을 때 서비스 워커·화면이 직접 띄우는 알림도 같이 겹치게
+                    "data" to mapOf("link" to link) + (tag?.let { mapOf("tag" to it) } ?: emptyMap()),
                 ),
             ),
         )

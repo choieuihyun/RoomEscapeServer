@@ -109,17 +109,12 @@ class NoticeService(
     companion object {
         const val MAX_LETTERS = 500
         const val MAX_LINES = 10
-        const val PREVIEW_LETTERS = 60
         const val TITLE = "새 공지가 있어요"
         val GAP: Duration = Duration.ofMinutes(1)
 
         fun clean(raw: String?): String = boundedText(raw, MAX_LETTERS, MAX_LINES, ClubError::badNotice)
 
-        /** 알림 본문 — 첫 줄 앞 60자, 넘으면 `…`. 코드 포인트로 자른다 — UTF-16 으로 자르면 이모지가 반쪽 난다 */
-        fun preview(text: String): String {
-            val line = text.lines().first().trimEnd()
-            if (line.codePointCount(0, line.length) <= PREVIEW_LETTERS) return line
-            return line.substring(0, line.offsetByCodePoints(0, PREVIEW_LETTERS)) + "…"
-        }
+        /** 알림 본문 — 첫 줄 앞 60자. 일정 댓글(§4.16)과 같은 자르기라 [ClubPushText.preview] 한 곳에 둔다 */
+        fun preview(text: String): String = ClubPushText.preview(text)
     }
 }

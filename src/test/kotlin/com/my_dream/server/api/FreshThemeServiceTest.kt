@@ -106,9 +106,46 @@ class FreshThemeServiceTest @Autowired constructor(
         val r = fresh.fresh("나", id, "2026-12-25")
         assertFalse(r.collected)
         assertNull(r.checkedAt)
-        assertTrue(r.themes.isEmpty())
-        assertEquals(4, r.missing.size)
+        assertTrue(r.themes.isEmpty(), "모은 테마가 하나도 없으면 카탈로그도 비어 있다")
+        // ~~4지점이 다 missing~~ — 정정 (2026-10-27 · §4.9 추가): 안 모은 날은 빈 배열. 그날 지점이 "빠진" 게 아니라 날 전체가 아직이다
+        assertTrue(r.missing.isEmpty())
         assertEquals(listOf("나"), r.noRecord, "기록이 하나도 없는 참여자 — 그 사람의 '안 해 봄' 은 믿을 수 없다")
+    }
+
+    @Test
+    fun `안 모은 날은 지원 지점의 테마 전부를 회차 없이 — 해 본 사람과 순서는 모은 날과 같고, 값은 테마 고르기 목록과 같다`() {
+        // 2~3주 뒤 일정 — 예약이 안 열려 그날 시간표가 없다. 그래도 누가 해 봤는지는 보고 싶다 (§4.9 추가)
+        sync.sync(day(Play33Branch.KONKUK, date, "18" to "목격자", "19" to "비밀의 화원"))
+        sync.sync(day(Play33Branch.HONGDAE, LocalDate.of(2020, 1, 1), "1" to "사라진 테마"))
+        val id = event()
+        events.join("너", id)
+        played.add("너", PlayedInput(themeName = "목격자", themeKey = "play33-konkuk:18"))
+
+        val r = fresh.fresh("나", id, "2026-11-28")
+
+        assertFalse(r.collected)
+        assertNull(r.checkedAt)
+        assertTrue(r.missing.isEmpty())
+        assertEquals(listOf("play33-konkuk:19", "play33-hongdae:1", "play33-konkuk:18"), r.themes.map { it.themeKey }, "해 본 사람 수 → 매장 → 지점 → 이름")
+        assertEquals(listOf(emptyList(), emptyList(), listOf("너")), r.themes.map { it.playedBy })
+        assertTrue(r.themes.all { it.sessions.isEmpty() }, "회차는 모른다")
+
+        val witness = r.themes.last()
+        assertEquals("play33-konkuk:18", witness.id, "id 는 /api/schedule 테마와 같은 값")
+        assertEquals("목격자", witness.name)
+        assertEquals("플레이33 건대점", witness.place)
+        assertEquals(70, witness.dur)
+        val refs = query.themes().associateBy { it.themeKey }
+        assertEquals(refs.keys, r.themes.map { it.themeKey }.toSet(), "테마 고르기 목록과 같은 테마들")
+        r.themes.forEach {
+            val ref = refs.getValue(it.themeKey)
+            assertEquals(listOf(ref.themeName, ref.storeName, ref.branchName), listOf(it.name, it.storeName, it.branchName))
+        }
+
+        // 모은 날은 지금처럼 그날 열린 테마만 — 카탈로그와 섞이지 않는다
+        val collected = fresh.fresh("나", id, null)
+        assertTrue(collected.collected)
+        assertEquals(setOf("play33-konkuk:18", "play33-konkuk:19"), collected.themes.map { it.themeKey }.toSet())
     }
 
     @Test

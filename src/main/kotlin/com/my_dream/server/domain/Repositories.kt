@@ -445,6 +445,27 @@ interface ClubFeedbackCommentRepository : JpaRepository<ClubFeedbackComment, Lon
     fun deleteByFeedback(feedbackId: Long): Int
 }
 
+/** 일정 목록의 `commentCount` 한 줄 */
+data class EventCount(val eventId: Long, val count: Long)
+
+interface ClubEventCommentRepository : JpaRepository<ClubEventComment, Long> {
+
+    fun findByEventIdOrderById(eventId: Long): List<ClubEventComment>
+
+    /** 일정 목록의 댓글 수 — 정산 합계([SettlementItemRepository.totalsByEvent])와 같은 모양 */
+    @Query(
+        """
+        select new com.my_dream.server.domain.EventCount(c.eventId, count(c))
+        from ClubEventComment c where c.eventId in :eventIds group by c.eventId
+        """,
+    )
+    fun countsByEvent(eventIds: Collection<Long>): List<EventCount>
+
+    @Modifying
+    @Query("delete from ClubEventComment c where c.eventId = :eventId")
+    fun deleteByEvent(eventId: Long): Int
+}
+
 interface ClubNoticeRepository : JpaRepository<ClubNotice, Long> {
 
     /** 걸린 공지. 같은 순간 둘이 쓰면 잠깐 두 행일 수 있어 가장 나중 것 하나만 본다 (D46) */

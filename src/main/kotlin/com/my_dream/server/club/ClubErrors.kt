@@ -94,6 +94,8 @@ class ClubError(
         fun badStatus() = ClubError(HttpStatus.BAD_REQUEST, "BAD_STATUS", "처리 상태를 다시 골라 주세요.")
         fun notAuthor() = ClubError(HttpStatus.FORBIDDEN, "NOT_AUTHOR", "쓴 사람만 할 수 있어요.")
         fun noSuchFeedback() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_FEEDBACK", "지워졌거나 없는 의견이에요.")
+        /** 일정 댓글(§4.16)은 10줄까지라 문구가 다르다. 코드는 의견 댓글과 같은 `BAD_COMMENT` */
+        fun badEventComment() = ClubError(HttpStatus.BAD_REQUEST, "BAD_COMMENT", "댓글은 1~300자, 10줄까지 적을 수 있어요.")
         fun noSuchComment() = ClubError(HttpStatus.NOT_FOUND, "NO_SUCH_COMMENT", "지워졌거나 없는 댓글이에요.")
     }
 }

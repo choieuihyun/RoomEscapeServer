@@ -49,6 +49,7 @@ class MigrationValidationTest @Autowired constructor(
     private val watches: WatchRepository,
     private val logs: NotificationLogRepository,
     private val settlementItems: SettlementItemRepository,
+    private val eventComments: ClubEventCommentRepository,
     private val jdbc: JdbcTemplate,
     private val tx: TransactionTemplate,
 ) {
@@ -63,6 +64,7 @@ class MigrationValidationTest @Autowired constructor(
     // 컨테이너는 클래스 하나가 같이 쓴다. 테스트마다 비우지 않으면 앞 테스트의 행이 남는다
     @BeforeEach
     fun clean() {
+        jdbc.update("DELETE FROM club_event_comment")
         jdbc.update("DELETE FROM club_feedback_like")
         jdbc.update("DELETE FROM club_feedback_comment")
         jdbc.update("DELETE FROM club_feedback")
@@ -88,7 +90,7 @@ class MigrationValidationTest @Autowired constructor(
     }
 
     @Test
-    fun `V17 까지 돌고 엔티티와 맞는다`() {
+    fun `V18 까지 돌고 엔티티와 맞는다`() {
         // 컨텍스트가 떴다는 것 자체가 validate 통과다. 표가 비어 있는지까지 본다
         assertEquals(0, members.count())
         assertEquals(0, kakaoLinks.count())
@@ -282,6 +284,21 @@ class MigrationValidationTest @Autowired constructor(
         jdbc.update("DELETE FROM club_feedback WHERE id = ?", id)
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM club_feedback_like", Int::class.java))
         assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM club_feedback_comment", Int::class.java))
+    }
+
+    @Test
+    fun `V18 일정 댓글 — 300자는 이모지여도 들어가고, 일정별 수 쿼리가 돌고, 일정 행을 손으로 지우면 따라간다`() {
+        val id = insertEvent()
+        val insert = "INSERT INTO club_event_comment (event_id, user_id, text, admin, created_at) VALUES (?, 'b', ?, false, now())"
+        jdbc.update(insert, id, "🙂".repeat(300))
+        jdbc.update(insert, id, "둘")
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, id, "🙂".repeat(301)) }
+        assertFailsWith<DataIntegrityViolationException> { jdbc.update(insert, 999_999L, "없는 일정") }
+        // 생성자 식 + group by — H2 에서만 돌려 본 쿼리다
+        assertEquals(listOf(EventCount(id, 2)), eventComments.countsByEvent(listOf(id)))
+        // 서비스는 일정을 "지움" 표시만 하고 댓글을 먼저 지운다. 이건 사람이 운영 DB 를 정리할 때다
+        jdbc.update("DELETE FROM club_event WHERE id = ?", id)
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM club_event_comment", Int::class.java))
     }
 
     @Test

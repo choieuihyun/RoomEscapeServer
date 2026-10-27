@@ -65,16 +65,23 @@ class ScheduleQueryService(
      * 해 본 테마는 대개 지난 테마라, 지금 열린 것만 주면 기록할 수가 없다 (D33)
      */
     fun themes(): List<ThemeRefDto> {
-        val supported = supportedBranches().map { it.key }.toSet()
         val korean = Collator.getInstance(Locale.KOREAN)
-        return themes.findAllWithStore()
-            .filter { it.store.storeKey in supported }
+        return catalog()
             .map { ThemeRefDto("${it.store.storeKey}:${it.externalId}", it.name, it.store.branchName, it.store.brand) }
             .sortedWith(
                 compareBy<ThemeRefDto, String>(korean) { it.storeName }
                     .thenBy(korean) { it.branchName }
                     .thenBy(korean) { it.themeName },
             )
+    }
+
+    /**
+     * 지원 지점의 테마 전부(지점까지 읽어 둔 것). `/api/themes` 와 협의 도우미의 "안 모은 날"(§4.9 추가)이 **같은 목록**을 쓴다 —
+     * 두 곳이 따로 거르면 한쪽에만 있는 테마가 생긴다. 사이트에서 사라진 테마도 남는다(위 [themes] 와 같은 이유)
+     */
+    fun catalog(): List<Theme> {
+        val supported = supportedBranches().map { it.key }.toSet()
+        return themes.findAllWithStore().filter { it.store.storeKey in supported }
     }
 
     /** 없는 지점이거나 아직 수집되지 않았으면 null. 호출자가 그 사실을 구분해 알릴 수 있게 한다. */

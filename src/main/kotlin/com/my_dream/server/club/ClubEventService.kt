@@ -5,6 +5,7 @@ import com.my_dream.server.domain.ClubEventAvailability
 import com.my_dream.server.domain.ClubEventAvailabilityRepository
 import com.my_dream.server.domain.ClubEventCandidate
 import com.my_dream.server.domain.ClubEventCandidateRepository
+import com.my_dream.server.domain.ClubEventCommentRepository
 import com.my_dream.server.domain.ClubEventParticipant
 import com.my_dream.server.domain.ClubEventParticipantRepository
 import com.my_dream.server.domain.ClubEventRepository
@@ -119,6 +120,8 @@ data class EventDto(
      * 맨 뒤에 기본값과 함께 둔다 — 옛 화면은 이 칸을 모르고, 테스트의 다른 생성 자리도 안 건드린다
      */
     val settlementTotal: Long? = null,
+    /** 지금 댓글 수 (§4.16 · D49). 옛 화면은 모르는 칸이라 맨 뒤에 기본값과 함께 */
+    val commentCount: Int = 0,
 )
 
 data class DeletedDto(val id: Long, val deleted: Boolean)
@@ -158,6 +161,7 @@ class ClubEventService(
     private val members: ClubMemberRepository,
     private val profiles: MemberProfileRepository,
     private val settlementItems: SettlementItemRepository,
+    private val comments: ClubEventCommentRepository,
     private val publisher: ApplicationEventPublisher,
 ) {
 
@@ -288,6 +292,8 @@ class ClubEventService(
         if (!canManage(event, viewer)) throw ClubError.notEventOwner()
         event.deletedAt = Instant.now()
         event.deletedBy = uid
+        // 댓글은 함께 지운다(§4.16). 일정은 표시만 남지만, 지운 일정의 댓글은 아무도 다시 못 본다 — 멤버끼리 쓴 글을 둘 이유가 없다
+        comments.deleteByEvent(id)
         log.info("동호회 일정 {} 삭제 표시 (by {})", id, uid)
         return DeletedDto(id, true)
     }
@@ -452,7 +458,7 @@ class ClubEventService(
         segments.saveAll(list.mapIndexed { i, s -> ClubEventSegment(event, i, s.themeName, s.branchName, s.themeKey, s.startMin, s.endMin) })
     }
 
-    // --- 응답 만들기 — 일정 n 개에 쿼리 7개 (구간 · 참여자 · 후보 · 응답 · 해 본 테마 · 닉네임 · 정산 합계), N+1 을 만들지 않는다 ---
+    // --- 응답 만들기 — 일정 n 개에 쿼리 8개 (구간 · 참여자 · 후보 · 응답 · 해 본 테마 · 닉네임 · 정산 합계 · 댓글 수), N+1 을 만들지 않는다 ---
 
     private fun toDto(event: ClubEvent, viewer: ClubMember) = toDtos(listOf(event), viewer).single()
 
@@ -468,6 +474,7 @@ class ClubEventService(
         // 내보낸 멤버도 행이 남아 있으니 닉네임이 나온다. 행이 아예 없는 경우는 없지만, 있어도 화면이 깨지지 않게 빈 문자열
         val nick = members.findByUserIdIn(uids.toSet()).associate { it.userId to it.nickname }
         val settled = settlementItems.totalsByEvent(ids).associate { it.eventId to it.total }
+        val commented = comments.countsByEvent(ids).associate { it.eventId to it.count.toInt() }
 
         return list.map { e ->
             val id = requireNotNull(e.id)
@@ -502,6 +509,7 @@ class ClubEventService(
                 mine = e.createdBy == viewer.userId,
                 canManage = canManage(e, viewer),
                 settlementTotal = settled[id],
+                commentCount = commented[id] ?: 0,
             )
         }
     }

@@ -477,6 +477,21 @@ class ClubFeedbackComment(
     var id: Long? = null
 }
 
+/** 일정 댓글 (D49). 의견 댓글([ClubFeedbackComment])과 같은 모양 + 일정. [admin] 은 쓸 때 운영진이었나(저장 값) */
+@Entity
+@Table(name = "club_event_comment")
+class ClubEventComment(
+    @Column(name = "event_id", nullable = false) val eventId: Long,
+    @Column(name = "user_id", nullable = false) val userId: String,
+    @Column(nullable = false, length = 300) val text: String,
+    @Column(nullable = false) val admin: Boolean,
+    @Column(name = "created_at", nullable = false) val createdAt: Instant,
+) {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null
+}
+
 /**
  * 정산 머리 (D37). **[version] 은 손으로 올린다** — `@Version` 이 아니다. 계약은 "없으면 0, 첫 저장이 1" 인데
  * `@Version` 은 새 행이 0 에서 시작하고 flush 때 올라 응답에 옛 번호가 나간다(D31 의 함정).

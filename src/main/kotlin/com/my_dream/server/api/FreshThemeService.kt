@@ -7,6 +7,8 @@ import com.my_dream.server.domain.ClubEventParticipantRepository
 import com.my_dream.server.domain.ClubEventRepository
 import com.my_dream.server.domain.ClubMemberRepository
 import com.my_dream.server.domain.PlayedThemeRepository
+import com.my_dream.server.domain.Theme
+import com.my_dream.server.domain.TimeSlot
 import com.my_dream.server.domain.TimeSlotRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -92,8 +94,14 @@ class FreshThemeService(
             .filter { it.theme.store.storeKey in supportedKeys && !schedule.isBeforeWindow(it.theme.store.storeKey, date) }
         val seen = rows.map { it.theme.store.storeKey }.toSet()
 
+        // 그날 시간표를 하나도 안 모았으면(대개 예약이 아직 안 열린 2~3주 뒤) 지원 지점의 테마 전부를 회차 없이 싣는다 (§4.9 추가 · 2026-10-27).
+        // "누가 해 봤나" 는 날짜와 상관없이 알 수 있어서다. 모은 날이면 지금처럼 그날 열린 테마만 — 카탈로그와 섞지 않는다
+        val collected = rows.isNotEmpty()
+        val byTheme: Map<Theme, List<TimeSlot>> =
+            if (collected) rows.groupBy { it.theme } else schedule.catalog().associateWith { emptyList() }
+
         val korean = Collator.getInstance(Locale.KOREAN)
-        val themes = rows.groupBy { it.theme }.map { (theme, themeSlots) ->
+        val themes = byTheme.map { (theme, themeSlots) ->
             val store = theme.store
             val key = "${store.storeKey}:${theme.externalId}"
             val nameKey = PlayedMatch.nameKey(theme.name)
@@ -112,9 +120,10 @@ class FreshThemeService(
 
         return FreshDto(
             date = date,
-            collected = rows.isNotEmpty(),
+            collected = collected,
             checkedAt = rows.maxOfOrNull { it.lastCheckedAt },
-            missing = supported.filter { it.key !in seen }.map { BranchRefDto(it.brand, it.branchName) },
+            // 안 모은 날은 빈 배열(계약) — 지점이 전부 "빠짐" 으로 나오면 화면이 그 목록을 경고로 띄운다
+            missing = if (collected) supported.filter { it.key !in seen }.map { BranchRefDto(it.brand, it.branchName) } else emptyList(),
             noRecord = people.filter { playedByUser[it].isNullOrEmpty() },
             themes = themes,
         )
