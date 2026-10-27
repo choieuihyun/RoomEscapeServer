@@ -1,0 +1,26 @@
+# 라이브러리 버전 올리기 PR (사용자 결정 2026-10-27 · 아키텍처 D48 · 배포.md "보안").
+#
+# ⚠️ 이 PR 을 GitHub 에서 바로 병합하지 않는다. main 에 들어가면 서버 크론이 5분 안에
+#    **테스트 없이**(Dockerfile 이 `bootJar -x test`) 운영에 올린다. 브랜치를 받아 테스트를 돌린 뒤 올린다.
+#
+# 보안 구멍 알림(Dependabot alerts)과 보안 수정 PR 은 이 파일이 아니라 저장소 설정
+# (Settings → Code security) 에서 켠다 — 이 파일은 "평소 버전 올리기" 만 정한다.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Seoul
+    # 작은 올리기는 한 PR 로 묶는다 — 라이브러리마다 PR 이 따로 오면 아무도 안 본다
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    # 큰 버전(Spring Boot 5 같은)은 코드를 고쳐야 해서 자동 PR 로 받지 않는다.
+    # 보안 구멍 **알림**은 이 파일과 상관없이 온다 — 큰 버전만 고칠 수 있는 구멍이면 알림을 보고 손으로 올린다
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+    open-pull-requests-limit: 2
