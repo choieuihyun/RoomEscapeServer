@@ -229,6 +229,9 @@ class FcmNotifier(
                     "notification" to mapOf("title" to text.title, "body" to text.body),
                     // 알림을 누르면 Floduler 로 간다. 없으면 눌러도 아무 일도 안 일어난다
                     "webpush" to mapOf(
+                        // 화면이 꺼진 안드로이드에 바로 전한다. normal(기본)이면 절전 중에 묶여 늦게 올 수 있다 — 빈자리·일정 알림은 늦으면 소용없다.
+                        // 위에서 내려오는 팝업(헤즈업)인지는 이 값이 아니라 기기의 알림 채널 설정이 정한다
+                        "headers" to mapOf("Urgency" to "high"),
                         "fcm_options" to mapOf("link" to link),
                         // tag 가 같으면 브라우저가 앞 알림을 바꿔 끼운다. renotify 가 없으면 바꿔 끼울 때 소리·진동이 안 난다
                         "notification" to mapOf("icon" to icon, "badge" to icon) +

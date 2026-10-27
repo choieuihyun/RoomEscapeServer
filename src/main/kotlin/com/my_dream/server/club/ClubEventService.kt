@@ -421,8 +421,10 @@ class ClubEventService(
         val before = participants.countByEvent(event)
         if (cap != null && before >= cap) throw ClubError.eventFull()
         participants.saveAndFlush(ClubEventParticipant(event, uid, addedBy, Instant.now()))
-        // 마감 알림 (D34) — 이 사람으로 **처음** 찼을 때만. 정원을 줄여 같아진 경우(수정)는 여기를 안 지난다
-        if (cap != null && before + 1 == cap.toLong()) changed(event, AlertKind.FULL, addedBy ?: uid)
+        // 참여 알림 (D50) + 마감 알림 (D34) 을 **한 사건으로** 알린다 — 둘이 같은 순간이면 만든 사람이 두 통 받지 않게 한 곳에서 고른다.
+        // 마감은 이 사람으로 **처음** 찼을 때만. 정원을 줄여 같아진 경우(수정)는 여기를 안 지난다
+        val filled = cap != null && before + 1 == cap.toLong()
+        publisher.publishEvent(ClubEventJoined(requireNotNull(event.id), uid, addedBy ?: uid, (before + 1).toInt(), filled))
     }
 
     /**

@@ -85,6 +85,13 @@ class EventCommentTest @Autowired constructor(
         repeat(50) { if (notifier.pushes.size >= n) return; Thread.sleep(50) }
     }
 
+    /** 참여하면 만든 사람에게 참여 알림(D50)이 따로 간다 — 그것까지 기다렸다 비운다. 여기서 보는 것은 댓글 알림이다 */
+    private fun settleJoinAlert() {
+        awaitPushes(1)
+        Thread.sleep(100)
+        notifier.pushes.clear()
+    }
+
     @Test
     fun `쓰고 보고 지우고 — 계약 모양, 오래된 순, commentCount, 쓴 사람·운영진만 지운다`() {
         val id = event()
@@ -154,6 +161,7 @@ class EventCommentTest @Autowired constructor(
     fun `알림 — 승인된 참여자 + 만든 사람 + 댓글 쓴 사람, 쓴 사람 빼고 겹치지 않게, 일정마다 같은 tag`() {
         val id = event(title = "", segs = listOf(SegmentInput(themeName = "목격자", branchName = "건대점", startMin = 600)))
         events.join("너", id)
+        settleJoinAlert()
         // "나" 는 만든 사람이자 참여자 — 한 번만 받는다
 
         write("쟤", id, "${"가".repeat(70)}\\n둘째 줄")   // JSON 안의 줄바꿈 — 날 줄바꿈 문자는 JSON 이 아니다
@@ -187,6 +195,7 @@ class EventCommentTest @Autowired constructor(
     fun `지난 날짜 일정에도 쓰고 알림도 간다 — 정산·후기 이야기`() {
         val id = event()
         events.join("너", id)
+        settleJoinAlert()
         jdbc.update("UPDATE club_event SET event_date = DATE '2026-01-01' WHERE id = ?", id)
         write("너", id, "정산 보냈어요")
         awaitPushes(1)

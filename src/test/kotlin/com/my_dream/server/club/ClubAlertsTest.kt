@@ -60,17 +60,24 @@ class ClubAlertsTest @Autowired constructor(
 
     private fun changes() = published.stream(ClubEventChanged::class.java).toList()
 
+    private fun joins() = published.stream(ClubEventJoined::class.java).toList()
+
     // --- 언제 "바뀌었다" 고 보나 ---
 
     @Test
-    fun `정원이 처음 찬 순간에만 마감 — 넣은 사람이 actor`() {
+    fun `참여마다 한 건, 정원이 처음 찬 순간에만 filled — 넣은 사람이 actor`() {
+        // 마감은 ClubEventChanged 가 아니라 참여 사건의 filled 로 온다(D50) — 참여 알림과 한 곳에서 골라 보내려고
         val id = service.create("나", input(capacity = 3)).id
         service.join("너", id)
-        assertTrue(changes().isEmpty(), "2/3 — 아직")
         service.addParticipant("운영", id, "쟤")
-        assertEquals(listOf(ClubEventChanged(id, AlertKind.FULL, "운영")), changes(), "대신 넣기면 넣은 사람이 한 일이다")
+        assertEquals(
+            listOf(ClubEventJoined(id, "너", "너", 2, false), ClubEventJoined(id, "쟤", "운영", 3, true)),
+            joins(),
+            "만들 때 만든 사람이 들어가는 것은 참여가 아니다 · 대신 넣기면 넣은 사람이 한 일이다",
+        )
         service.join("쟤", id)   // 이미 있음 — 다시 눌러도 또 안 나간다
-        assertEquals(1, changes().size)
+        assertEquals(2, joins().size)
+        assertTrue(changes().isEmpty())
     }
 
     @Test
@@ -80,6 +87,8 @@ class ClubAlertsTest @Autowired constructor(
         service.update("나", made.id, input(capacity = 2, version = made.version))   // 2/2 가 됐지만 수정으로 — 계약상 없음
         assertEquals("EVENT_FULL", assertFailsWith<ClubError> { service.join("쟤", made.id) }.code)
         assertTrue(changes().isEmpty())
+        assertTrue(joins().none { it.filled }, "정원을 줄여 찬 것은 마감이 아니다")
+        assertEquals(listOf("너"), joins().map { it.joiner }, "진 요청은 사건도 없다")
     }
 
     @Test
@@ -133,5 +142,79 @@ class ClubAlertsTest @Autowired constructor(
         assertEquals(0, alerts.send(ClubEventChanged(gone, AlertKind.BOOKED, "나"), today, now))
         assertEquals(1, alerts.send(ClubEventChanged(open, AlertKind.BOOKED, "나"), today, now))
         assertEquals("모임 · 날짜 미정", notifier.pushes.single().body)
+    }
+
+    // --- 참여 알림 (D50) ---
+
+    @Test
+    fun `참여 알림은 만든 사람에게만 — 문구 · 링크 · tag, 정원이 없으면 수만`() {
+        val id = service.create("나", input(capacity = null)).id
+        service.join("너", id)
+        assertTrue(alerts.joined(ClubEventJoined(id, "너", "너", 2, false), today, now))
+        val p = notifier.pushes.single()
+        assertEquals("나", p.userId)
+        assertEquals("닉너 님이 참여했어요", p.title)
+        assertEquals("모임 · 11/7(토) · 2명", p.body)
+        assertEquals("#e=$id", p.linkFragment)
+        assertEquals("ev-join-$id", p.tag)
+
+        // 횟수 제한 없음 — 바로 또 와도 보낸다(기기에서 겹친다)
+        assertTrue(alerts.joined(ClubEventJoined(id, "쟤", "쟤", 3, false), today, now))
+        assertEquals("닉쟤 님이 참여했어요", notifier.pushes.last().title)
+    }
+
+    @Test
+    fun `대신 넣기면 들어간 사람 이름, 넣은 사람이 만든 사람이면 안 보낸다`() {
+        val id = service.create("나", input(capacity = 4)).id
+        assertTrue(alerts.joined(ClubEventJoined(id, "쟤", "운영", 2, false), today, now))
+        assertEquals("닉쟤 님이 참여했어요", notifier.pushes.single().title)
+        assertEquals("모임 · 11/7(토) · 2/4명", notifier.pushes.single().body)
+        notifier.pushes.clear()
+        assertTrue(!alerts.joined(ClubEventJoined(id, "너", "나", 3, false), today, now), "만든 사람이 넣었다")
+        assertTrue(!alerts.joined(ClubEventJoined(id, "나", "나", 1, false), today, now), "만든 사람 본인")
+        assertTrue(notifier.pushes.isEmpty())
+    }
+
+    @Test
+    fun `만든 사람이 승인 멤버가 아니거나, 지난·지운 일정이면 없다 — 날짜 미정은 보낸다`() {
+        val removed = service.create("나", input()).id
+        members.findByUserId("나")!!.status = MemberStatus.REMOVED
+        assertTrue(!alerts.joined(ClubEventJoined(removed, "너", "너", 2, false), today, now))
+        members.findByUserId("나")!!.status = MemberStatus.APPROVED
+
+        val past = service.create("나", input(date = "2026-10-31")).id
+        val gone = service.create("나", input()).id.also { service.delete("나", it) }
+        assertTrue(!alerts.joined(ClubEventJoined(past, "너", "너", 2, false), today, now))
+        assertTrue(!alerts.joined(ClubEventJoined(gone, "너", "너", 2, false), today, now))
+        assertTrue(notifier.pushes.isEmpty())
+
+        val open = service.create("나", input(date = null)).id
+        assertTrue(alerts.joined(ClubEventJoined(open, "너", "너", 2, false), today, now))
+        assertEquals("모임 · 날짜 미정 · 2/3명", notifier.pushes.single().body)
+    }
+
+    @Test
+    fun `그 참여로 찼고 만든 사람이 마감을 받으면 참여 알림은 없다 — 두 통 방지`() {
+        val id = service.create("나", input(capacity = 2)).id
+        service.join("너", id)
+        assertTrue(!alerts.joined(ClubEventJoined(id, "너", "너", 2, true), today, now))
+        assertEquals(listOf("나" to "일정 자리가 다 찼어요"), notifier.pushes.map { it.userId to it.title }, "만든 사람은 마감 한 통만")
+    }
+
+    @Test
+    fun `찼어도 만든 사람이 참여자가 아니면 참여 알림이 간다 — 마감이 10분 제한에 걸려도`() {
+        val a = service.create("나", input(capacity = 2)).id
+        service.leave("나", a)
+        listOf("너", "쟤").forEach { service.join(it, a) }
+        assertTrue(alerts.joined(ClubEventJoined(a, "쟤", "쟤", 2, true), today, now))
+        assertEquals(setOf("너" to "일정 자리가 다 찼어요", "나" to "닉쟤 님이 참여했어요"), notifier.pushes.map { it.userId to it.title }.toSet())
+
+        // 만든 사람이 참여자여도, 마감이 10분 안에 이미 나가 이번엔 안 나가면 참여 알림은 간다
+        val b = service.create("나", input(capacity = 2)).id
+        service.join("너", b)
+        alerts.send(ClubEventChanged(b, AlertKind.FULL, "너"), today, now)
+        notifier.pushes.clear()
+        assertTrue(alerts.joined(ClubEventJoined(b, "너", "너", 2, true), today, now.plusSeconds(60)))
+        assertEquals(listOf("나" to "닉너 님이 참여했어요"), notifier.pushes.map { it.userId to it.title })
     }
 }

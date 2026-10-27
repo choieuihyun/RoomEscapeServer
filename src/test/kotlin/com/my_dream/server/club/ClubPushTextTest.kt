@@ -72,4 +72,13 @@ class ClubPushTextTest {
         assertEquals("A → B · ${"🙂".repeat(60)}…", ClubPushText.comment(untitled, segs(untitled, 600 to "A", 700 to "B"), "닉", "🙂".repeat(61)).second, "코드 포인트로 자른다")
         assertEquals("안녕", ClubPushText.comment(untitled, emptyList(), "닉", "안녕").second, "앞에 ' · ' 가 홀로 남지 않는다")
     }
+
+    @Test
+    fun `참여 — 제목은 들어간 사람, 본문은 마감과 같은 표기에 수 · 정원이 없으면 수만`() {
+        assertEquals("닉너 님이 참여했어요" to "보드게임처럼 · 10/24(토) · 3/4명", ClubPushText.joined(event(), emptyList(), "닉너", 3))
+        val untitled = event(title = "")
+        val open = ClubEvent("", null, null, null, null, null, true, null, "u", Instant.EPOCH, Instant.EPOCH)
+        assertEquals("A · 10/24(토) · 2/4명", ClubPushText.joined(untitled, segs(untitled, 600 to "A"), "닉", 2).second)
+        assertEquals("B · 날짜 미정 · 5명", ClubPushText.joined(open, segs(open, 600 to "B"), "닉", 5).second)
+    }
 }

@@ -40,6 +40,15 @@ object ClubPushText {
     fun full(event: ClubEvent, segs: List<ClubEventSegment>, capacity: Int): Pair<String, String> =
         "일정 자리가 다 찼어요" to "${what(event, segs)} · ${day(event.date)} · $capacity/${capacity}명"
 
+    /**
+     * 참여 (D50): 제목 `{참여한 사람} 님이 참여했어요`, 본문 `{제목 또는 구간} · {날짜} · {count}/{정원}명` — 정원이 없으면 `{count}명`.
+     * 날짜·구간 표기는 마감과 같다
+     */
+    fun joined(event: ClubEvent, segs: List<ClubEventSegment>, nickname: String, count: Int): Pair<String, String> {
+        val people = event.capacity?.let { "$count/${it}명" } ?: "${count}명"
+        return "$nickname 님이 참여했어요" to "${what(event, segs)} · ${day(event.date)} · $people"
+    }
+
     /** 예약 완료: `{제목 또는 구간} · {날짜} {첫 시각}` — 첫 시각은 첫 구간 → 오전·오후 → 일정 시작 → 없으면 뺀다 */
     fun booked(event: ClubEvent, segs: List<ClubEventSegment>): Pair<String, String> {
         val first = segs.firstOrNull()?.let { time(it.startMin) } ?: halfDay(event) ?: event.startMin?.let(::time)

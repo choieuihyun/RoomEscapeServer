@@ -114,6 +114,7 @@ class FcmNotifierTest {
             .andExpect(jsonPath("$.message.webpush.notification.icon").value("https://example.test/icon-192.png"))
             // tag 가 없으면 싣지 않는다 — 지금까지의 알림은 겹치지 않고 따로 뜬다
             .andExpect(jsonPath("$.message.webpush.notification.tag").doesNotExist())
+            .andExpect(jsonPath("$.message.webpush.headers.Urgency").value("high"))
             .andExpect(jsonPath("$.message.data.tag").doesNotExist())
             .andRespond(withSuccess(fixture("fcm-ok.json"), MediaType.APPLICATION_JSON))
 
@@ -130,6 +131,8 @@ class FcmNotifierTest {
         server.expect(requestTo("https://fcm.test/v1/projects/roomescapescheduler/messages:send"))
             .andExpect(jsonPath("$.message.webpush.notification.tag").value("ev-cmt-12"))
             .andExpect(jsonPath("$.message.webpush.notification.renotify").value(true))
+            // 화면이 꺼진 안드로이드에도 바로 — 모든 알림에 싣는다
+            .andExpect(jsonPath("$.message.webpush.headers.Urgency").value("high"))
             .andExpect(jsonPath("$.message.webpush.notification.icon").value("https://example.test/icon-192.png"))
             .andExpect(jsonPath("$.message.data.tag").value("ev-cmt-12"))
             .andExpect(jsonPath("$.message.data.link").value("https://example.test/#e=12"))

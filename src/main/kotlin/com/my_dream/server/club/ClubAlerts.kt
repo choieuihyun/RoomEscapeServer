@@ -27,6 +27,12 @@ enum class AlertKind { FULL, BOOKED }
 data class ClubEventChanged(val eventId: Long, val kind: AlertKind, val actor: String)
 
 /**
+ * 누가 일정에 들어왔다 (참여하기 · 대신 넣기). [joiner] 는 들어간 사람, [actor] 는 그 일을 한 사람(대신 넣기면 넣은 사람).
+ * [count] 는 **들어간 순간의** 참여자 수 — 알림이 늦게 나가도 그때의 수를 쓴다. [filled] 면 이 참여로 정원이 처음 찼다(마감 알림)
+ */
+data class ClubEventJoined(val eventId: Long, val joiner: String, val actor: String, val count: Int, val filled: Boolean)
+
+/**
  * 마감 · 예약 완료 알림 (계약 §4.10 · 아키텍처 D34).
  *
  * 같은 일정 같은 종류는 **10분에 한 번** — 마감↔취소가 반복되면 알림이 쏟아진다. 기억은 메모리라
@@ -45,11 +51,36 @@ class ClubAlerts(
     private val lastSent = ConcurrentHashMap<Pair<Long, AlertKind>, Instant>()
 
     /** @return 보낸 사람 수 */
-    fun send(change: ClubEventChanged, today: LocalDate = todayKst(), now: Instant = Instant.now()): Int {
-        val event = events.findById(change.eventId).orElse(null)?.takeIf { it.deletedAt == null } ?: return 0
+    fun send(change: ClubEventChanged, today: LocalDate = todayKst(), now: Instant = Instant.now()): Int = deliver(change, today, now).size
+
+    /**
+     * 참여 한 건 — 정원이 찼으면 마감 알림을 먼저 보내고, **그 마감 알림을 만든 사람이 받았으면** 참여 알림은 건너뛴다
+     * (계약 §4.10 "같은 순간 두 통이 가지 않게"). 마감이 10분 제한에 걸려 안 나갔거나 만든 사람이 참여자가 아니면 참여 알림은 간다.
+     * @return 참여 알림을 보냈나
+     */
+    fun joined(j: ClubEventJoined, today: LocalDate = todayKst(), now: Instant = Instant.now()): Boolean {
+        val gotFull = if (j.filled) deliver(ClubEventChanged(j.eventId, AlertKind.FULL, j.actor), today, now) else emptyList()
+        val event = events.findById(j.eventId).orElse(null)?.takeIf { it.deletedAt == null } ?: return false
+        if (event.date?.let { it < today } == true) return false
+        val creator = event.createdBy
+        // 만든 사람이 스스로 들어갔거나 남을 넣었으면 알 일이다
+        if (j.actor == creator || creator in gotFull) return false
+        if (members.findByUserId(creator)?.status != MemberStatus.APPROVED) return false
+
+        val nickname = members.findByUserId(j.joiner)?.nickname.orEmpty()
+        val (title, body) = ClubPushText.joined(event, segments.findByEventIds(listOf(j.eventId)), nickname, j.count)
+        // 횟수 제한은 없다 — 여러 명이 연달아 들어와도 tag 로 기기에서 하나로 겹친다(D50)
+        notifier.push(Push(creator, title, body, "#e=${j.eventId}", "ev-join-${j.eventId}"))
+        log.info("참여 알림 — 일정 {}", j.eventId)
+        return true
+    }
+
+    /** @return 보낸 사람들 */
+    private fun deliver(change: ClubEventChanged, today: LocalDate, now: Instant): List<String> {
+        val event = events.findById(change.eventId).orElse(null)?.takeIf { it.deletedAt == null } ?: return emptyList()
         // 지난 날짜 일정은 기록을 고치려고 누른 것이다 — 알림은 잡음이다
-        if (event.date?.let { it < today } == true) return 0
-        if (!claim(change.eventId to change.kind, now)) return 0
+        if (event.date?.let { it < today } == true) return emptyList()
+        if (!claim(change.eventId to change.kind, now)) return emptyList()
 
         val segs = segments.findByEventIds(listOf(change.eventId))
         val uids = participants.findByEventIds(listOf(change.eventId)).map { it.userId }
@@ -62,7 +93,7 @@ class ClubAlerts(
         // 기기가 없는 사람은 FcmNotifier 가 조용히 건너뛴다 (NO_ADDRESS)
         to.forEach { notifier.push(Push(it, title, body, "#e=${change.eventId}")) }
         log.info("동호회 알림 {} — 일정 {} · {}명", change.kind, change.eventId, to.size)
-        return to.size
+        return to
     }
 
     /** 10분 안에 같은 알림을 보냈으면 false. 비교와 기록을 한 번에 한다 — 동시에 둘이 와도 하나만 통과한다 */
@@ -106,6 +137,14 @@ class ClubAlertListener(
         pool.execute {
             // 알림이 실패해도 그 요청은 이미 성공했다. 로그만 남긴다
             runCatching { alerts.send(change) }.onFailure { log.error("동호회 알림 실패 — {}", change, it) }
+        }
+    }
+
+    /** 참여 · 마감 알림(D50 · D34) — 둘을 한 작업으로 보내야 "만든 사람에게 두 통" 을 고를 수 있다 */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun on(joined: ClubEventJoined) {
+        pool.execute {
+            runCatching { alerts.joined(joined) }.onFailure { log.error("참여 알림 실패 — {}", joined, it) }
         }
     }
 
